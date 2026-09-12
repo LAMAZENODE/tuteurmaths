@@ -5,11 +5,13 @@ import json
 import re
 import stripe
 import io
-import os 
+import os
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 # ============================================================
 # CONFIGURATION DE LA PAGE
@@ -25,23 +27,23 @@ def charger_traductions():
     chemin_fichier = os.path.join(chemin_script, "translations.json")
     with open(chemin_fichier, "r", encoding="utf-8") as f:
         return json.load(f)
-   
+
 TRADUCTIONS = charger_traductions()
 
-# Sélecteur de langue dans la sidebar
 LANGUES = {
     "🇫🇷 Français": "fr",
     "🇬🇧 English": "en",
     "🇩🇪 Deutsch": "de",
     "🇪🇸 Español": "es",
-    "🇮🇹 Italiano": "it"
+    "🇮🇹 Italiano": "it",
+    "🇸🇦 العربية": "ar"
 }
 
 if "langue" not in st.session_state:
     st.session_state.langue = "fr"
 
 with st.sidebar:
-    st.markdown("### 🌍 Language / Langue / Sprache / Idioma / Lingua")
+    st.markdown("### 🌍 Language / Langue / Sprache / Idioma / Lingua / اللغة")
     choix = st.selectbox(
         "Choisissez votre langue :",
         options=list(LANGUES.keys()),
@@ -49,6 +51,44 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     st.session_state.langue = LANGUES[choix]
+
+# ============================================================
+# CSS POUR L'ARABE (droite à gauche)
+# ============================================================
+def injecter_css(langue):
+    if langue == "ar":
+        st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+        html, body, [class*="css"], .stApp {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Cairo', sans-serif;
+        }
+        .stTextArea textarea, .stTextInput input {
+            direction: rtl;
+            text-align: right;
+        }
+        .stMarkdown, .stMarkdown p, .stMarkdown li,
+        h1, h2, h3, h4, h5, h6 {
+            direction: rtl;
+            text-align: right;
+        }
+        [data-testid="stSidebar"] {
+            direction: rtl;
+            text-align: right;
+        }
+        .stButton > button, .stDownloadButton > button {
+            direction: rtl;
+        }
+        .katex, .MathJax, .katex-display {
+            direction: ltr !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+injecter_css(st.session_state.langue)
+
 
 def t(cle, **kwargs):
     """Fonction de traduction avec interpolation."""
@@ -100,7 +140,7 @@ if "session_id" in query_params:
         st.error(t("verif_error"))
 
 # ============================================================
-# FONCTION PDF
+# FONCTION PDF (avec support arabe)
 # ============================================================
 def generer_pdf(texte_correction, enonce_exercice):
     buffer = io.BytesIO()
@@ -110,16 +150,40 @@ def generer_pdf(texte_correction, enonce_exercice):
         title="AI Math Tutor Correction"
     )
     styles = getSampleStyleSheet()
+
+    # Détection de la langue arabe
+    langue = st.session_state.get("langue", "fr")
+    est_arabe = (langue == "ar")
+
+    # Police adaptée
+    police = "Helvetica"
+    if est_arabe:
+        chemin_police = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "NotoNaskhArabic-Regular.ttf"
+        )
+        if os.path.exists(chemin_police):
+            pdfmetrics.registerFont(TTFont("Arabic", chemin_police))
+            police = "Arabic"
+
+    alignement = TA_RIGHT if est_arabe else TA_JUSTIFY
+
     style_titre = ParagraphStyle('TitrePDF', parent=styles['Heading1'],
-        fontSize=22, leading=26, textColor='#1E3A8A', alignment=TA_CENTER, spaceAfter=20)
+        fontName=police, fontSize=22, leading=26,
+        textColor='#1E3A8A', alignment=TA_CENTER, spaceAfter=20)
     style_sous_titre = ParagraphStyle('SousTitrePDF', parent=styles['Heading2'],
-        fontSize=14, leading=18, textColor='#10B981', spaceBefore=15, spaceAfter=10)
+        fontName=police, fontSize=14, leading=18,
+        textColor='#10B981', spaceBefore=15, spaceAfter=10,
+        alignment=alignement)
     style_corps = ParagraphStyle('CorpsPDF', parent=styles['BodyText'],
-        fontSize=11, leading=16, textColor='#374151', alignment=TA_JUSTIFY, spaceAfter=10)
+        fontName=police, fontSize=11, leading=16,
+        textColor='#374151', alignment=alignement, spaceAfter=10)
     style_enonce = ParagraphStyle('EnoncePDF', parent=styles['Italic'],
-        fontSize=10, leading=14, textColor='#6B7280', spaceAfter=15)
+        fontName=police, fontSize=10, leading=14,
+        textColor='#6B7280', spaceAfter=15, alignment=alignement)
     style_footer = ParagraphStyle('FooterPDF', parent=styles['Normal'],
-        fontSize=8, leading=10, textColor='#9CA3AF', alignment=TA_CENTER, spaceBefore=30)
+        fontName=police, fontSize=8, leading=10,
+        textColor='#9CA3AF', alignment=TA_CENTER, spaceBefore=30)
 
     histoire = []
     histoire.append(Paragraph(t("pdf_title"), style_titre))
@@ -216,17 +280,32 @@ else:
         else:
             with st.spinner(t("spinner")):
                 try:
-                    # Instructions multilingues pour l'IA
+                    noms_langues = {
+                        "fr": "français",
+                        "en": "anglais",
+                        "de": "allemand",
+                        "es": "espagnol",
+                        "it": "italien",
+                        "ar": "arabe",
+                    }
+                    nom_langue = noms_langues.get(st.session_state.langue, "français")
+
                     instructions = (
                         f"Tu es un tuteur privé de mathématiques hautement qualifié, pédagogue et bienveillant. "
-                        f"Réponds IMPÉRATIVEMENT dans la langue suivante : {st.session_state.langue}. "
+                        f"Réponds IMPÉRATIVEMENT en {nom_langue}. "
                         "Ton but est d'aider l'élève à comprendre son exercice, pas seulement de lui donner la réponse brute. "
                         "1. Salue brièvement l'élève de manière encourageante.\n"
                         "2. Rappelle brièvement les propriétés ou formules mathématiques nécessaires.\n"
                         "3. Propose une correction extrêmement détaillée, rédigée étape par étape.\n"
                         "4. Utilise un langage clair, accessible et structure tes calculs avec une mise en forme soignée.\n"
-                        "5. Termine par un petit conseil ou un mot d'encouragement pour ses révisions."
+                        "5. Termine par un petit conseil ou un mot d'encouragement pour ses révisions.\n"
                     )
+
+                    if st.session_state.langue == "ar":
+                        instructions += (
+                            "IMPORTANT pour l'arabe : utilise des formules LaTeX entre $ ... $ pour les maths inline "
+                            "et $$ ... $$ pour les formules en bloc. Rédige tout le texte explicatif en arabe standard moderne."
+                        )
 
                     reponse_ia = client_ia.models.generate_content(
                         model='gemini-2.5-flash',
@@ -259,6 +338,7 @@ else:
             mime="application/pdf",
             use_container_width=True
         )
+
 
 
 
