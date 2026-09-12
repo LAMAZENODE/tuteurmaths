@@ -1,0 +1,6 @@
+google-genai
+streamlit
+plotly
+numpy
+stripe
+reportlab
