@@ -14,12 +14,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 # ============================================================
-# CONFIGURATION DE LA PAGE
-# ============================================================
-st.set_page_config(page_title="AI Math Tutor", page_icon="📐", layout="centered")
-
-# ============================================================
-# CHARGEMENT DES TRADUCTIONS
+# CHARGEMENT DES TRADUCTIONS (AVANT set_page_config)
 # ============================================================
 @st.cache_data
 def charger_traductions():
@@ -39,9 +34,43 @@ LANGUES = {
     "🇸🇦 العربية": "ar"
 }
 
-if "langue" not in st.session_state:
-    st.session_state.langue = "fr"
+# ============================================================
+# DÉTECTION AUTOMATIQUE DE LA LANGUE DU NAVIGATEUR
+# ============================================================
+def detecter_langue_navigateur():
+    """
+    Lit l'en-tête HTTP 'Accept-Language' envoyé par le navigateur.
+    Ex: 'en-US,en;q=0.9,fr;q=0.8' → retourne 'en'
+    Fallback : 'en' (anglais) si rien n'est détecté.
+    Nécessite Streamlit >= 1.37 pour st.context.headers.
+    """
+    langues_supportees = {"fr", "en", "de", "es", "it", "ar"}
+    try:
+        accept_lang = st.context.headers.get("Accept-Language", "")
+        for part in accept_lang.split(","):
+            code = part.split(";")[0].strip().lower()[:2]
+            if code in langues_supportees:
+                return code
+    except Exception:
+        pass
+    return "en"  # ← Par défaut : ANGLAIS (plus universel que le français)
 
+# Initialisation de la langue dans la session
+if "langue" not in st.session_state:
+    st.session_state.langue = detecter_langue_navigateur()
+
+# ============================================================
+# CONFIGURATION DE LA PAGE (dépend de la langue détectée)
+# ============================================================
+st.set_page_config(
+    page_title=TRADUCTIONS[st.session_state.langue].get("page_title", "AI Math Tutor"),
+    page_icon="📐",
+    layout="centered"
+)
+
+# ============================================================
+# SÉLECTEUR DE LANGUE (dans la sidebar)
+# ============================================================
 with st.sidebar:
     st.markdown("### 🌍 Language / Langue / Sprache / Idioma / Lingua / اللغة")
     choix = st.selectbox(
@@ -89,7 +118,9 @@ def injecter_css(langue):
 
 injecter_css(st.session_state.langue)
 
-
+# ============================================================
+# FONCTION DE TRADUCTION
+# ============================================================
 def t(cle, **kwargs):
     """Fonction de traduction avec interpolation."""
     texte = TRADUCTIONS[st.session_state.langue].get(cle, cle)
@@ -288,7 +319,7 @@ else:
                         "it": "italien",
                         "ar": "arabe",
                     }
-                    nom_langue = noms_langues.get(st.session_state.langue, "français")
+                    nom_langue = noms_langues.get(st.session_state.langue, "anglais")
 
                     instructions = (
                         f"Tu es un tuteur privé de mathématiques hautement qualifié, pédagogue et bienveillant. "
@@ -338,13 +369,3 @@ else:
             mime="application/pdf",
             use_container_width=True
         )
-
-
-
-
-
-
-
-
-
-
