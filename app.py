@@ -41,7 +41,7 @@ def detecter_langue_navigateur():
     """
     Lit l'en-tête HTTP 'Accept-Language' envoyé par le navigateur.
     Ex: 'en-US,en;q=0.9,fr;q=0.8' → retourne 'en'
-    Fallback : 'en' (anglais) si rien n'est détecté.
+    Fallback : 'en' si rien n'est détecté.
     Nécessite Streamlit >= 1.37 pour st.context.headers.
     """
     langues_supportees = {"fr", "en", "de", "es", "it", "ar"}
@@ -53,17 +53,16 @@ def detecter_langue_navigateur():
                 return code
     except Exception:
         pass
-    return "en"  # ← Par défaut : ANGLAIS (plus universel que le français)
+    return "en"
 
-# Initialisation de la langue dans la session
 if "langue" not in st.session_state:
     st.session_state.langue = detecter_langue_navigateur()
 
 # ============================================================
-# CONFIGURATION DE LA PAGE (dépend de la langue détectée)
+# CONFIGURATION DE LA PAGE (titre dynamique selon langue)
 # ============================================================
 st.set_page_config(
-    page_title=TRADUCTIONS[st.session_state.langue].get("page_title", "AI Math Tutor"),
+    page_title=TRADUCTIONS[st.session_state.langue].get("page_title", "Math Coach"),
     page_icon="📐",
     layout="centered"
 )
@@ -178,7 +177,7 @@ def generer_pdf(texte_correction, enonce_exercice):
     doc = SimpleDocTemplate(
         buffer, pagesize=letter,
         rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40,
-        title="AI Math Tutor Correction"
+        title=t("pdf_title")
     )
     styles = getSampleStyleSheet()
 
@@ -228,7 +227,10 @@ def generer_pdf(texte_correction, enonce_exercice):
     texte_propre = re.sub(r'\*(.*?)\*', r'<i>\1</i>', texte_propre)
     histoire.append(Paragraph(texte_propre, style_corps))
     histoire.append(Spacer(1, 20))
-    histoire.append(Paragraph("This is for informational purposes only. AI responses may include mistakes.", style_footer))
+    histoire.append(Paragraph(
+        "This document is for informational purposes only. Responses may include mistakes.",
+        style_footer
+    ))
     doc.build(histoire)
     buffer.seek(0)
     return buffer
@@ -322,7 +324,7 @@ else:
                     nom_langue = noms_langues.get(st.session_state.langue, "anglais")
 
                     instructions = (
-                        f"Tu es un tuteur privé de mathématiques hautement qualifié, pédagogue et bienveillant. "
+                        f"Tu es un coach privé de mathématiques hautement qualifié, pédagogue et bienveillant. "
                         f"Réponds IMPÉRATIVEMENT en {nom_langue}. "
                         "Ton but est d'aider l'élève à comprendre son exercice, pas seulement de lui donner la réponse brute. "
                         "1. Salue brièvement l'élève de manière encourageante.\n"
@@ -363,9 +365,13 @@ else:
             st.session_state['dernier_enonce']
         )
         st.download_button(
-            label="📥 Télécharger la correction en PDF",
+            label=t("button_download_pdf"),
             data=pdf_buffer,
-            file_name="correction_tuteur_math.pdf",
+            file_name="correction_coach_math.pdf",
             mime="application/pdf",
             use_container_width=True
         )
+
+
+
+
