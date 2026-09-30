@@ -538,7 +538,7 @@ def generer_correction(exercice):
         )
 
     reponse_ia = client_ia.models.generate_content(
-        model='gemini-3.6-flash',
+        model='gemini-2.5-flash',
         contents=exercice,
         config=types.GenerateContentConfig(
             system_instruction=instructions,
