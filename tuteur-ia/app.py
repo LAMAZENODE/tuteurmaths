@@ -237,6 +237,11 @@ def injecter_css(langue):
         .katex, .MathJax, .katex-display {
             direction: ltr !important;
         }
+        span[dir="ltr"] {
+            display: inline-block;
+            direction: ltr;
+            unicode-bidi: embed;
+        }
         </style>
         """, unsafe_allow_html=True)
 
@@ -375,6 +380,29 @@ def _charger_police_base64():
         return None
 
 
+def _isoler_latin_en_arabe(texte):
+    """Enveloppe les expressions latines dans <span dir='ltr'> pour RTL."""
+    # f(x), g(x), etc.
+    texte = re.sub(
+        r'([a-zA-Z])\s*\(\s*([^)]*?)\s*\)',
+        r'<span dir="ltr">\1(\2)</span>',
+        texte
+    )
+    # Formules type 2x + 3, ax - b
+    texte = re.sub(
+        r'(?<![a-zA-Z0-9])(\d*[a-zA-Z]\s*[+\-]\s*\d+)(?![a-zA-Z0-9])',
+        r'<span dir="ltr">\1</span>',
+        texte
+    )
+    # Parenthèses avec texte latin
+    texte = re.sub(
+        r'\(\s*([a-zA-ZÀ-ÿ\'\- ]+?)\s*\)',
+        r'<span dir="ltr">(\1)</span>',
+        texte
+    )
+    return texte
+
+
 def _markdown_vers_html(contenu, est_arabe=False):
     """Convertit un texte Markdown en HTML structuré."""
     lignes_html = []
@@ -387,13 +415,12 @@ def _markdown_vers_html(contenu, est_arabe=False):
         l = _convertir_latex_simple(l)
 
         if est_arabe:
-            for k, v in {
-                " ً": "ً", " ٍ": "ٍ", " ٌ": "ٌ",
-                " َ": "َ", " ِ": "ِ", " ُ": "ُ",
-                " ْ": "ْ", " ّ": "ّ",
-                " .": ".", " ،": "،", " ؟": "؟",
-            }.items():
-                l = l.replace(k, v)
+            # 1. Nettoyage des accents arabes (regex, plus robuste)
+            l = re.sub(r'\s+([\u064B-\u0652])', r'\1', l)
+            l = re.sub(r'\s+([.,،؟!؛:])', r'\1', l)
+            l = re.sub(r' {2,}', ' ', l)
+            # 2. Isolation des expressions latines
+            l = _isoler_latin_en_arabe(l)
 
         if l.startswith("### "):
             lignes_html.append(f"<h3>{l[4:]}</h3>")
@@ -483,6 +510,11 @@ def generer_pdf(texte_correction, enonce_exercice):
             p {{ margin: 6px 0; }}
             .puce-ar {{ padding-right: 22px; text-indent: -14px; margin: 4px 0; }}
             .puce {{ padding-left: 22px; text-indent: -14px; margin: 4px 0; }}
+            span[dir="ltr"] {{
+                display: inline-block;
+                direction: ltr;
+                unicode-bidi: embed;
+            }}
             .footer {{
                 margin-top: 40px;
                 font-size: 8pt;
@@ -540,13 +572,20 @@ def generer_correction(exercice):
 
     if st.session_state.langue == "ar":
         instructions += (
-            "IMPORTANT pour l'arabe : utilise des formules LaTeX entre $ ... $ pour les maths inline "
-            "et $$ ... $$ pour les formules en bloc. Rédige tout le texte explicatif en arabe standard moderne."
+            "IMPORTANT pour l'arabe :\n"
+            "- Rédige tout le texte explicatif en arabe standard moderne.\n"
+            "- Utilise des formules LaTeX entre $ ... $ pour les maths inline "
+            "et $$ ... $$ pour les formules en bloc.\n"
+            "- ⚠️ N'ajoute JAMAIS d'espace avant les accents arabes "
+            "(exemples corrects : أهلاً وليس أهال ً، حقاً وليس حقا ً، دائماً وليس دائما ً).\n"
+            "- ⚠️ Colle toujours les accents au caractère qui les précède.\n"
+            "- ⚠️ Ne mets jamais d'espace avant la ponctuation (. ، ؟ !)."
         )
+
     modeles = [
-        "gemini-3.6-flash",   # ← nouveau modèle recommandé
-        "gemini-3.8-flash",
+        "gemini-3.6-flash",
         "gemini-2.5-flash",
+        "gemini-2.0-flash",
         "gemini-flash-latest",
     ]
 
@@ -702,7 +741,6 @@ elif not est_abonne:
 
     # ---------- BLOC : AFFICHAGE DE LA CORRECTION GRATUITE ----------
     else:
-        # L'utilisateur a consommé son essai → on affiche la correction
         st.success(t("free_question_used"))
         st.write("---")
 
@@ -793,4 +831,3 @@ else:
         st.markdown(st.session_state['derniere_correction'])
         st.write("---")
         afficher_correction_et_pdf("correction_coach_math.pdf")
-
