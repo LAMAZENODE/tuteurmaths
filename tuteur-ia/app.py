@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 import json
 import re
+import time
 import stripe
 import io
 import os
@@ -332,7 +333,7 @@ if "session_id" in query_params:
         st.error(t("verif_error"))
 
 # ============================================================
-# FONCTION PDF — WEASYPRINT (RTL natif + ligatures arabes)
+# FONCTION PDF — WEASYPRINT
 # ============================================================
 def _convertir_latex_simple(texte):
     """Convertit les formules LaTeX en texte simple."""
@@ -511,7 +512,7 @@ def generer_pdf(texte_correction, enonce_exercice):
     return io.BytesIO(pdf_bytes)
 
 # ============================================================
-# GÉNÉRATION DE CORRECTION
+# GÉNÉRATION DE CORRECTION (avec retry automatique)
 # ============================================================
 def generer_correction(exercice):
     noms_langues = {
@@ -537,15 +538,54 @@ def generer_correction(exercice):
             "et $$ ... $$ pour les formules en bloc. Rédige tout le texte explicatif en arabe standard moderne."
         )
 
-    reponse_ia = client_ia.models.generate_content(
-        model='gemini-3.8-flash',
-        contents=exercice,
-        config=types.GenerateContentConfig(
-            system_instruction=instructions,
-            temperature=0.3
+    # Liste de modèles à essayer (du plus récent au plus ancien)
+    modeles = [
+        "gemini-3.8-flash",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-flash-latest",
+    ]
+
+    derniere_erreur = None
+
+    for mod in modeles:
+        for tentative in range(3):
+            try:
+                reponse_ia = client_ia.models.generate_content(
+                    model=mod,
+                    contents=exercice,
+                    config=types.GenerateContentConfig(
+                        system_instruction=instructions,
+                        temperature=0.3
+                    )
+                )
+                if reponse_ia and reponse_ia.text:
+                    return reponse_ia.text
+            except Exception as e:
+                derniere_erreur = str(e)
+
+                # 503 → serveur surchargé → on attend et on réessaie
+                if "503" in derniere_erreur or "UNAVAILABLE" in derniere_erreur:
+                    time.sleep(2 + tentative * 2)
+                    continue
+
+                # 404 → modèle introuvable → on passe au suivant
+                if "404" in derniere_erreur or "NOT_FOUND" in derniere_erreur:
+                    break
+
+                # Autre erreur
+                time.sleep(1)
+                continue
+
+    # Message clair pour l'utilisateur
+    if "503" in str(derniere_erreur) or "UNAVAILABLE" in str(derniere_erreur):
+        return (
+            "⏳ Le service est momentanément surchargé. "
+            "Merci de réessayer dans 1 à 2 minutes. "
+            "Votre question gratuite n'a PAS été consommée."
         )
-    )
-    return reponse_ia.text
+
+    return f"❌ Erreur : {derniere_erreur}"
 
 # ============================================================
 # AFFICHAGE CORRECTION + PDF
@@ -554,17 +594,20 @@ def afficher_correction_et_pdf(nom_fichier="correction_coach_math.pdf"):
     if 'derniere_correction' in st.session_state:
         st.write("---")
         st.markdown(st.session_state['derniere_correction'])
-        pdf_buffer = generer_pdf(
-            st.session_state['derniere_correction'],
-            st.session_state['dernier_enonce']
-        )
-        st.download_button(
-            label=t("button_download_pdf"),
-            data=pdf_buffer,
-            file_name=nom_fichier,
-            mime="application/pdf",
-            use_container_width=True
-        )
+        try:
+            pdf_buffer = generer_pdf(
+                st.session_state['derniere_correction'],
+                st.session_state['dernier_enonce']
+            )
+            st.download_button(
+                label=t("button_download_pdf"),
+                data=pdf_buffer,
+                file_name=nom_fichier,
+                mime="application/pdf",
+                use_container_width=True
+            )
+        except Exception as e:
+            st.warning(f"PDF indisponible : {e}")
 
 # ============================================================
 # INTERFACE
@@ -640,19 +683,24 @@ elif not est_abonne:
                     with st.spinner(t("spinner")):
                         try:
                             correction = generer_correction(exercice_gratuit)
-                            sauvegarder_email(st.session_state.email_verifie)
-                            st.session_state.free_question_used = True
-                            st.session_state['derniere_correction'] = correction
-                            st.session_state['dernier_enonce'] = exercice_gratuit
-                            if cookie_manager is not None:
-                                try:
-                                    cookie_manager.set(
-                                        "free_question_used", "1",
-                                        expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
-                                    )
-                                except Exception:
-                                    pass
-                            st.rerun()
+
+                            # ⚠️ Vérifier que la correction est valide avant de consommer l'essai
+                            if correction.startswith("❌") or correction.startswith("⏳"):
+                                st.warning(correction)
+                            else:
+                                sauvegarder_email(st.session_state.email_verifie)
+                                st.session_state.free_question_used = True
+                                st.session_state['derniere_correction'] = correction
+                                st.session_state['dernier_enonce'] = exercice_gratuit
+                                if cookie_manager is not None:
+                                    try:
+                                        cookie_manager.set(
+                                            "free_question_used", "1",
+                                            expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
+                                        )
+                                    except Exception:
+                                        pass
+                                st.rerun()
                         except Exception as api_error:
                             st.error(f"Erreur lors de la génération : {api_error}")
 
@@ -720,14 +768,22 @@ else:
 
     exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
 
-    if st.button(t("button_correct"), type="primary", use_container_width=True, key="key_correct"):
+    if st.button(t("button_correct"), type="primary", use_container_width=True, key="btn_correct"):
         if not exercice.strip():
             st.warning(t("warning_empty"))
         else:
             with st.spinner(t("spinner")):
                 try:
                     correction = generer_correction(exercice)
-                    st.session_state['derniere_correction'] = correction
-                    st.session_state['dernier_enonce'] = exercice
+
+                    if correction.startswith("❌") or correction.startswith("⏳"):
+                        st.warning(correction)
+                    else:
+                        st.session_state['derniere_correction'] = correction
+                        st.session_state['dernier_enonce'] = exercice
+                        st.rerun()
                 except Exception as api_error:
                     st.error(f"Erreur lors de la génération : {api_error}")
+
+    if 'derniere_correction' in st.session_state:
+        afficher_correction_et_pdf("correction_coach_math.pdf")
