@@ -543,11 +543,10 @@ def generer_correction(exercice):
             "IMPORTANT pour l'arabe : utilise des formules LaTeX entre $ ... $ pour les maths inline "
             "et $$ ... $$ pour les formules en bloc. Rédige tout le texte explicatif en arabe standard moderne."
         )
-
     modeles = [
+        "gemini-3.6-flash",   # ← nouveau modèle recommandé
         "gemini-3.8-flash",
         "gemini-2.5-flash",
-        "gemini-2.0-flash",
         "gemini-flash-latest",
     ]
 
