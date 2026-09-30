@@ -235,7 +235,7 @@ def injecter_css(langue):
             direction: rtl;
         }
 
-        /* 🔑 Détection automatique de la direction par paragraphe */
+        /* Détection automatique de la direction par paragraphe */
         .stMarkdown p, .stMarkdown li {
             unicode-bidi: plaintext !important;
         }
@@ -379,9 +379,10 @@ def _convertir_latex_simple(texte):
 def _normaliser_espaces(texte):
     """Convertit TOUS les espaces Unicode en espace normal."""
     remplacements = [
-        ("\u00A0", " "), ("\u2000", " "), ("\u2001", " "), ("\u2002", " "),
-        ("\u2003", " "), ("\u2004", " "), ("\u2005", " "), ("\u2006", " "),
-        ("\u2007", " "), ("\u2008", " "), ("\u2009", " "), ("\u200A", " "),
+        ("\u00A0", " "), ("\u1680", " "),
+        ("\u2000", " "), ("\u2001", " "), ("\u2002", " "), ("\u2003", " "),
+        ("\u2004", " "), ("\u2005", " "), ("\u2006", " "), ("\u2007", " "),
+        ("\u2008", " "), ("\u2009", " "), ("\u200A", " "),
         ("\u202F", " "), ("\u205F", " "), ("\u3000", " "),
         ("\u200B", ""), ("\uFEFF", ""),
     ]
@@ -391,27 +392,34 @@ def _normaliser_espaces(texte):
 
 
 def _nettoyer_arabe(ligne):
-    """Nettoie les espaces parasites et les accents arabes (version renforcée)."""
-    # 1. Normaliser TOUS les espaces Unicode en espace normal
+    """Nettoie les espaces parasites et les accents arabes (version ULTRA)."""
+    # 1. Normaliser TOUS les espaces Unicode
     ligne = _normaliser_espaces(ligne)
 
-    # 2. Supprimer TOUS les espaces avant les accents arabes (3 passes)
+    # 2. Supprimer les caractères invisibles de contrôle
+    for c in ["\u200C", "\u200D", "\u200E", "\u200F",
+              "\u202A", "\u202B", "\u202C", "\u202D", "\u202E",
+              "\u2066", "\u2067", "\u2068", "\u2069"]:
+        ligne = ligne.replace(c, "")
+
+    # 3. Supprimer TOUS les espaces avant les accents arabes (5 passes)
+    for _ in range(5):
+        ligne = re.sub(
+            r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+'
+            r'([\u064B-\u0652\u0670\u06D6-\u06ED])',
+            r'\1',
+            ligne
+        )
+
+    # 4. Supprimer les espaces avant la ponctuation (3 passes)
     for _ in range(3):
         ligne = re.sub(
-            r'[\s\u00A0\u2000-\u200F\u2028-\u202F\u205F\u3000]+([\u064B-\u0652\u0670\u06D6-\u06ED])',
+            r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+([.,،؟!؛:])',
             r'\1',
             ligne
         )
 
-    # 3. Supprimer les espaces avant la ponctuation (2 passes)
-    for _ in range(2):
-        ligne = re.sub(
-            r'[\s\u00A0\u2000-\u200F]+([.,،؟!؛:])',
-            r'\1',
-            ligne
-        )
-
-    # 4. Doubles espaces résiduels
+    # 5. Doubles espaces résiduels
     ligne = re.sub(r' {2,}', ' ', ligne)
 
     return ligne
