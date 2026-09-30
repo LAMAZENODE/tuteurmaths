@@ -6,8 +6,6 @@ import re
 import stripe
 import io
 import os
-import time
-import random
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -256,10 +254,11 @@ def t(cle, **kwargs):
     return texte
 
 # ============================================================
-# COOKIE MANAGER
+# COOKIE MANAGER (PAS de @st.cache_resource !)
 # ============================================================
 if COOKIES_DISPONIBLES:
     cookie_manager = stx.CookieManager(key="cookie_manager_math")
+    # Force l'initialisation au premier run
     cookie_manager.get_all(key="init_cookies")
 else:
     cookie_manager = None
@@ -340,69 +339,237 @@ if "session_id" in query_params:
 # ============================================================
 # FONCTION PDF
 # ============================================================
-def generer_pdf(texte_correction, enonce_exercice):
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer, pagesize=letter,
-        rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40,
-        title=t("pdf_title")
-    )
-    styles = getSampleStyleSheet()
+import base64
+from weasyprint import HTML
 
-    langue = st.session_state.get("langue", "fr")
-    est_arabe = (langue == "ar")
 
-    police = "Helvetica"
-    if est_arabe:
-        chemin_police = os.path.join(
+def _convertir_latex_simple(texte):
+    """
+    Convertit les formules LaTeX en texte simple (WeasyPrint ne rend pas LaTeX).
+    Ex: \\frac{a}{b} -> (a)/(b),  $$x$$ -> x
+    """
+    # \frac{a}{b} -> (a)/(b)
+    texte = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1)/(\2)', texte)
+
+    # Symboles simples
+    remplacements = {
+        r'\times': ' × ',
+        r'\cdot': ' · ',
+        r'\leq': ' ≤ ',
+        r'\geq': ' ≥ ',
+        r'\neq': ' ≠ ',
+        r'\approx': ' ≈ ',
+        r'\infty': ' ∞ ',
+        r'\pm': ' ± ',
+        r'\alpha': 'α',
+        r'\beta': 'β',
+        r'\gamma': 'γ',
+        r'\pi': 'π',
+        r'\theta': 'θ',
+    }
+    for k, v in remplacements.items():
+        texte = texte.replace(k, v)
+
+    # \sqrt{x} -> √(x)
+    texte = re.sub(r'\\sqrt\{([^{}]+)\}', r'√(\1)', texte)
+
+    # x^{2} -> x^2 ; x_{1} -> x_1
+    texte = re.sub(r'\^\{([^{}]+)\}', r'^\1', texte)
+    texte = re.sub(r'_\{([^{}]+)\}', r'_\1', texte)
+
+    # Retirer les balises $$ ... $$ et $ ... $
+    texte = re.sub(r'\$\$(.+?)\$\$', r'\1', texte, flags=re.DOTALL)
+    texte = re.sub(r'\$(.+?)\$', r'\1', texte)
+
+    return texte
+
+
+@st.cache_resource(show_spinner=False)
+def _charger_police_base64():
+    """Charge la police arabe en base64 pour l'intégrer dans le HTML."""
+    try:
+        chemin = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "NotoNaskhArabic-Regular.ttf"
         )
-        if os.path.exists(chemin_police):
-            pdfmetrics.registerFont(TTFont("Arabic", chemin_police))
-            police = "Arabic"
+        with open(chemin, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        return None
 
-    alignement = TA_RIGHT if est_arabe else TA_JUSTIFY
 
-    style_titre = ParagraphStyle('TitrePDF', parent=styles['Heading1'],
-        fontName=police, fontSize=22, leading=26,
-        textColor='#1E3A8A', alignment=TA_CENTER, spaceAfter=20)
-    style_sous_titre = ParagraphStyle('SousTitrePDF', parent=styles['Heading2'],
-        fontName=police, fontSize=14, leading=18,
-        textColor='#10B981', spaceBefore=15, spaceAfter=10,
-        alignment=alignement)
-    style_corps = ParagraphStyle('CorpsPDF', parent=styles['BodyText'],
-        fontName=police, fontSize=11, leading=16,
-        textColor='#374151', alignment=alignement, spaceAfter=10)
-    style_enonce = ParagraphStyle('EnoncePDF', parent=styles['Italic'],
-        fontName=police, fontSize=10, leading=14,
-        textColor='#6B7280', spaceAfter=15, alignment=alignement)
-    style_footer = ParagraphStyle('FooterPDF', parent=styles['Normal'],
-        fontName=police, fontSize=8, leading=10,
-        textColor='#9CA3AF', alignment=TA_CENTER, spaceBefore=30)
+def _markdown_vers_html(contenu, est_arabe=False):
+    """Convertit une correction Markdown en HTML structuré."""
+    lignes_html = []
+    for ligne in contenu.split("\n"):
+        l = ligne.rstrip()
 
-    histoire = []
-    histoire.append(Paragraph(t("pdf_title"), style_titre))
-    histoire.append(Spacer(1, 10))
-    histoire.append(Paragraph(t("pdf_enonce"), style_sous_titre))
-    histoire.append(Paragraph(enonce_exercice.replace('\n', '<br/>'), style_enonce))
-    histoire.append(Spacer(1, 10))
-    histoire.append(Paragraph(t("pdf_resolution"), style_sous_titre))
-    texte_propre = texte_correction.replace('\n', '<br/>')
-    texte_propre = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', texte_propre)
-    texte_propre = re.sub(r'\*(.*?)\*', r'<i>\1</i>', texte_propre)
-    histoire.append(Paragraph(texte_propre, style_corps))
-    histoire.append(Spacer(1, 20))
-    histoire.append(Paragraph(
-        "This document is for informational purposes only. Responses may include mistakes.",
-        style_footer
-    ))
-    doc.build(histoire)
-    buffer.seek(0)
-    return buffer
+        if not l.strip():
+            lignes_html.append("<br>")
+            continue
+
+        # Convertir LaTeX en texte simple
+        l = _convertir_latex_simple(l)
+
+        if est_arabe:
+            # Corriger les espaces avant les accents arabes
+            for k, v in {
+                " ً": "ً", " ٍ": "ٍ", " ٌ": "ٌ",
+                " َ": "َ", " ِ": "ِ", " ُ": "ُ",
+                " ْ": "ْ", " ّ": "ّ",
+                " .": ".", " ،": "،", " ؟": "؟",
+            }.items():
+                l = l.replace(k, v)
+
+        if l.startswith("### "):
+            lignes_html.append(f"<h3>{l[4:]}</h3>")
+        elif l.startswith("## "):
+            lignes_html.append(f"<h2>{l[3:]}</h2>")
+        elif l.startswith("# "):
+            lignes_html.append(f"<h1>{l[2:]}</h1>")
+        elif l.lstrip().startswith(("- ", "* ")):
+            texte_puce = l.lstrip()[2:]
+            # Gras / italique Markdown
+            texte_puce = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', texte_puce)
+            texte_puce = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', texte_puce)
+            classe = "puce-ar" if est_arabe else "puce"
+            lignes_html.append(f'<p class="{classe}">• {texte_puce}</p>')
+        else:
+            # Gras / italique Markdown
+            l = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', l)
+            l = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', l)
+            lignes_html.append(f"<p>{l}</p>")
+
+    return "\n".join(lignes_html)
+
+
+def generer_pdf(texte_correction, enonce_exercice):
+    """
+    Génère le PDF de correction avec WeasyPrint (RTL natif + ligatures arabes).
+    """
+    langue = st.session_state.get("langue", "fr")
+    est_arabe = (langue == "ar")
+
+    direction = "rtl" if est_arabe else "ltr"
+    align = "right" if est_arabe else "left"
+
+    # --- Récupère les textes traduits ---
+    titre_pdf = t("pdf_title")
+    titre_enonce = t("pdf_enonce")
+    titre_resolution = t("pdf_resolution")
+
+    # --- Convertit le contenu en HTML ---
+    corps_enonce = _markdown_vers_html(enonce_exercice, est_arabe=est_arabe)
+    corps_correction = _markdown_vers_html(texte_correction, est_arabe=est_arabe)
+
+    # --- Charge la police arabe en base64 ---
+    police_b64 = _charger_police_base64()
+    font_face = ""
+    if police_b64:
+        font_face = f"""
+        @font-face {{
+            font-family: 'NotoArabicEmbedded';
+            src: url(data:font/ttf;base64,{police_b64}) format('truetype');
+        }}
+        """
+        police_css = "'NotoArabicEmbedded', 'DejaVu Sans', Arial, sans-serif"
+    else:
+        police_css = "'Noto Naskh Arabic', 'Amiri', 'DejaVu Sans', Arial, sans-serif"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            {font_face}
+            @page {{
+                margin: 2cm;
+                size: A4;
+            }}
+            body {{
+                font-family: {police_css};
+                direction: {direction};
+                text-align: {align};
+                font-size: 11pt;
+                line-height: 1.7;
+                color: #374151;
+            }}
+            h1 {{
+                font-size: 20pt;
+                color: #1E3A8A;
+                text-align: center;
+                margin-bottom: 20px;
+                margin-top: 0;
+            }}
+            h2 {{
+                font-size: 14pt;
+                color: #10B981;
+                margin-top: 20px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #e5e7eb;
+                padding-bottom: 4px;
+            }}
+            h3 {{
+                font-size: 12pt;
+                color: #6b21a8;
+                margin-top: 14px;
+                margin-bottom: 6px;
+            }}
+            p {{
+                margin: 6px 0;
+            }}
+            .puce-ar {{
+                padding-right: 22px;
+                text-indent: -14px;
+                margin: 4px 0;
+            }}
+            .puce {{
+                padding-left: 22px;
+                text-indent: -14px;
+                margin: 4px 0;
+            }}
+            .footer {{
+                margin-top: 40px;
+                font-size: 8pt;
+                color: #9CA3AF;
+                text-align: center;
+                border-top: 1px solid #e5e7eb;
+                padding-top: 10px;
+            }}
+            .enonce {{
+                background-color: #F9FAFB;
+                padding: 12px;
+                border-radius: 6px;
+                margin-bottom: 20px;
+                color: #4B5563;
+                font-style: italic;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>{titre_pdf}</h1>
+
+        <h2>{titre_enonce}</h2>
+        <div class="enonce">{corps_enonce}</div>
+
+        <h2>{titre_resolution}</h2>
+        {corps_correction}
+
+        <div class="footer">
+            This document is for informational purposes only. Responses may include mistakes.
+        </div>
+    </body>
+    </html>
+    """
+
+    pdf_bytes = HTML(string=html).write_pdf()
+
+    # Retourne un BytesIO pour compatibilité avec st.download_button
+    return io.BytesIO(pdf_bytes)
 
 # ============================================================
-# GÉNÉRATION DE CORRECTION (avec retry sur 503)
+# GÉNÉRATION DE CORRECTION
 # ============================================================
 def generer_correction(exercice):
     noms_langues = {
@@ -428,29 +595,15 @@ def generer_correction(exercice):
             "et $$ ... $$ pour les formules en bloc. Rédige tout le texte explicatif en arabe standard moderne."
         )
 
-    # Retry automatique sur les erreurs 503 (surcharge temporaire)
-    max_retries = 3
-    derniere_erreur = None
-    for tentative in range(max_retries):
-        try:
-            reponse_ia = client_ia.models.generate_content(
-                model='gemini-3.6-flash',
-                contents=exercice,
-                config=types.GenerateContentConfig(
-                    system_instruction=instructions
-                )
-            )
-            return reponse_ia.text
-        except Exception as e:
-            derniere_erreur = e
-            message = str(e)
-            if ("503" in message or "UNAVAILABLE" in message) and tentative < max_retries - 1:
-                delai = (2 ** tentative) + random.uniform(0, 1)
-                time.sleep(delai)
-                continue
-            raise
-
-    raise derniere_erreur
+    reponse_ia = client_ia.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=exercice,
+        config=types.GenerateContentConfig(
+            system_instruction=instructions,
+            temperature=0.3
+        )
+    )
+    return reponse_ia.text
 
 # ============================================================
 # AFFICHAGE CORRECTION + PDF
@@ -470,22 +623,6 @@ def afficher_correction_et_pdf(nom_fichier="correction_coach_math.pdf"):
             mime="application/pdf",
             use_container_width=True
         )
-
-# ============================================================
-# GESTION D'ERREUR IA LISIBLE
-# ============================================================
-def afficher_erreur_ia(api_error):
-    message = str(api_error)
-    if "401" in message or "UNAUTHENTICATED" in message:
-        st.error("🔑 Problème d'authentification avec l'API. La clé API est invalide ou son compte de service a été désactivé.")
-    elif "404" in message or "NOT_FOUND" in message:
-        st.error("🤖 Le modèle demandé n'est pas disponible. Contactez l'administrateur.")
-    elif "503" in message or "UNAVAILABLE" in message:
-        st.error("⏳ Le service est momentanément surchargé. Merci de réessayer dans quelques instants.")
-    elif "429" in message or "RESOURCE_EXHAUSTED" in message:
-        st.error("⏳ Trop de requêtes envoyées. Merci de patienter une minute avant de réessayer.")
-    else:
-        st.error(f"Erreur lors de la génération : {api_error}")
 
 # ============================================================
 # INTERFACE
@@ -516,7 +653,7 @@ elif not est_abonne:
         except Exception:
             pass
 
-    # --- TITRE DE MARQUE ---
+    # --- TITRE DE MARQUE (à son emplacement d'origine, toujours affiché) ---
     st.markdown(
         f"<h1 style='text-align: center; color: #1E3A8A;'>{t('hero_title')}</h1>",
         unsafe_allow_html=True
@@ -526,29 +663,6 @@ elif not est_abonne:
         unsafe_allow_html=True
     )
     st.write("---")
-
-    # --- ENCART "QUESTION GRATUITE" (uniquement si pas encore utilisée) ---
-    if not st.session_state.free_question_used:
-        st.markdown(
-            f"""
-            <div style="
-                background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-                padding: 20px;
-                border-radius: 12px;
-                text-align: center;
-                margin-bottom: 20px;
-                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            ">
-                <h2 style="color: white; margin: 0 0 8px 0; font-size: 1.6em;">
-                    {t('free_question_title')}
-                </h2>
-                <p style="color: #ECFDF5; margin: 0; font-size: 1.05em;">
-                    {t('free_question_subtitle')}
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
     # --- Si la question gratuite n'a PAS encore été utilisée ---
     if not st.session_state.free_question_used:
@@ -595,10 +709,15 @@ elif not est_abonne:
                     with st.spinner(t("spinner")):
                         try:
                             correction = generer_correction(exercice_gratuit)
+
+                            # Sauvegarder l'email comme utilisé
                             sauvegarder_email(st.session_state.email_verifie)
+
+                            # Marquer comme utilisée
                             st.session_state.free_question_used = True
                             st.session_state['derniere_correction'] = correction
                             st.session_state['dernier_enonce'] = exercice_gratuit
+
                             if cookie_manager is not None:
                                 try:
                                     cookie_manager.set(
@@ -607,22 +726,20 @@ elif not est_abonne:
                                     )
                                 except Exception:
                                     pass
+
                             st.rerun()
                         except Exception as api_error:
-                            afficher_erreur_ia(api_error)
+                            st.error(f"Erreur lors de la génération : {api_error}")
 
-    # ============================================================
-    # AFFICHAGE DE LA CORRECTION GRATUITE
-    # EN DEHORS du if/else pour survivre au rerun()
-    # ============================================================
-    if st.session_state.free_question_used and 'derniere_correction' in st.session_state:
-        st.write("---")
-        afficher_correction_et_pdf("correction_gratuite.pdf")
-        st.write("---")
-        st.success(t("free_question_used"))
-        st.markdown(t("free_question_used_msg"))
-        st.write("---")
-    elif st.session_state.free_question_used:
+            # Affichage de la correction gratuite si déjà générée
+            if st.session_state.free_question_used and 'derniere_correction' in st.session_state:
+                afficher_correction_et_pdf("correction_gratuite.pdf")
+                st.write("---")
+                st.success(t("free_question_used"))
+                st.markdown(t("free_question_used_msg"))
+
+    # --- Si la question gratuite a DÉJÀ été utilisée ---
+    else:
         st.info(t("free_question_used_msg"))
         st.write("---")
 
@@ -692,6 +809,6 @@ else:
                     st.session_state['derniere_correction'] = correction
                     st.session_state['dernier_enonce'] = exercice
                 except Exception as api_error:
-                    afficher_erreur_ia(api_error)
+                    st.error(f"Erreur lors de la génération : {api_error}")
 
     afficher_correction_et_pdf("correction_coach_math.pdf")
