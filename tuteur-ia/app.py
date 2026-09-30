@@ -3,14 +3,12 @@ from google import genai
 from google.genai import types
 import json
 import re
-import time
 import stripe
 import io
 import os
 import datetime
 import base64
 from weasyprint import HTML
-from supabase import create_client, Client
 
 # Cookie manager (optionnel)
 try:
@@ -53,7 +51,6 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Étape 2 : Posez votre question",
         "email_continue_btn": "Continuer vers ma question gratuite →",
         "email_verified": "✅ Email vérifié. Vous pouvez maintenant poser votre question gratuite.",
-        "correction_title": "Votre correction",
     },
     "en": {
         "free_question_title": "🎁 Your first question is free",
@@ -73,7 +70,6 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Step 2: Ask your question",
         "email_continue_btn": "Continue to my free question →",
         "email_verified": "✅ Email verified. You can now ask your free question.",
-        "correction_title": "Your correction",
     },
     "de": {
         "free_question_title": "🎁 Ihre erste Frage ist kostenlos",
@@ -93,7 +89,6 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Schritt 2: Stellen Sie Ihre Frage",
         "email_continue_btn": "Weiter zu meiner kostenlosen Frage →",
         "email_verified": "✅ E-Mail verifiziert. Sie können jetzt Ihre kostenlose Frage stellen.",
-        "correction_title": "Ihre Korrektur",
     },
     "es": {
         "free_question_title": "🎁 Tu primera pregunta es gratis",
@@ -113,7 +108,6 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Paso 2: Haz tu pregunta",
         "email_continue_btn": "Continuar a mi pregunta gratuita →",
         "email_verified": "✅ Correo verificado. Ya puedes hacer tu pregunta gratuita.",
-        "correction_title": "Tu corrección",
     },
     "it": {
         "free_question_title": "🎁 La tua prima domanda è gratuita",
@@ -133,7 +127,6 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Passo 2: Fai la tua domanda",
         "email_continue_btn": "Continua verso la mia domanda gratuita →",
         "email_verified": "✅ Email verificata. Ora puoi fare la tua domanda gratuita.",
-        "correction_title": "La tua correzione",
     },
     "ar": {
         "free_question_title": "🎁 سؤالك الأول مجاني",
@@ -153,7 +146,6 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "الخطوة 2: اطرح سؤالك",
         "email_continue_btn": "تابع إلى سؤالي المجاني ←",
         "email_verified": "✅ تم التحقق من البريد. يمكنك الآن طرح سؤالك المجاني.",
-        "correction_title": "التصحيح",
     },
 }
 
@@ -214,7 +206,6 @@ def injecter_css(langue):
         st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-
         html, body, [class*="css"], .stApp {
             direction: rtl;
             text-align: right;
@@ -224,6 +215,7 @@ def injecter_css(langue):
             direction: rtl;
             text-align: right;
         }
+        .stMarkdown, .stMarkdown p, .stMarkdown li,
         h1, h2, h3, h4, h5, h6 {
             direction: rtl;
             text-align: right;
@@ -235,23 +227,8 @@ def injecter_css(langue):
         .stButton > button, .stDownloadButton > button {
             direction: rtl;
         }
-
-        /* Détection automatique de la direction par paragraphe */
-        .stMarkdown p, .stMarkdown li {
-            unicode-bidi: plaintext !important;
-        }
-
-        /* Formules et code : LTR */
-        code, pre, .stCode, .katex, .MathJax, .katex-display {
+        .katex, .MathJax, .katex-display {
             direction: ltr !important;
-            text-align: left !important;
-            unicode-bidi: isolate !important;
-        }
-
-        span[dir="ltr"] {
-            display: inline !important;
-            direction: ltr !important;
-            unicode-bidi: isolate !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -282,70 +259,34 @@ else:
     cookie_manager = None
 
 # ============================================================
-# GESTION DES EMAILS — SUPABASE
+# GESTION DES EMAILS UTILISÉS
 # ============================================================
-@st.cache_resource
-def init_supabase() -> Client:
-    """Initialise la connexion Supabase (une seule fois)."""
-    url = st.secrets["supabase"]["SUPABASE_URL"]
-    key = st.secrets["supabase"]["SUPABASE_KEY"]
-    return create_client(url, key)
-
-supabase = init_supabase()
-
+CHEMIN_EMAILS = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "emails_utilises.json"
+)
 
 def charger_emails_utilises():
-    """Récupère tous les emails utilisés depuis Supabase."""
+    if not os.path.exists(CHEMIN_EMAILS):
+        return []
     try:
-        response = supabase.table("emails_utilises").select("email").execute()
-        return [row["email"] for row in response.data]
-    except Exception as e:
-        st.error(f"Erreur Supabase (chargement) : {e}")
+        with open(CHEMIN_EMAILS, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
         return []
 
-
 def sauvegarder_email(email):
-    """Sauvegarde un email dans Supabase."""
-    email_clean = email.lower().strip()
-    try:
-        existing = supabase.table("emails_utilises") \
-            .select("id") \
-            .eq("email", email_clean) \
-            .execute()
-        if existing.data:
-            return
-        supabase.table("emails_utilises").insert({
-            "email": email_clean
-        }).execute()
-    except Exception as e:
-        st.error(f"Erreur Supabase (sauvegarde) : {e}")
-
-
-def retirer_email(email):
-    """Retire un email de Supabase (si la génération échoue)."""
-    email_clean = email.lower().strip()
-    try:
-        supabase.table("emails_utilises") \
-            .delete() \
-            .eq("email", email_clean) \
-            .execute()
-    except Exception as e:
-        st.error(f"Erreur Supabase (retrait) : {e}")
-
+    emails = charger_emails_utilises()
+    if email not in emails:
+        emails.append(email)
+        try:
+            with open(CHEMIN_EMAILS, "w", encoding="utf-8") as f:
+                json.dump(emails, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
 
 def email_deja_utilise(email):
-    """Vérifie si l'email existe déjà dans Supabase."""
-    email_clean = email.lower().strip()
-    try:
-        response = supabase.table("emails_utilises") \
-            .select("id") \
-            .eq("email", email_clean) \
-            .execute()
-        return len(response.data) > 0
-    except Exception as e:
-        st.error(f"Erreur Supabase (vérification) : {e}")
-        return False
-
+    return email.lower().strip() in [e.lower().strip() for e in charger_emails_utilises()]
 
 def email_valide(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -391,7 +332,7 @@ if "session_id" in query_params:
         st.error(t("verif_error"))
 
 # ============================================================
-# OUTILS PDF — NETTOYAGE ARABE
+# FONCTION PDF — WEASYPRINT (RTL natif + ligatures arabes)
 # ============================================================
 def _convertir_latex_simple(texte):
     """Convertit les formules LaTeX en texte simple."""
@@ -413,59 +354,18 @@ def _convertir_latex_simple(texte):
     return texte
 
 
-def _normaliser_espaces(texte):
-    """Convertit TOUS les espaces Unicode en espace normal."""
-    remplacements = [
-        ("\u00A0", " "), ("\u1680", " "),
-        ("\u2000", " "), ("\u2001", " "), ("\u2002", " "), ("\u2003", " "),
-        ("\u2004", " "), ("\u2005", " "), ("\u2006", " "), ("\u2007", " "),
-        ("\u2008", " "), ("\u2009", " "), ("\u200A", " "),
-        ("\u202F", " "), ("\u205F", " "), ("\u3000", " "),
-        ("\u200B", ""), ("\uFEFF", ""),
-    ]
-    for k, v in remplacements:
-        texte = texte.replace(k, v)
-    return texte
-
-
-def _nettoyer_arabe(ligne):
-    """Nettoie les espaces parasites et les accents arabes (version ULTRA)."""
-    ligne = _normaliser_espaces(ligne)
-
-    for c in ["\u200C", "\u200D", "\u200E", "\u200F",
-              "\u202A", "\u202B", "\u202C", "\u202D", "\u202E",
-              "\u2066", "\u2067", "\u2068", "\u2069"]:
-        ligne = ligne.replace(c, "")
-
-    for _ in range(5):
-        ligne = re.sub(
-            r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+'
-            r'([\u064B-\u0652\u0670\u06D6-\u06ED])',
-            r'\1',
-            ligne
+@st.cache_resource(show_spinner=False)
+def _charger_police_base64():
+    """Charge la police arabe en base64."""
+    try:
+        chemin = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "NotoNaskhArabic-Regular.ttf"
         )
-
-    for _ in range(3):
-        ligne = re.sub(
-            r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+([.,،؟!؛:])',
-            r'\1',
-            ligne
-        )
-
-    ligne = re.sub(r' {2,}', ' ', ligne)
-    return ligne
-
-
-def _est_ligne_formule(ligne):
-    """Détecte si la ligne est majoritairement latine/mathématique."""
-    stripped = ligne.strip()
-    if not stripped:
-        return False
-    compte_latin = sum(
-        1 for c in stripped
-        if c.isascii() and (c.isalnum() or c in "()+-=/*^_.,' ")
-    )
-    return compte_latin / max(len(stripped), 1) > 0.6
+        with open(chemin, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        return None
 
 
 def _markdown_vers_html(contenu, est_arabe=False):
@@ -480,10 +380,13 @@ def _markdown_vers_html(contenu, est_arabe=False):
         l = _convertir_latex_simple(l)
 
         if est_arabe:
-            if _est_ligne_formule(l):
-                l = f'<span dir="ltr">{l.strip()}</span>'
-            else:
-                l = _nettoyer_arabe(l)
+            for k, v in {
+                " ً": "ً", " ٍ": "ٍ", " ٌ": "ٌ",
+                " َ": "َ", " ِ": "ِ", " ُ": "ُ",
+                " ْ": "ْ", " ّ": "ّ",
+                " .": ".", " ،": "،", " ؟": "؟",
+            }.items():
+                l = l.replace(k, v)
 
         if l.startswith("### "):
             lignes_html.append(f"<h3>{l[4:]}</h3>")
@@ -503,23 +406,6 @@ def _markdown_vers_html(contenu, est_arabe=False):
             lignes_html.append(f"<p>{l}</p>")
 
     return "\n".join(lignes_html)
-
-
-# ============================================================
-# GÉNÉRATION PDF — WEASYPRINT
-# ============================================================
-@st.cache_resource(show_spinner=False)
-def _charger_police_base64():
-    """Charge la police arabe en base64."""
-    try:
-        chemin = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "NotoNaskhArabic-Regular.ttf"
-        )
-        with open(chemin, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
-    except Exception:
-        return None
 
 
 def generer_pdf(texte_correction, enonce_exercice):
@@ -587,14 +473,9 @@ def generer_pdf(texte_correction, enonce_exercice):
                 margin-top: 14px;
                 margin-bottom: 6px;
             }}
-            p {{ margin: 6px 0; unicode-bidi: plaintext; }}
+            p {{ margin: 6px 0; }}
             .puce-ar {{ padding-right: 22px; text-indent: -14px; margin: 4px 0; }}
             .puce {{ padding-left: 22px; text-indent: -14px; margin: 4px 0; }}
-            span[dir="ltr"] {{
-                display: inline-block;
-                direction: ltr;
-                unicode-bidi: isolate;
-            }}
             .footer {{
                 margin-top: 40px;
                 font-size: 8pt;
@@ -630,7 +511,7 @@ def generer_pdf(texte_correction, enonce_exercice):
     return io.BytesIO(pdf_bytes)
 
 # ============================================================
-# GÉNÉRATION DE CORRECTION (avec retry automatique)
+# GÉNÉRATION DE CORRECTION
 # ============================================================
 def generer_correction(exercice):
     noms_langues = {
@@ -652,78 +533,38 @@ def generer_correction(exercice):
 
     if st.session_state.langue == "ar":
         instructions += (
-            "IMPORTANT pour l'arabe :\n"
-            "- Rédige tout le texte explicatif en arabe standard moderne.\n"
-            "- Utilise des formules LaTeX entre $ ... $ pour les maths inline "
-            "et $$ ... $$ pour les formules en bloc.\n"
-            "- ⚠️ N'ajoute JAMAIS d'espace avant les accents arabes "
-            "(أهلاً، حقاً، دائماً — PAS أهال ً، حقا ً، دائما ً).\n"
-            "- ⚠️ Colle toujours les accents au caractère qui les précède.\n"
-            "- ⚠️ Ne mets jamais d'espace avant la ponctuation (. ، ؟ !).\n"
-            "- ⚠️ N'utilise JAMAIS deux alifs consécutifs dans un mot "
-            "(écris الاستيعاب، الأساسية — PAS االستيعاب، األساسية)."
+            "IMPORTANT pour l'arabe : utilise des formules LaTeX entre $ ... $ pour les maths inline "
+            "et $$ ... $$ pour les formules en bloc. Rédige tout le texte explicatif en arabe standard moderne."
         )
 
-    modeles = [
-        "gemini-3.6-flash",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-flash-latest",
-    ]
-
-    derniere_erreur = None
-
-    for mod in modeles:
-        for tentative in range(3):
-            try:
-                reponse_ia = client_ia.models.generate_content(
-                    model=mod,
-                    contents=exercice,
-                    config=types.GenerateContentConfig(
-                        system_instruction=instructions,
-                        temperature=0.3
-                    )
-                )
-                if reponse_ia and reponse_ia.text:
-                    return reponse_ia.text
-            except Exception as e:
-                derniere_erreur = str(e)
-                if "503" in derniere_erreur or "UNAVAILABLE" in derniere_erreur:
-                    time.sleep(2 + tentative * 2)
-                    continue
-                if "404" in derniere_erreur or "NOT_FOUND" in derniere_erreur:
-                    break
-                time.sleep(1)
-                continue
-
-    if "503" in str(derniere_erreur) or "UNAVAILABLE" in str(derniere_erreur):
-        return (
-            "⏳ Le service est momentanément surchargé. "
-            "Merci de réessayer dans 1 à 2 minutes. "
-            "Votre question gratuite n'a PAS été consommée."
+    reponse_ia = client_ia.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=exercice,
+        config=types.GenerateContentConfig(
+            system_instruction=instructions,
+            temperature=0.3
         )
-
-    return f"❌ Erreur : {derniere_erreur}"
+    )
+    return reponse_ia.text
 
 # ============================================================
 # AFFICHAGE CORRECTION + PDF
 # ============================================================
 def afficher_correction_et_pdf(nom_fichier="correction_coach_math.pdf"):
     if 'derniere_correction' in st.session_state:
-        try:
-            pdf_buffer = generer_pdf(
-                st.session_state['derniere_correction'],
-                st.session_state['dernier_enonce']
-            )
-            st.download_button(
-                label=t("button_download_pdf"),
-                data=pdf_buffer,
-                file_name=nom_fichier,
-                mime="application/pdf",
-                use_container_width=True
-            )
-        except Exception as e:
-            st.warning(f"PDF indisponible : {e}")
+        st.write("---")
+        st.markdown(st.session_state['derniere_correction'])
+        pdf_buffer = generer_pdf(
+            st.session_state['derniere_correction'],
+            st.session_state['dernier_enonce']
+        )
+        st.download_button(
+            label=t("button_download_pdf"),
+            data=pdf_buffer,
+            file_name=nom_fichier,
+            mime="application/pdf",
+            use_container_width=True
+        )
 
 # ============================================================
 # INTERFACE
@@ -761,56 +602,45 @@ elif not est_abonne:
     )
     st.write("---")
 
-    # ---------- BLOC : ÉTAPE 1 (email) ----------
-    if st.session_state.email_verifie is None and not st.session_state.free_question_used:
-        st.markdown(f"#### {t('email_step_title')}")
-        email_saisi = st.text_input(
-            t("email_label"),
-            placeholder=t("email_placeholder"),
-            help=t("email_help"),
-            key="email_input"
-        )
-        if st.button(t("email_continue_btn"), type="primary", use_container_width=True, key="btn_email"):
-            email_clean = email_saisi.strip().lower()
-            if not email_valide(email_clean):
-                st.error(t("email_invalid"))
-            elif email_deja_utilise(email_clean):
-                st.error(t("email_already_used"))
-                st.info(t("free_question_used_msg"))
-            else:
-                st.session_state.email_verifie = email_clean
-                st.rerun()
+    if not st.session_state.free_question_used:
+        if st.session_state.email_verifie is None:
+            st.markdown(f"#### {t('email_step_title')}")
+            email_saisi = st.text_input(
+                t("email_label"),
+                placeholder=t("email_placeholder"),
+                help=t("email_help"),
+                key="email_input"
+            )
+            if st.button(t("email_continue_btn"), type="primary", use_container_width=True, key="btn_email"):
+                email_clean = email_saisi.strip().lower()
+                if not email_valide(email_clean):
+                    st.error(t("email_invalid"))
+                elif email_deja_utilise(email_clean):
+                    st.error(t("email_already_used"))
+                    st.info(t("free_question_used_msg"))
+                else:
+                    st.session_state.email_verifie = email_clean
+                    st.rerun()
+        else:
+            st.success(t("email_verified"))
+            st.markdown(f"#### {t('question_step_title')}")
+            st.info(t("free_question_remaining"))
+            st.write("---")
 
-    # ---------- BLOC : ÉTAPE 2 (question gratuite) ----------
-    elif not st.session_state.free_question_used:
-        st.success(t("email_verified"))
-        st.markdown(f"#### {t('question_step_title')}")
-        st.info(t("free_question_remaining"))
-        st.write("---")
+            exercice_gratuit = st.text_area(
+                t("free_question_label"),
+                height=150,
+                key="free_question_input"
+            )
 
-        exercice_gratuit = st.text_area(
-            t("free_question_label"),
-            height=150,
-            key="free_question_input"
-        )
-
-        if st.button(t("free_question_button"), type="primary", use_container_width=True, key="btn_free"):
-            if not exercice_gratuit.strip():
-                st.warning(t("warning_empty"))
-            else:
-                # ✅ Sauvegarder l'email AVANT la génération
-                sauvegarder_email(st.session_state.email_verifie)
-
-                with st.spinner(t("spinner")):
-                    try:
-                        correction = generer_correction(exercice_gratuit)
-
-                        if correction.startswith("❌") or correction.startswith("⏳"):
-                            # En cas d'échec technique, on retire l'email
-                            # pour ne pas pénaliser l'utilisateur
-                            retirer_email(st.session_state.email_verifie)
-                            st.warning(correction)
-                        else:
+            if st.button(t("free_question_button"), type="primary", use_container_width=True, key="btn_free"):
+                if not exercice_gratuit.strip():
+                    st.warning(t("warning_empty"))
+                else:
+                    with st.spinner(t("spinner")):
+                        try:
+                            correction = generer_correction(exercice_gratuit)
+                            sauvegarder_email(st.session_state.email_verifie)
                             st.session_state.free_question_used = True
                             st.session_state['derniere_correction'] = correction
                             st.session_state['dernier_enonce'] = exercice_gratuit
@@ -818,32 +648,23 @@ elif not est_abonne:
                                 try:
                                     cookie_manager.set(
                                         "free_question_used", "1",
-                                        expires_at=datetime.datetime.now() + datetime.timedelta(days=365),
-                                        secure=True,
-                                        same_site="strict"
+                                        expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
                                     )
                                 except Exception:
                                     pass
                             st.rerun()
-                    except Exception as api_error:
-                        retirer_email(st.session_state.email_verifie)
-                        st.error(f"Erreur lors de la génération : {api_error}")
+                        except Exception as api_error:
+                            st.error(f"Erreur lors de la génération : {api_error}")
 
-    # ---------- BLOC : AFFICHAGE DE LA CORRECTION GRATUITE ----------
+            if st.session_state.free_question_used and 'derniere_correction' in st.session_state:
+                afficher_correction_et_pdf("correction_gratuite.pdf")
+                st.write("---")
+                st.success(t("free_question_used"))
+                st.markdown(t("free_question_used_msg"))
     else:
-        st.success(t("free_question_used"))
-        st.write("---")
-
-        if 'derniere_correction' in st.session_state:
-            st.markdown(f"### ✨ {t('correction_title')}")
-            st.markdown(st.session_state['derniere_correction'])
-            st.write("---")
-            afficher_correction_et_pdf("correction_gratuite.pdf")
-
-        st.write("---")
         st.info(t("free_question_used_msg"))
+        st.write("---")
 
-    # ---------- BLOC : OFFRE PAYANTE ----------
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"**{t('feature1_title')}**")
@@ -899,25 +720,14 @@ else:
 
     exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
 
-    if st.button(t("button_correct"), type="primary", use_container_width=True, key="btn_correct"):
+    if st.button(t("button_correct"), type="primary", use_container_width=True, key="key_correct"):
         if not exercice.strip():
             st.warning(t("warning_empty"))
         else:
             with st.spinner(t("spinner")):
                 try:
                     correction = generer_correction(exercice)
-
-                    if correction.startswith("❌") or correction.startswith("⏳"):
-                        st.warning(correction)
-                    else:
-                        st.session_state['derniere_correction'] = correction
-                        st.session_state['dernier_enonce'] = exercice
-                        st.rerun()
+                    st.session_state['derniere_correction'] = correction
+                    st.session_state['dernier_enonce'] = exercice
                 except Exception as api_error:
                     st.error(f"Erreur lors de la génération : {api_error}")
-
-    if 'derniere_correction' in st.session_state:
-        st.markdown(f"### ✨ {t('correction_title')}")
-        st.markdown(st.session_state['derniere_correction'])
-        st.write("---")
-        afficher_correction_et_pdf("correction_coach_math.pdf")
