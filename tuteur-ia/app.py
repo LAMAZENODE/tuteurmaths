@@ -10,6 +10,7 @@ import os
 import datetime
 import base64
 from weasyprint import HTML
+from supabase import create_client, Client
 
 # Cookie manager (optionnel)
 try:
@@ -281,34 +282,70 @@ else:
     cookie_manager = None
 
 # ============================================================
-# GESTION DES EMAILS UTILISÉS
+# GESTION DES EMAILS — SUPABASE
 # ============================================================
-CHEMIN_EMAILS = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "emails_utilises.json"
-)
+@st.cache_resource
+def init_supabase() -> Client:
+    """Initialise la connexion Supabase (une seule fois)."""
+    url = st.secrets["supabase"]["SUPABASE_URL"]
+    key = st.secrets["supabase"]["SUPABASE_KEY"]
+    return create_client(url, key)
+
+supabase = init_supabase()
+
 
 def charger_emails_utilises():
-    if not os.path.exists(CHEMIN_EMAILS):
-        return []
+    """Récupère tous les emails utilisés depuis Supabase."""
     try:
-        with open(CHEMIN_EMAILS, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
+        response = supabase.table("emails_utilises").select("email").execute()
+        return [row["email"] for row in response.data]
+    except Exception as e:
+        st.error(f"Erreur Supabase (chargement) : {e}")
         return []
+
 
 def sauvegarder_email(email):
-    emails = charger_emails_utilises()
-    if email not in emails:
-        emails.append(email)
-        try:
-            with open(CHEMIN_EMAILS, "w", encoding="utf-8") as f:
-                json.dump(emails, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+    """Sauvegarde un email dans Supabase."""
+    email_clean = email.lower().strip()
+    try:
+        existing = supabase.table("emails_utilises") \
+            .select("id") \
+            .eq("email", email_clean) \
+            .execute()
+        if existing.data:
+            return
+        supabase.table("emails_utilises").insert({
+            "email": email_clean
+        }).execute()
+    except Exception as e:
+        st.error(f"Erreur Supabase (sauvegarde) : {e}")
+
+
+def retirer_email(email):
+    """Retire un email de Supabase (si la génération échoue)."""
+    email_clean = email.lower().strip()
+    try:
+        supabase.table("emails_utilises") \
+            .delete() \
+            .eq("email", email_clean) \
+            .execute()
+    except Exception as e:
+        st.error(f"Erreur Supabase (retrait) : {e}")
+
 
 def email_deja_utilise(email):
-    return email.lower().strip() in [e.lower().strip() for e in charger_emails_utilises()]
+    """Vérifie si l'email existe déjà dans Supabase."""
+    email_clean = email.lower().strip()
+    try:
+        response = supabase.table("emails_utilises") \
+            .select("id") \
+            .eq("email", email_clean) \
+            .execute()
+        return len(response.data) > 0
+    except Exception as e:
+        st.error(f"Erreur Supabase (vérification) : {e}")
+        return False
+
 
 def email_valide(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -393,16 +430,13 @@ def _normaliser_espaces(texte):
 
 def _nettoyer_arabe(ligne):
     """Nettoie les espaces parasites et les accents arabes (version ULTRA)."""
-    # 1. Normaliser TOUS les espaces Unicode
     ligne = _normaliser_espaces(ligne)
 
-    # 2. Supprimer les caractères invisibles de contrôle
     for c in ["\u200C", "\u200D", "\u200E", "\u200F",
               "\u202A", "\u202B", "\u202C", "\u202D", "\u202E",
               "\u2066", "\u2067", "\u2068", "\u2069"]:
         ligne = ligne.replace(c, "")
 
-    # 3. Supprimer TOUS les espaces avant les accents arabes (5 passes)
     for _ in range(5):
         ligne = re.sub(
             r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+'
@@ -411,7 +445,6 @@ def _nettoyer_arabe(ligne):
             ligne
         )
 
-    # 4. Supprimer les espaces avant la ponctuation (3 passes)
     for _ in range(3):
         ligne = re.sub(
             r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+([.,،؟!؛:])',
@@ -419,9 +452,7 @@ def _nettoyer_arabe(ligne):
             ligne
         )
 
-    # 5. Doubles espaces résiduels
     ligne = re.sub(r' {2,}', ' ', ligne)
-
     return ligne
 
 
@@ -767,14 +798,19 @@ elif not est_abonne:
             if not exercice_gratuit.strip():
                 st.warning(t("warning_empty"))
             else:
+                # ✅ Sauvegarder l'email AVANT la génération
+                sauvegarder_email(st.session_state.email_verifie)
+
                 with st.spinner(t("spinner")):
                     try:
                         correction = generer_correction(exercice_gratuit)
 
                         if correction.startswith("❌") or correction.startswith("⏳"):
+                            # En cas d'échec technique, on retire l'email
+                            # pour ne pas pénaliser l'utilisateur
+                            retirer_email(st.session_state.email_verifie)
                             st.warning(correction)
                         else:
-                            sauvegarder_email(st.session_state.email_verifie)
                             st.session_state.free_question_used = True
                             st.session_state['derniere_correction'] = correction
                             st.session_state['dernier_enonce'] = exercice_gratuit
@@ -782,12 +818,15 @@ elif not est_abonne:
                                 try:
                                     cookie_manager.set(
                                         "free_question_used", "1",
-                                        expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
+                                        expires_at=datetime.datetime.now() + datetime.timedelta(days=365),
+                                        secure=True,
+                                        same_site="strict"
                                     )
                                 except Exception:
                                     pass
                             st.rerun()
                     except Exception as api_error:
+                        retirer_email(st.session_state.email_verifie)
                         st.error(f"Erreur lors de la génération : {api_error}")
 
     # ---------- BLOC : AFFICHAGE DE LA CORRECTION GRATUITE ----------
