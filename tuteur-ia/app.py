@@ -206,13 +206,14 @@ with st.sidebar:
     st.session_state.langue = LANGUES[choix]
 
 # ============================================================
-# CSS ARABE (corrigé pour l'affichage des formules)
+# CSS ARABE
 # ============================================================
 def injecter_css(langue):
     if langue == "ar":
         st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
         html, body, [class*="css"], .stApp {
             direction: rtl;
             text-align: right;
@@ -222,7 +223,6 @@ def injecter_css(langue):
             direction: rtl;
             text-align: right;
         }
-        .stMarkdown, .stMarkdown p, .stMarkdown li,
         h1, h2, h3, h4, h5, h6 {
             direction: rtl;
             text-align: right;
@@ -235,7 +235,12 @@ def injecter_css(langue):
             direction: rtl;
         }
 
-        /* ⚠️ Corrige l'affichage des formules et du code */
+        /* 🔑 Détection automatique de la direction par paragraphe */
+        .stMarkdown p, .stMarkdown li {
+            unicode-bidi: plaintext !important;
+        }
+
+        /* Formules et code : LTR */
         code, pre, .stCode, .katex, .MathJax, .katex-display {
             direction: ltr !important;
             text-align: left !important;
@@ -246,19 +251,6 @@ def injecter_css(langue):
             display: inline !important;
             direction: ltr !important;
             unicode-bidi: isolate !important;
-        }
-
-        /* Empêche la coupure excessive des mots */
-        .stMarkdown p {
-            word-break: normal;
-            overflow-wrap: break-word;
-            white-space: normal;
-        }
-
-        /* Les blocs de code restent en LTR */
-        .stMarkdown pre {
-            direction: ltr !important;
-            text-align: left !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -399,11 +391,29 @@ def _normaliser_espaces(texte):
 
 
 def _nettoyer_arabe(ligne):
-    """Nettoie les espaces parasites et les accents arabes."""
+    """Nettoie les espaces parasites et les accents arabes (version renforcée)."""
+    # 1. Normaliser TOUS les espaces Unicode en espace normal
     ligne = _normaliser_espaces(ligne)
-    ligne = re.sub(r'\s+([\u064B-\u0652\u0670\u06D6-\u06ED])', r'\1', ligne)
-    ligne = re.sub(r'\s+([.,،؟!؛:])', r'\1', ligne)
+
+    # 2. Supprimer TOUS les espaces avant les accents arabes (3 passes)
+    for _ in range(3):
+        ligne = re.sub(
+            r'[\s\u00A0\u2000-\u200F\u2028-\u202F\u205F\u3000]+([\u064B-\u0652\u0670\u06D6-\u06ED])',
+            r'\1',
+            ligne
+        )
+
+    # 3. Supprimer les espaces avant la ponctuation (2 passes)
+    for _ in range(2):
+        ligne = re.sub(
+            r'[\s\u00A0\u2000-\u200F]+([.,،؟!؛:])',
+            r'\1',
+            ligne
+        )
+
+    # 4. Doubles espaces résiduels
     ligne = re.sub(r' {2,}', ' ', ligne)
+
     return ligne
 
 
@@ -538,7 +548,7 @@ def generer_pdf(texte_correction, enonce_exercice):
                 margin-top: 14px;
                 margin-bottom: 6px;
             }}
-            p {{ margin: 6px 0; }}
+            p {{ margin: 6px 0; unicode-bidi: plaintext; }}
             .puce-ar {{ padding-right: 22px; text-indent: -14px; margin: 4px 0; }}
             .puce {{ padding-left: 22px; text-indent: -14px; margin: 4px 0; }}
             span[dir="ltr"] {{
