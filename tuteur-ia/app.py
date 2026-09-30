@@ -7,12 +7,8 @@ import stripe
 import io
 import os
 import datetime
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+import base64
+from weasyprint import HTML
 
 # Cookie manager (optionnel)
 try:
@@ -254,11 +250,10 @@ def t(cle, **kwargs):
     return texte
 
 # ============================================================
-# COOKIE MANAGER (PAS de @st.cache_resource !)
+# COOKIE MANAGER
 # ============================================================
 if COOKIES_DISPONIBLES:
     cookie_manager = stx.CookieManager(key="cookie_manager_math")
-    # Force l'initialisation au premier run
     cookie_manager.get_all(key="init_cookies")
 else:
     cookie_manager = None
@@ -337,56 +332,31 @@ if "session_id" in query_params:
         st.error(t("verif_error"))
 
 # ============================================================
-# FONCTION PDF
+# FONCTION PDF — WEASYPRINT (RTL natif + ligatures arabes)
 # ============================================================
-import base64
-from weasyprint import HTML
-
-
 def _convertir_latex_simple(texte):
-    """
-    Convertit les formules LaTeX en texte simple (WeasyPrint ne rend pas LaTeX).
-    Ex: \\frac{a}{b} -> (a)/(b),  $$x$$ -> x
-    """
-    # \frac{a}{b} -> (a)/(b)
+    """Convertit les formules LaTeX en texte simple."""
     texte = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1)/(\2)', texte)
-
-    # Symboles simples
     remplacements = {
-        r'\times': ' × ',
-        r'\cdot': ' · ',
-        r'\leq': ' ≤ ',
-        r'\geq': ' ≥ ',
-        r'\neq': ' ≠ ',
-        r'\approx': ' ≈ ',
-        r'\infty': ' ∞ ',
-        r'\pm': ' ± ',
-        r'\alpha': 'α',
-        r'\beta': 'β',
-        r'\gamma': 'γ',
-        r'\pi': 'π',
-        r'\theta': 'θ',
+        r'\times': ' × ', r'\cdot': ' · ',
+        r'\leq': ' ≤ ', r'\geq': ' ≥ ', r'\neq': ' ≠ ',
+        r'\approx': ' ≈ ', r'\infty': ' ∞ ', r'\pm': ' ± ',
+        r'\alpha': 'α', r'\beta': 'β', r'\gamma': 'γ',
+        r'\pi': 'π', r'\theta': 'θ',
     }
     for k, v in remplacements.items():
         texte = texte.replace(k, v)
-
-    # \sqrt{x} -> √(x)
     texte = re.sub(r'\\sqrt\{([^{}]+)\}', r'√(\1)', texte)
-
-    # x^{2} -> x^2 ; x_{1} -> x_1
     texte = re.sub(r'\^\{([^{}]+)\}', r'^\1', texte)
     texte = re.sub(r'_\{([^{}]+)\}', r'_\1', texte)
-
-    # Retirer les balises $$ ... $$ et $ ... $
     texte = re.sub(r'\$\$(.+?)\$\$', r'\1', texte, flags=re.DOTALL)
     texte = re.sub(r'\$(.+?)\$', r'\1', texte)
-
     return texte
 
 
 @st.cache_resource(show_spinner=False)
 def _charger_police_base64():
-    """Charge la police arabe en base64 pour l'intégrer dans le HTML."""
+    """Charge la police arabe en base64."""
     try:
         chemin = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -399,20 +369,17 @@ def _charger_police_base64():
 
 
 def _markdown_vers_html(contenu, est_arabe=False):
-    """Convertit une correction Markdown en HTML structuré."""
+    """Convertit un texte Markdown en HTML structuré."""
     lignes_html = []
     for ligne in contenu.split("\n"):
         l = ligne.rstrip()
-
         if not l.strip():
             lignes_html.append("<br>")
             continue
 
-        # Convertir LaTeX en texte simple
         l = _convertir_latex_simple(l)
 
         if est_arabe:
-            # Corriger les espaces avant les accents arabes
             for k, v in {
                 " ً": "ً", " ٍ": "ٍ", " ٌ": "ٌ",
                 " َ": "َ", " ِ": "ِ", " ُ": "ُ",
@@ -429,13 +396,11 @@ def _markdown_vers_html(contenu, est_arabe=False):
             lignes_html.append(f"<h1>{l[2:]}</h1>")
         elif l.lstrip().startswith(("- ", "* ")):
             texte_puce = l.lstrip()[2:]
-            # Gras / italique Markdown
             texte_puce = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', texte_puce)
             texte_puce = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', texte_puce)
             classe = "puce-ar" if est_arabe else "puce"
             lignes_html.append(f'<p class="{classe}">• {texte_puce}</p>')
         else:
-            # Gras / italique Markdown
             l = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', l)
             l = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', l)
             lignes_html.append(f"<p>{l}</p>")
@@ -444,25 +409,20 @@ def _markdown_vers_html(contenu, est_arabe=False):
 
 
 def generer_pdf(texte_correction, enonce_exercice):
-    """
-    Génère le PDF de correction avec WeasyPrint (RTL natif + ligatures arabes).
-    """
+    """Génère le PDF avec WeasyPrint (RTL natif, ligatures correctes)."""
     langue = st.session_state.get("langue", "fr")
     est_arabe = (langue == "ar")
 
     direction = "rtl" if est_arabe else "ltr"
     align = "right" if est_arabe else "left"
 
-    # --- Récupère les textes traduits ---
     titre_pdf = t("pdf_title")
     titre_enonce = t("pdf_enonce")
     titre_resolution = t("pdf_resolution")
 
-    # --- Convertit le contenu en HTML ---
     corps_enonce = _markdown_vers_html(enonce_exercice, est_arabe=est_arabe)
     corps_correction = _markdown_vers_html(texte_correction, est_arabe=est_arabe)
 
-    # --- Charge la police arabe en base64 ---
     police_b64 = _charger_police_base64()
     font_face = ""
     if police_b64:
@@ -483,10 +443,7 @@ def generer_pdf(texte_correction, enonce_exercice):
         <meta charset="utf-8">
         <style>
             {font_face}
-            @page {{
-                margin: 2cm;
-                size: A4;
-            }}
+            @page {{ margin: 2cm; size: A4; }}
             body {{
                 font-family: {police_css};
                 direction: {direction};
@@ -516,19 +473,9 @@ def generer_pdf(texte_correction, enonce_exercice):
                 margin-top: 14px;
                 margin-bottom: 6px;
             }}
-            p {{
-                margin: 6px 0;
-            }}
-            .puce-ar {{
-                padding-right: 22px;
-                text-indent: -14px;
-                margin: 4px 0;
-            }}
-            .puce {{
-                padding-left: 22px;
-                text-indent: -14px;
-                margin: 4px 0;
-            }}
+            p {{ margin: 6px 0; }}
+            .puce-ar {{ padding-right: 22px; text-indent: -14px; margin: 4px 0; }}
+            .puce {{ padding-left: 22px; text-indent: -14px; margin: 4px 0; }}
             .footer {{
                 margin-top: 40px;
                 font-size: 8pt;
@@ -549,13 +496,10 @@ def generer_pdf(texte_correction, enonce_exercice):
     </head>
     <body>
         <h1>{titre_pdf}</h1>
-
         <h2>{titre_enonce}</h2>
         <div class="enonce">{corps_enonce}</div>
-
         <h2>{titre_resolution}</h2>
         {corps_correction}
-
         <div class="footer">
             This document is for informational purposes only. Responses may include mistakes.
         </div>
@@ -564,8 +508,6 @@ def generer_pdf(texte_correction, enonce_exercice):
     """
 
     pdf_bytes = HTML(string=html).write_pdf()
-
-    # Retourne un BytesIO pour compatibilité avec st.download_button
     return io.BytesIO(pdf_bytes)
 
 # ============================================================
@@ -637,14 +579,11 @@ if est_rembourse:
 
 # Cas 2 : Non payé
 elif not est_abonne:
-    # --- Initialisation de l'état ---
     if "free_question_used" not in st.session_state:
         st.session_state.free_question_used = False
-
     if "email_verifie" not in st.session_state:
         st.session_state.email_verifie = None
 
-    # --- Vérification du cookie ---
     if not st.session_state.free_question_used and cookie_manager is not None:
         try:
             cookie_val = cookie_manager.get(cookie="free_question_used")
@@ -653,7 +592,6 @@ elif not est_abonne:
         except Exception:
             pass
 
-    # --- TITRE DE MARQUE (à son emplacement d'origine, toujours affiché) ---
     st.markdown(
         f"<h1 style='text-align: center; color: #1E3A8A;'>{t('hero_title')}</h1>",
         unsafe_allow_html=True
@@ -664,20 +602,15 @@ elif not est_abonne:
     )
     st.write("---")
 
-    # --- Si la question gratuite n'a PAS encore été utilisée ---
     if not st.session_state.free_question_used:
-
-        # ÉTAPE 1 : Saisie de l'email
         if st.session_state.email_verifie is None:
             st.markdown(f"#### {t('email_step_title')}")
-
             email_saisi = st.text_input(
                 t("email_label"),
                 placeholder=t("email_placeholder"),
                 help=t("email_help"),
                 key="email_input"
             )
-
             if st.button(t("email_continue_btn"), type="primary", use_container_width=True, key="btn_email"):
                 email_clean = email_saisi.strip().lower()
                 if not email_valide(email_clean):
@@ -688,8 +621,6 @@ elif not est_abonne:
                 else:
                     st.session_state.email_verifie = email_clean
                     st.rerun()
-
-        # ÉTAPE 2 : Question gratuite
         else:
             st.success(t("email_verified"))
             st.markdown(f"#### {t('question_step_title')}")
@@ -709,15 +640,10 @@ elif not est_abonne:
                     with st.spinner(t("spinner")):
                         try:
                             correction = generer_correction(exercice_gratuit)
-
-                            # Sauvegarder l'email comme utilisé
                             sauvegarder_email(st.session_state.email_verifie)
-
-                            # Marquer comme utilisée
                             st.session_state.free_question_used = True
                             st.session_state['derniere_correction'] = correction
                             st.session_state['dernier_enonce'] = exercice_gratuit
-
                             if cookie_manager is not None:
                                 try:
                                     cookie_manager.set(
@@ -726,24 +652,19 @@ elif not est_abonne:
                                     )
                                 except Exception:
                                     pass
-
                             st.rerun()
                         except Exception as api_error:
                             st.error(f"Erreur lors de la génération : {api_error}")
 
-            # Affichage de la correction gratuite si déjà générée
             if st.session_state.free_question_used and 'derniere_correction' in st.session_state:
                 afficher_correction_et_pdf("correction_gratuite.pdf")
                 st.write("---")
                 st.success(t("free_question_used"))
                 st.markdown(t("free_question_used_msg"))
-
-    # --- Si la question gratuite a DÉJÀ été utilisée ---
     else:
         st.info(t("free_question_used_msg"))
         st.write("---")
 
-    # --- Bloc de vente (toujours affiché) ---
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"**{t('feature1_title')}**")
@@ -799,7 +720,7 @@ else:
 
     exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
 
-    if st.button(t("button_correct"), type="primary", use_container_width=True, key="btn_correct"):
+    if st.button(t("button_correct"), type="primary", use_container_width=True, key="key_correct"):
         if not exercice.strip():
             st.warning(t("warning_empty"))
         else:
@@ -810,7 +731,3 @@ else:
                     st.session_state['dernier_enonce'] = exercice
                 except Exception as api_error:
                     st.error(f"Erreur lors de la génération : {api_error}")
-
-    afficher_correction_et_pdf("correction_coach_math.pdf")
-
-
