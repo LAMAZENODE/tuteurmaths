@@ -5,3 +5,4 @@ weasyprint>=60.0
 extra-streamlit-components
 plotly
 numpy
+supabase==2.x.x
