@@ -52,6 +52,7 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Étape 2 : Posez votre question",
         "email_continue_btn": "Continuer vers ma question gratuite →",
         "email_verified": "✅ Email vérifié. Vous pouvez maintenant poser votre question gratuite.",
+        "correction_title": "Votre correction",
     },
     "en": {
         "free_question_title": "🎁 Your first question is free",
@@ -71,6 +72,7 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Step 2: Ask your question",
         "email_continue_btn": "Continue to my free question →",
         "email_verified": "✅ Email verified. You can now ask your free question.",
+        "correction_title": "Your correction",
     },
     "de": {
         "free_question_title": "🎁 Ihre erste Frage ist kostenlos",
@@ -90,6 +92,7 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Schritt 2: Stellen Sie Ihre Frage",
         "email_continue_btn": "Weiter zu meiner kostenlosen Frage →",
         "email_verified": "✅ E-Mail verifiziert. Sie können jetzt Ihre kostenlose Frage stellen.",
+        "correction_title": "Ihre Korrektur",
     },
     "es": {
         "free_question_title": "🎁 Tu primera pregunta es gratis",
@@ -109,6 +112,7 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Paso 2: Haz tu pregunta",
         "email_continue_btn": "Continuar a mi pregunta gratuita →",
         "email_verified": "✅ Correo verificado. Ya puedes hacer tu pregunta gratuita.",
+        "correction_title": "Tu corrección",
     },
     "it": {
         "free_question_title": "🎁 La tua prima domanda è gratuita",
@@ -128,6 +132,7 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Passo 2: Fai la tua domanda",
         "email_continue_btn": "Continua verso la mia domanda gratuita →",
         "email_verified": "✅ Email verificata. Ora puoi fare la tua domanda gratuita.",
+        "correction_title": "La tua correzione",
     },
     "ar": {
         "free_question_title": "🎁 سؤالك الأول مجاني",
@@ -147,6 +152,7 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "الخطوة 2: اطرح سؤالك",
         "email_continue_btn": "تابع إلى سؤالي المجاني ←",
         "email_verified": "✅ تم التحقق من البريد. يمكنك الآن طرح سؤالك المجاني.",
+        "correction_title": "التصحيح",
     },
 }
 
@@ -538,7 +544,6 @@ def generer_correction(exercice):
             "et $$ ... $$ pour les formules en bloc. Rédige tout le texte explicatif en arabe standard moderne."
         )
 
-    # Liste de modèles à essayer (du plus récent au plus ancien)
     modeles = [
         "gemini-3.8-flash",
         "gemini-2.5-flash",
@@ -563,21 +568,14 @@ def generer_correction(exercice):
                     return reponse_ia.text
             except Exception as e:
                 derniere_erreur = str(e)
-
-                # 503 → serveur surchargé → on attend et on réessaie
                 if "503" in derniere_erreur or "UNAVAILABLE" in derniere_erreur:
                     time.sleep(2 + tentative * 2)
                     continue
-
-                # 404 → modèle introuvable → on passe au suivant
                 if "404" in derniere_erreur or "NOT_FOUND" in derniere_erreur:
                     break
-
-                # Autre erreur
                 time.sleep(1)
                 continue
 
-    # Message clair pour l'utilisateur
     if "503" in str(derniere_erreur) or "UNAVAILABLE" in str(derniere_erreur):
         return (
             "⏳ Le service est momentanément surchargé. "
@@ -592,8 +590,6 @@ def generer_correction(exercice):
 # ============================================================
 def afficher_correction_et_pdf(nom_fichier="correction_coach_math.pdf"):
     if 'derniere_correction' in st.session_state:
-        st.write("---")
-        st.markdown(st.session_state['derniere_correction'])
         try:
             pdf_buffer = generer_pdf(
                 st.session_state['derniere_correction'],
@@ -645,74 +641,82 @@ elif not est_abonne:
     )
     st.write("---")
 
-    if not st.session_state.free_question_used:
-        if st.session_state.email_verifie is None:
-            st.markdown(f"#### {t('email_step_title')}")
-            email_saisi = st.text_input(
-                t("email_label"),
-                placeholder=t("email_placeholder"),
-                help=t("email_help"),
-                key="email_input"
-            )
-            if st.button(t("email_continue_btn"), type="primary", use_container_width=True, key="btn_email"):
-                email_clean = email_saisi.strip().lower()
-                if not email_valide(email_clean):
-                    st.error(t("email_invalid"))
-                elif email_deja_utilise(email_clean):
-                    st.error(t("email_already_used"))
-                    st.info(t("free_question_used_msg"))
-                else:
-                    st.session_state.email_verifie = email_clean
-                    st.rerun()
-        else:
-            st.success(t("email_verified"))
-            st.markdown(f"#### {t('question_step_title')}")
-            st.info(t("free_question_remaining"))
-            st.write("---")
+    # ---------- BLOC : ÉTAPE 1 (email) ----------
+    if st.session_state.email_verifie is None and not st.session_state.free_question_used:
+        st.markdown(f"#### {t('email_step_title')}")
+        email_saisi = st.text_input(
+            t("email_label"),
+            placeholder=t("email_placeholder"),
+            help=t("email_help"),
+            key="email_input"
+        )
+        if st.button(t("email_continue_btn"), type="primary", use_container_width=True, key="btn_email"):
+            email_clean = email_saisi.strip().lower()
+            if not email_valide(email_clean):
+                st.error(t("email_invalid"))
+            elif email_deja_utilise(email_clean):
+                st.error(t("email_already_used"))
+                st.info(t("free_question_used_msg"))
+            else:
+                st.session_state.email_verifie = email_clean
+                st.rerun()
 
-            exercice_gratuit = st.text_area(
-                t("free_question_label"),
-                height=150,
-                key="free_question_input"
-            )
-
-            if st.button(t("free_question_button"), type="primary", use_container_width=True, key="btn_free"):
-                if not exercice_gratuit.strip():
-                    st.warning(t("warning_empty"))
-                else:
-                    with st.spinner(t("spinner")):
-                        try:
-                            correction = generer_correction(exercice_gratuit)
-
-                            # ⚠️ Vérifier que la correction est valide avant de consommer l'essai
-                            if correction.startswith("❌") or correction.startswith("⏳"):
-                                st.warning(correction)
-                            else:
-                                sauvegarder_email(st.session_state.email_verifie)
-                                st.session_state.free_question_used = True
-                                st.session_state['derniere_correction'] = correction
-                                st.session_state['dernier_enonce'] = exercice_gratuit
-                                if cookie_manager is not None:
-                                    try:
-                                        cookie_manager.set(
-                                            "free_question_used", "1",
-                                            expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
-                                        )
-                                    except Exception:
-                                        pass
-                                st.rerun()
-                        except Exception as api_error:
-                            st.error(f"Erreur lors de la génération : {api_error}")
-
-            if st.session_state.free_question_used and 'derniere_correction' in st.session_state:
-                afficher_correction_et_pdf("correction_gratuite.pdf")
-                st.write("---")
-                st.success(t("free_question_used"))
-                st.markdown(t("free_question_used_msg"))
-    else:
-        st.info(t("free_question_used_msg"))
+    # ---------- BLOC : ÉTAPE 2 (question gratuite) ----------
+    elif not st.session_state.free_question_used:
+        st.success(t("email_verified"))
+        st.markdown(f"#### {t('question_step_title')}")
+        st.info(t("free_question_remaining"))
         st.write("---")
 
+        exercice_gratuit = st.text_area(
+            t("free_question_label"),
+            height=150,
+            key="free_question_input"
+        )
+
+        if st.button(t("free_question_button"), type="primary", use_container_width=True, key="btn_free"):
+            if not exercice_gratuit.strip():
+                st.warning(t("warning_empty"))
+            else:
+                with st.spinner(t("spinner")):
+                    try:
+                        correction = generer_correction(exercice_gratuit)
+
+                        if correction.startswith("❌") or correction.startswith("⏳"):
+                            st.warning(correction)
+                        else:
+                            sauvegarder_email(st.session_state.email_verifie)
+                            st.session_state.free_question_used = True
+                            st.session_state['derniere_correction'] = correction
+                            st.session_state['dernier_enonce'] = exercice_gratuit
+                            if cookie_manager is not None:
+                                try:
+                                    cookie_manager.set(
+                                        "free_question_used", "1",
+                                        expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
+                                    )
+                                except Exception:
+                                    pass
+                            st.rerun()
+                    except Exception as api_error:
+                        st.error(f"Erreur lors de la génération : {api_error}")
+
+    # ---------- BLOC : AFFICHAGE DE LA CORRECTION GRATUITE ----------
+    else:
+        # L'utilisateur a consommé son essai → on affiche la correction
+        st.success(t("free_question_used"))
+        st.write("---")
+
+        if 'derniere_correction' in st.session_state:
+            st.markdown(f"### ✨ {t('correction_title')}")
+            st.markdown(st.session_state['derniere_correction'])
+            st.write("---")
+            afficher_correction_et_pdf("correction_gratuite.pdf")
+
+        st.write("---")
+        st.info(t("free_question_used_msg"))
+
+    # ---------- BLOC : OFFRE PAYANTE (toujours affichée) ----------
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"**{t('feature1_title')}**")
@@ -786,4 +790,8 @@ else:
                     st.error(f"Erreur lors de la génération : {api_error}")
 
     if 'derniere_correction' in st.session_state:
+        st.markdown(f"### ✨ {t('correction_title')}")
+        st.markdown(st.session_state['derniere_correction'])
+        st.write("---")
         afficher_correction_et_pdf("correction_coach_math.pdf")
+
