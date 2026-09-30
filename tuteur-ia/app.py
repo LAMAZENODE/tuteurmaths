@@ -206,7 +206,7 @@ with st.sidebar:
     st.session_state.langue = LANGUES[choix]
 
 # ============================================================
-# CSS ARABE
+# CSS ARABE (corrigé pour l'affichage des formules)
 # ============================================================
 def injecter_css(langue):
     if langue == "ar":
@@ -234,13 +234,31 @@ def injecter_css(langue):
         .stButton > button, .stDownloadButton > button {
             direction: rtl;
         }
-        .katex, .MathJax, .katex-display {
+
+        /* ⚠️ Corrige l'affichage des formules et du code */
+        code, pre, .stCode, .katex, .MathJax, .katex-display {
             direction: ltr !important;
+            text-align: left !important;
+            unicode-bidi: isolate !important;
         }
+
         span[dir="ltr"] {
-            display: inline-block;
-            direction: ltr;
-            unicode-bidi: embed;
+            display: inline !important;
+            direction: ltr !important;
+            unicode-bidi: isolate !important;
+        }
+
+        /* Empêche la coupure excessive des mots */
+        .stMarkdown p {
+            word-break: normal;
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
+        /* Les blocs de code restent en LTR */
+        .stMarkdown pre {
+            direction: ltr !important;
+            text-align: left !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -344,7 +362,7 @@ if "session_id" in query_params:
         st.error(t("verif_error"))
 
 # ============================================================
-# OUTILS POUR LE PDF — NETTOYAGE ARABE
+# OUTILS PDF — NETTOYAGE ARABE
 # ============================================================
 def _convertir_latex_simple(texte):
     """Convertit les formules LaTeX en texte simple."""
@@ -380,38 +398,17 @@ def _normaliser_espaces(texte):
     return texte
 
 
-def _corriger_alif_lam(texte):
-    """
-    Corrige la ligature arabe lam-alif cassée.
-    Quand 'لا' est encodé en deux caractères séparés, certains rendus
-    affichent 'اا' + 'ل' au lieu de 'لا'.
-    Exemple : الاستيعاب au lieu de االستيعاب
-    """
-    # Cas fréquent : 'اا' (deux alifs) suivi ou précédé de 'ل' → 'لا'
-    texte = re.sub(r'اا', 'ا', texte)
-    texte = re.sub(r'الا', 'الا', texte)  # déjà correct
-    return texte
-
-
 def _nettoyer_arabe(ligne):
-    """Nettoie les espaces parasites et corrige les accents dans une ligne arabe."""
-    # 1. Normaliser les espaces Unicode
+    """Nettoie les espaces parasites et les accents arabes."""
     ligne = _normaliser_espaces(ligne)
-
-    # 2. Supprimer les espaces avant les accents arabes
     ligne = re.sub(r'\s+([\u064B-\u0652\u0670\u06D6-\u06ED])', r'\1', ligne)
-
-    # 3. Supprimer les espaces avant la ponctuation
     ligne = re.sub(r'\s+([.,،؟!؛:])', r'\1', ligne)
-
-    # 4. Supprimer les doubles espaces
     ligne = re.sub(r' {2,}', ' ', ligne)
-
     return ligne
 
 
 def _est_ligne_formule(ligne):
-    """Détecte si la ligne est majoritairement composée de caractères latins/maths."""
+    """Détecte si la ligne est majoritairement latine/mathématique."""
     stripped = ligne.strip()
     if not stripped:
         return False
@@ -431,17 +428,14 @@ def _markdown_vers_html(contenu, est_arabe=False):
             lignes_html.append("<br>")
             continue
 
-        # Conversion LaTeX
         l = _convertir_latex_simple(l)
 
         if est_arabe:
             if _est_ligne_formule(l):
-                # Ligne formule → bloc LTR complet
                 l = f'<span dir="ltr">{l.strip()}</span>'
             else:
                 l = _nettoyer_arabe(l)
 
-        # Markdown
         if l.startswith("### "):
             lignes_html.append(f"<h3>{l[4:]}</h3>")
         elif l.startswith("## "):
@@ -550,7 +544,7 @@ def generer_pdf(texte_correction, enonce_exercice):
             span[dir="ltr"] {{
                 display: inline-block;
                 direction: ltr;
-                unicode-bidi: embed;
+                unicode-bidi: isolate;
             }}
             .footer {{
                 margin-top: 40px;
