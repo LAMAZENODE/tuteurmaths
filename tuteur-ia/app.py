@@ -344,7 +344,7 @@ if "session_id" in query_params:
         st.error(t("verif_error"))
 
 # ============================================================
-# FONCTION PDF — WEASYPRINT
+# OUTILS POUR LE PDF — NETTOYAGE ARABE
 # ============================================================
 def _convertir_latex_simple(texte):
     """Convertit les formules LaTeX en texte simple."""
@@ -366,41 +366,60 @@ def _convertir_latex_simple(texte):
     return texte
 
 
-@st.cache_resource(show_spinner=False)
-def _charger_police_base64():
-    """Charge la police arabe en base64."""
-    try:
-        chemin = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "NotoNaskhArabic-Regular.ttf"
-        )
-        with open(chemin, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
-    except Exception:
-        return None
-
-
-def _isoler_latin_en_arabe(texte):
-    """Enveloppe les expressions latines dans <span dir='ltr'> pour RTL."""
-    # f(x), g(x), etc.
-    texte = re.sub(
-        r'([a-zA-Z])\s*\(\s*([^)]*?)\s*\)',
-        r'<span dir="ltr">\1(\2)</span>',
-        texte
-    )
-    # Formules type 2x + 3, ax - b
-    texte = re.sub(
-        r'(?<![a-zA-Z0-9])(\d*[a-zA-Z]\s*[+\-]\s*\d+)(?![a-zA-Z0-9])',
-        r'<span dir="ltr">\1</span>',
-        texte
-    )
-    # Parenthèses avec texte latin
-    texte = re.sub(
-        r'\(\s*([a-zA-ZÀ-ÿ\'\- ]+?)\s*\)',
-        r'<span dir="ltr">(\1)</span>',
-        texte
-    )
+def _normaliser_espaces(texte):
+    """Convertit TOUS les espaces Unicode en espace normal."""
+    remplacements = [
+        ("\u00A0", " "), ("\u2000", " "), ("\u2001", " "), ("\u2002", " "),
+        ("\u2003", " "), ("\u2004", " "), ("\u2005", " "), ("\u2006", " "),
+        ("\u2007", " "), ("\u2008", " "), ("\u2009", " "), ("\u200A", " "),
+        ("\u202F", " "), ("\u205F", " "), ("\u3000", " "),
+        ("\u200B", ""), ("\uFEFF", ""),
+    ]
+    for k, v in remplacements:
+        texte = texte.replace(k, v)
     return texte
+
+
+def _corriger_alif_lam(texte):
+    """
+    Corrige la ligature arabe lam-alif cassée.
+    Quand 'لا' est encodé en deux caractères séparés, certains rendus
+    affichent 'اا' + 'ل' au lieu de 'لا'.
+    Exemple : الاستيعاب au lieu de االستيعاب
+    """
+    # Cas fréquent : 'اا' (deux alifs) suivi ou précédé de 'ل' → 'لا'
+    texte = re.sub(r'اا', 'ا', texte)
+    texte = re.sub(r'الا', 'الا', texte)  # déjà correct
+    return texte
+
+
+def _nettoyer_arabe(ligne):
+    """Nettoie les espaces parasites et corrige les accents dans une ligne arabe."""
+    # 1. Normaliser les espaces Unicode
+    ligne = _normaliser_espaces(ligne)
+
+    # 2. Supprimer les espaces avant les accents arabes
+    ligne = re.sub(r'\s+([\u064B-\u0652\u0670\u06D6-\u06ED])', r'\1', ligne)
+
+    # 3. Supprimer les espaces avant la ponctuation
+    ligne = re.sub(r'\s+([.,،؟!؛:])', r'\1', ligne)
+
+    # 4. Supprimer les doubles espaces
+    ligne = re.sub(r' {2,}', ' ', ligne)
+
+    return ligne
+
+
+def _est_ligne_formule(ligne):
+    """Détecte si la ligne est majoritairement composée de caractères latins/maths."""
+    stripped = ligne.strip()
+    if not stripped:
+        return False
+    compte_latin = sum(
+        1 for c in stripped
+        if c.isascii() and (c.isalnum() or c in "()+-=/*^_.,' ")
+    )
+    return compte_latin / max(len(stripped), 1) > 0.6
 
 
 def _markdown_vers_html(contenu, est_arabe=False):
@@ -412,16 +431,17 @@ def _markdown_vers_html(contenu, est_arabe=False):
             lignes_html.append("<br>")
             continue
 
+        # Conversion LaTeX
         l = _convertir_latex_simple(l)
 
         if est_arabe:
-            # 1. Nettoyage des accents arabes (regex, plus robuste)
-            l = re.sub(r'\s+([\u064B-\u0652])', r'\1', l)
-            l = re.sub(r'\s+([.,،؟!؛:])', r'\1', l)
-            l = re.sub(r' {2,}', ' ', l)
-            # 2. Isolation des expressions latines
-            l = _isoler_latin_en_arabe(l)
+            if _est_ligne_formule(l):
+                # Ligne formule → bloc LTR complet
+                l = f'<span dir="ltr">{l.strip()}</span>'
+            else:
+                l = _nettoyer_arabe(l)
 
+        # Markdown
         if l.startswith("### "):
             lignes_html.append(f"<h3>{l[4:]}</h3>")
         elif l.startswith("## "):
@@ -440,6 +460,23 @@ def _markdown_vers_html(contenu, est_arabe=False):
             lignes_html.append(f"<p>{l}</p>")
 
     return "\n".join(lignes_html)
+
+
+# ============================================================
+# GÉNÉRATION PDF — WEASYPRINT
+# ============================================================
+@st.cache_resource(show_spinner=False)
+def _charger_police_base64():
+    """Charge la police arabe en base64."""
+    try:
+        chemin = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "NotoNaskhArabic-Regular.ttf"
+        )
+        with open(chemin, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        return None
 
 
 def generer_pdf(texte_correction, enonce_exercice):
@@ -577,9 +614,11 @@ def generer_correction(exercice):
             "- Utilise des formules LaTeX entre $ ... $ pour les maths inline "
             "et $$ ... $$ pour les formules en bloc.\n"
             "- ⚠️ N'ajoute JAMAIS d'espace avant les accents arabes "
-            "(exemples corrects : أهلاً وليس أهال ً، حقاً وليس حقا ً، دائماً وليس دائما ً).\n"
+            "(أهلاً، حقاً، دائماً — PAS أهال ً، حقا ً، دائما ً).\n"
             "- ⚠️ Colle toujours les accents au caractère qui les précède.\n"
-            "- ⚠️ Ne mets jamais d'espace avant la ponctuation (. ، ؟ !)."
+            "- ⚠️ Ne mets jamais d'espace avant la ponctuation (. ، ؟ !).\n"
+            "- ⚠️ N'utilise JAMAIS deux alifs consécutifs dans un mot "
+            "(écris الاستيعاب، الأساسية — PAS االستيعاب، األساسية)."
         )
 
     modeles = [
@@ -753,7 +792,7 @@ elif not est_abonne:
         st.write("---")
         st.info(t("free_question_used_msg"))
 
-    # ---------- BLOC : OFFRE PAYANTE (toujours affichée) ----------
+    # ---------- BLOC : OFFRE PAYANTE ----------
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"**{t('feature1_title')}**")
