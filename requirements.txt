@@ -3,5 +3,6 @@ google-genai
 stripe
 weasyprint>=60.0
 extra-streamlit-components
+supabase
 plotly
 numpy
