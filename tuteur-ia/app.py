@@ -633,12 +633,12 @@ def generer_correction(exercice):
             "(écris الاستيعاب، الأساسية — PAS االستيعاب، األساسية)."
         )
 
+  
     modeles = [
-        "gemini-3.6-flash",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-flash-latest",
-    ]
+    "gemini-3.8-flash",       # Le plus récent et le plus capable
+    "gemini-3.6-flash",       # Alternative stable
+    "gemini-flash-latest",    # Toujours la dernière version
+]
 
     derniere_erreur = None
 
