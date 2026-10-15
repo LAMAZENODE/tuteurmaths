@@ -1,7 +1,7 @@
 streamlit>=1.37
 google-genai
 stripe
-weasyprint>=60.0
+reportlab
 extra-streamlit-components
 plotly
 numpy
