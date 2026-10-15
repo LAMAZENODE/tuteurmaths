@@ -3,13 +3,18 @@ from google import genai
 from google.genai import types
 import json
 import re
-import time
 import stripe
 import io
 import os
+import time
+import random
 import datetime
-import base64
-from weasyprint import HTML
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 # Cookie manager (optionnel)
 try:
@@ -17,18 +22,6 @@ try:
     COOKIES_DISPONIBLES = True
 except ImportError:
     COOKIES_DISPONIBLES = False
-
-# ============================================================
-# CHARGEMENT DES TRADUCTIONS
-# ============================================================
-@st.cache_data
-def charger_traductions():
-    chemin_script = os.path.dirname(os.path.abspath(__file__))
-    chemin_fichier = os.path.join(chemin_script, "translations.json")
-    with open(chemin_fichier, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-TRADUCTIONS = charger_traductions()
 
 # ============================================================
 # TRADUCTIONS DE SECOURS
@@ -52,7 +45,26 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Étape 2 : Posez votre question",
         "email_continue_btn": "Continuer vers ma question gratuite →",
         "email_verified": "✅ Email vérifié. Vous pouvez maintenant poser votre question gratuite.",
-        "correction_title": "Votre correction",
+        "coach_question": "As-tu compris cette étape ? Veux-tu que nous passions à la suite ?",
+        "coach_yes": "Oui, j'ai compris",
+        "coach_no": "Non, explique autrement",
+        "coach_finish": "J'ai terminé, montre-moi le récapitulatif",
+        "coach_done": "🎉 Bravo ! Tu as terminé toutes les étapes.",
+        "coach_step": "Étape",
+        "coach_restart": "🔄 Recommencer un nouvel exercice",
+        "coach_summary": "📋 Récapitulatif de ta progression",
+        "button_download_pdf": "📥 Télécharger la correction en PDF",
+        "spinner": "⏳ Génération de l'étape...",
+        "warning_empty": "⚠️ Merci de saisir un énoncé.",
+        "ai_init_error": "Erreur d'initialisation IA : {error}",
+        "verif_error": "Erreur de vérification du paiement.",
+        "pdf_title": "Ma Correction Personnalisée",
+        "pdf_enonce": "📌 Énoncé soumis :",
+        "pdf_resolution": "📝 Résolution pas à pas :",
+        "preambule_title": "📖 Rappel de cours",
+        "exemple_concret_title": "💡 Exemple concret",
+        "exemple_theorique_title": "🧮 Exemple théorique",
+        "retry_button": "🔄 Réessayer",
     },
     "en": {
         "free_question_title": "🎁 Your first question is free",
@@ -72,7 +84,26 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Step 2: Ask your question",
         "email_continue_btn": "Continue to my free question →",
         "email_verified": "✅ Email verified. You can now ask your free question.",
-        "correction_title": "Your correction",
+        "coach_question": "Did you understand this step? Shall we move on?",
+        "coach_yes": "Yes, I understood",
+        "coach_no": "No, explain differently",
+        "coach_finish": "I'm done, show me the summary",
+        "coach_done": "🎉 Well done! You completed all the steps.",
+        "coach_step": "Step",
+        "coach_restart": "🔄 Start a new exercise",
+        "coach_summary": "📋 Summary of your progression",
+        "button_download_pdf": "📥 Download correction as PDF",
+        "spinner": "⏳ Generating step...",
+        "warning_empty": "⚠️ Please enter a statement.",
+        "ai_init_error": "AI initialization error: {error}",
+        "verif_error": "Payment verification error.",
+        "pdf_title": "My Personalized Correction",
+        "pdf_enonce": "📌 Submitted statement:",
+        "pdf_resolution": "📝 Step-by-step resolution:",
+        "preambule_title": "📖 Course reminder",
+        "exemple_concret_title": "💡 Concrete example",
+        "exemple_theorique_title": "🧮 Theoretical example",
+        "retry_button": "🔄 Retry",
     },
     "de": {
         "free_question_title": "🎁 Ihre erste Frage ist kostenlos",
@@ -92,7 +123,26 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Schritt 2: Stellen Sie Ihre Frage",
         "email_continue_btn": "Weiter zu meiner kostenlosen Frage →",
         "email_verified": "✅ E-Mail verifiziert. Sie können jetzt Ihre kostenlose Frage stellen.",
-        "correction_title": "Ihre Korrektur",
+        "coach_question": "Hast du diesen Schritt verstanden? Wollen wir weitermachen?",
+        "coach_yes": "Ja, ich habe verstanden",
+        "coach_no": "Nein, anders erklären",
+        "coach_finish": "Ich bin fertig, zeig mir die Zusammenfassung",
+        "coach_done": "🎉 Gut gemacht! Du hast alle Schritte abgeschlossen.",
+        "coach_step": "Schritt",
+        "coach_restart": "🔄 Neue Übung starten",
+        "coach_summary": "📋 Zusammenfassung deines Fortschritts",
+        "button_download_pdf": "📥 Korrektur als PDF herunterladen",
+        "spinner": "⏳ Schritt wird generiert...",
+        "warning_empty": "⚠️ Bitte geben Sie eine Aufgabe ein.",
+        "ai_init_error": "KI-Initialisierungsfehler: {error}",
+        "verif_error": "Fehler bei der Zahlungsüberprüfung.",
+        "pdf_title": "Meine personalisierte Korrektur",
+        "pdf_enonce": "📌 Eingereichte Aufgabe:",
+        "pdf_resolution": "📝 Schritt-für-Schritt-Lösung:",
+        "preambule_title": "📖 Kurserinnerung",
+        "exemple_concret_title": "💡 Konkretes Beispiel",
+        "exemple_theorique_title": "🧮 Theoretisches Beispiel",
+        "retry_button": "🔄 Erneut versuchen",
     },
     "es": {
         "free_question_title": "🎁 Tu primera pregunta es gratis",
@@ -112,7 +162,26 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Paso 2: Haz tu pregunta",
         "email_continue_btn": "Continuar a mi pregunta gratuita →",
         "email_verified": "✅ Correo verificado. Ya puedes hacer tu pregunta gratuita.",
-        "correction_title": "Tu corrección",
+        "coach_question": "¿Has entendido este paso? ¿Pasamos al siguiente?",
+        "coach_yes": "Sí, lo he entendido",
+        "coach_no": "No, explica de otra forma",
+        "coach_finish": "He terminado, muéstrame el resumen",
+        "coach_done": "🎉 ¡Bien hecho! Has completado todos los pasos.",
+        "coach_step": "Paso",
+        "coach_restart": "🔄 Empezar un nuevo ejercicio",
+        "coach_summary": "📋 Resumen de tu progreso",
+        "button_download_pdf": "📥 Descargar corrección en PDF",
+        "spinner": "⏳ Generando paso...",
+        "warning_empty": "⚠️ Por favor, introduce un enunciado.",
+        "ai_init_error": "Error de inicialización IA: {error}",
+        "verif_error": "Error de verificación del pago.",
+        "pdf_title": "Mi Corrección Personalizada",
+        "pdf_enonce": "📌 Enunciado enviado:",
+        "pdf_resolution": "📝 Resolución paso a paso:",
+        "preambule_title": "📖 Recordatorio del curso",
+        "exemple_concret_title": "💡 Ejemplo concreto",
+        "exemple_theorique_title": "🧮 Ejemplo teórico",
+        "retry_button": "🔄 Reintentar",
     },
     "it": {
         "free_question_title": "🎁 La tua prima domanda è gratuita",
@@ -132,7 +201,26 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "Passo 2: Fai la tua domanda",
         "email_continue_btn": "Continua verso la mia domanda gratuita →",
         "email_verified": "✅ Email verificata. Ora puoi fare la tua domanda gratuita.",
-        "correction_title": "La tua correzione",
+        "coach_question": "Hai capito questo passaggio? Passiamo al prossimo?",
+        "coach_yes": "Sì, ho capito",
+        "coach_no": "No, spiega in modo diverso",
+        "coach_finish": "Ho finito, mostrami il riepilogo",
+        "coach_done": "🎉 Bravo! Hai completato tutti i passaggi.",
+        "coach_step": "Passo",
+        "coach_restart": "🔄 Inizia un nuovo esercizio",
+        "coach_summary": "📋 Riepilogo dei tuoi progressi",
+        "button_download_pdf": "📥 Scarica la correzione in PDF",
+        "spinner": "⏳ Generazione del passaggio...",
+        "warning_empty": "⚠️ Inserisci un enunciato.",
+        "ai_init_error": "Errore di inizializzazione IA: {error}",
+        "verif_error": "Errore di verifica del pagamento.",
+        "pdf_title": "La Mia Correzione Personalizzata",
+        "pdf_enonce": "📌 Enunciato inviato:",
+        "pdf_resolution": "📝 Risoluzione passo dopo passo:",
+        "preambule_title": "📖 Promemoria del corso",
+        "exemple_concret_title": "💡 Esempio concreto",
+        "exemple_theorique_title": "🧮 Esempio teorico",
+        "retry_button": "🔄 Riprova",
     },
     "ar": {
         "free_question_title": "🎁 سؤالك الأول مجاني",
@@ -152,9 +240,40 @@ TRADUCTIONS_SECOURS = {
         "question_step_title": "الخطوة 2: اطرح سؤالك",
         "email_continue_btn": "تابع إلى سؤالي المجاني ←",
         "email_verified": "✅ تم التحقق من البريد. يمكنك الآن طرح سؤالك المجاني.",
-        "correction_title": "التصحيح",
+        "coach_question": "هل فهمت هذه الخطوة؟ هل ننتقل إلى التالية؟",
+        "coach_yes": "نعم، لقد فهمت",
+        "coach_no": "لا، اشرح بطريقة أخرى",
+        "coach_finish": "لقد انتهيت، أرني الملخص",
+        "coach_done": "🎉 أحسنت! لقد أكملت جميع الخطوات.",
+        "coach_step": "الخطوة",
+        "coach_restart": "🔄 ابدأ تمرينًا جديدًا",
+        "coach_summary": "📋 ملخص تقدمك",
+        "button_download_pdf": "📥 تحميل التصحيح بصيغة PDF",
+        "spinner": "⏳ جارٍ إنشاء الخطوة...",
+        "warning_empty": "⚠️ يرجى إدخال نص التمرين.",
+        "ai_init_error": "خطأ في تهيئة الذكاء الاصطناعي: {error}",
+        "verif_error": "خطأ في التحقق من الدفع.",
+        "pdf_title": "تصحيحي المخصص",
+        "pdf_enonce": "📌 النص المرسل:",
+        "pdf_resolution": "📝 الحل خطوة بخطوة:",
+        "preambule_title": "📖 تذكير بالدرس",
+        "exemple_concret_title": "💡 مثال ملموس",
+        "exemple_theorique_title": "🧮 مثال نظري",
+        "retry_button": "🔄 إعادة المحاولة",
     },
 }
+
+@st.cache_data
+def charger_traductions():
+    chemin_script = os.path.dirname(os.path.abspath(__file__))
+    chemin_fichier = os.path.join(chemin_script, "translations.json")
+    try:
+        with open(chemin_fichier, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return TRADUCTIONS_SECOURS
+
+TRADUCTIONS = charger_traductions()
 
 LANGUES = {
     "🇫🇷 Français": "fr",
@@ -213,7 +332,6 @@ def injecter_css(langue):
         st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-
         html, body, [class*="css"], .stApp {
             direction: rtl;
             text-align: right;
@@ -223,6 +341,7 @@ def injecter_css(langue):
             direction: rtl;
             text-align: right;
         }
+        .stMarkdown, .stMarkdown p, .stMarkdown li,
         h1, h2, h3, h4, h5, h6 {
             direction: rtl;
             text-align: right;
@@ -234,23 +353,8 @@ def injecter_css(langue):
         .stButton > button, .stDownloadButton > button {
             direction: rtl;
         }
-
-        /* Détection automatique de la direction par paragraphe */
-        .stMarkdown p, .stMarkdown li {
-            unicode-bidi: plaintext !important;
-        }
-
-        /* Formules et code : LTR */
-        code, pre, .stCode, .katex, .MathJax, .katex-display {
+        .katex, .MathJax, .katex-display {
             direction: ltr !important;
-            text-align: left !important;
-            unicode-bidi: isolate !important;
-        }
-
-        span[dir="ltr"] {
-            display: inline !important;
-            direction: ltr !important;
-            unicode-bidi: isolate !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -325,10 +429,15 @@ try:
     client_ia = genai.Client(api_key=cle_pour_ia)
 except Exception as e:
     st.error(t("ai_init_error", error=str(e)))
+    st.stop()
 
-stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
-ID_PRIX_UNIQUE = st.secrets["STRIPE_PRICE_ID"]
-URL_APP = st.secrets["MON_URL_STREAMLIT"]
+try:
+    stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
+    ID_PRIX_UNIQUE = st.secrets["STRIPE_PRICE_ID"]
+    URL_APP = st.secrets["MON_URL_STREAMLIT"]
+except Exception as e:
+    st.error(f"Erreur de configuration Stripe : {e}")
+    st.stop()
 
 # ============================================================
 # VÉRIFICATION ANTI-FRAUDE (Stripe)
@@ -354,345 +463,498 @@ if "session_id" in query_params:
         st.error(t("verif_error"))
 
 # ============================================================
-# OUTILS PDF — NETTOYAGE ARABE
+# FONCTION PDF (CORRIGÉE — MULTILINGUE)
 # ============================================================
-def _convertir_latex_simple(texte):
-    """Convertit les formules LaTeX en texte simple."""
-    texte = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1)/(\2)', texte)
-    remplacements = {
-        r'\times': ' × ', r'\cdot': ' · ',
-        r'\leq': ' ≤ ', r'\geq': ' ≥ ', r'\neq': ' ≠ ',
-        r'\approx': ' ≈ ', r'\infty': ' ∞ ', r'\pm': ' ± ',
-        r'\alpha': 'α', r'\beta': 'β', r'\gamma': 'γ',
-        r'\pi': 'π', r'\theta': 'θ',
-    }
-    for k, v in remplacements.items():
-        texte = texte.replace(k, v)
-    texte = re.sub(r'\\sqrt\{([^{}]+)\}', r'√(\1)', texte)
-    texte = re.sub(r'\^\{([^{}]+)\}', r'^\1', texte)
-    texte = re.sub(r'_\{([^{}]+)\}', r'_\1', texte)
-    texte = re.sub(r'\$\$(.+?)\$\$', r'\1', texte, flags=re.DOTALL)
-    texte = re.sub(r'\$(.+?)\$', r'\1', texte)
-    return texte
-
-
-def _normaliser_espaces(texte):
-    """Convertit TOUS les espaces Unicode en espace normal."""
-    remplacements = [
-        ("\u00A0", " "), ("\u1680", " "),
-        ("\u2000", " "), ("\u2001", " "), ("\u2002", " "), ("\u2003", " "),
-        ("\u2004", " "), ("\u2005", " "), ("\u2006", " "), ("\u2007", " "),
-        ("\u2008", " "), ("\u2009", " "), ("\u200A", " "),
-        ("\u202F", " "), ("\u205F", " "), ("\u3000", " "),
-        ("\u200B", ""), ("\uFEFF", ""),
-    ]
-    for k, v in remplacements:
-        texte = texte.replace(k, v)
-    return texte
-
-
-def _nettoyer_arabe(ligne):
-    """Nettoie les espaces parasites et les accents arabes (version ULTRA)."""
-    # 1. Normaliser TOUS les espaces Unicode
-    ligne = _normaliser_espaces(ligne)
-
-    # 2. Supprimer les caractères invisibles de contrôle
-    for c in ["\u200C", "\u200D", "\u200E", "\u200F",
-              "\u202A", "\u202B", "\u202C", "\u202D", "\u202E",
-              "\u2066", "\u2067", "\u2068", "\u2069"]:
-        ligne = ligne.replace(c, "")
-
-    # 3. Supprimer TOUS les espaces avant les accents arabes (5 passes)
-    for _ in range(5):
-        ligne = re.sub(
-            r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+'
-            r'([\u064B-\u0652\u0670\u06D6-\u06ED])',
-            r'\1',
-            ligne
-        )
-
-    # 4. Supprimer les espaces avant la ponctuation (3 passes)
-    for _ in range(3):
-        ligne = re.sub(
-            r'[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+([.,،؟!؛:])',
-            r'\1',
-            ligne
-        )
-
-    # 5. Doubles espaces résiduels
-    ligne = re.sub(r' {2,}', ' ', ligne)
-
-    return ligne
-
-
-def _est_ligne_formule(ligne):
-    """Détecte si la ligne est majoritairement latine/mathématique."""
-    stripped = ligne.strip()
-    if not stripped:
-        return False
-    compte_latin = sum(
-        1 for c in stripped
-        if c.isascii() and (c.isalnum() or c in "()+-=/*^_.,' ")
-    )
-    return compte_latin / max(len(stripped), 1) > 0.6
-
-
-def _markdown_vers_html(contenu, est_arabe=False):
-    """Convertit un texte Markdown en HTML structuré."""
-    lignes_html = []
-    for ligne in contenu.split("\n"):
-        l = ligne.rstrip()
-        if not l.strip():
-            lignes_html.append("<br>")
-            continue
-
-        l = _convertir_latex_simple(l)
-
-        if est_arabe:
-            if _est_ligne_formule(l):
-                l = f'<span dir="ltr">{l.strip()}</span>'
-            else:
-                l = _nettoyer_arabe(l)
-
-        if l.startswith("### "):
-            lignes_html.append(f"<h3>{l[4:]}</h3>")
-        elif l.startswith("## "):
-            lignes_html.append(f"<h2>{l[3:]}</h2>")
-        elif l.startswith("# "):
-            lignes_html.append(f"<h1>{l[2:]}</h1>")
-        elif l.lstrip().startswith(("- ", "* ")):
-            texte_puce = l.lstrip()[2:]
-            texte_puce = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', texte_puce)
-            texte_puce = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', texte_puce)
-            classe = "puce-ar" if est_arabe else "puce"
-            lignes_html.append(f'<p class="{classe}">• {texte_puce}</p>')
-        else:
-            l = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', l)
-            l = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', l)
-            lignes_html.append(f"<p>{l}</p>")
-
-    return "\n".join(lignes_html)
-
-
-# ============================================================
-# GÉNÉRATION PDF — WEASYPRINT
-# ============================================================
-@st.cache_resource(show_spinner=False)
-def _charger_police_base64():
-    """Charge la police arabe en base64."""
-    try:
-        chemin = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "NotoNaskhArabic-Regular.ttf"
-        )
-        with open(chemin, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
-    except Exception:
-        return None
-
-
 def generer_pdf(texte_correction, enonce_exercice):
-    """Génère le PDF avec WeasyPrint (RTL natif, ligatures correctes)."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=letter,
+        rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40,
+        title=t("pdf_title")
+    )
+    styles = getSampleStyleSheet()
+
     langue = st.session_state.get("langue", "fr")
     est_arabe = (langue == "ar")
 
-    direction = "rtl" if est_arabe else "ltr"
-    align = "right" if est_arabe else "left"
+    police = "Helvetica"
+    if est_arabe:
+        chemin_police = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "NotoNaskhArabic-Regular.ttf"
+        )
+        if os.path.exists(chemin_police):
+            pdfmetrics.registerFont(TTFont("Arabic", chemin_police))
+            police = "Arabic"
 
-    titre_pdf = t("pdf_title")
-    titre_enonce = t("pdf_enonce")
-    titre_resolution = t("pdf_resolution")
+    alignement = TA_RIGHT if est_arabe else TA_JUSTIFY
 
-    corps_enonce = _markdown_vers_html(enonce_exercice, est_arabe=est_arabe)
-    corps_correction = _markdown_vers_html(texte_correction, est_arabe=est_arabe)
+    style_titre = ParagraphStyle('TitrePDF', parent=styles['Heading1'],
+        fontName=police, fontSize=22, leading=26,
+        textColor='#1E3A8A', alignment=TA_CENTER, spaceAfter=20)
+    style_sous_titre = ParagraphStyle('SousTitrePDF', parent=styles['Heading2'],
+        fontName=police, fontSize=14, leading=18,
+        textColor='#10B981', spaceBefore=15, spaceAfter=10,
+        alignment=alignement)
+    style_corps = ParagraphStyle('CorpsPDF', parent=styles['BodyText'],
+        fontName=police, fontSize=11, leading=16,
+        textColor='#374151', alignment=alignement, spaceAfter=10)
+    style_enonce = ParagraphStyle('EnoncePDF', parent=styles['Italic'],
+        fontName=police, fontSize=10, leading=14,
+        textColor='#6B7280', spaceAfter=15, alignment=alignement)
+    style_footer = ParagraphStyle('FooterPDF', parent=styles['Normal'],
+        fontName=police, fontSize=8, leading=10,
+        textColor='#9CA3AF', alignment=TA_CENTER, spaceBefore=30)
 
-    police_b64 = _charger_police_base64()
-    font_face = ""
-    if police_b64:
-        font_face = f"""
-        @font-face {{
-            font-family: 'NotoArabicEmbedded';
-            src: url(data:font/ttf;base64,{police_b64}) format('truetype');
-        }}
-        """
-        police_css = "'NotoArabicEmbedded', 'DejaVu Sans', Arial, sans-serif"
-    else:
-        police_css = "'Noto Naskh Arabic', 'Amiri', 'DejaVu Sans', Arial, sans-serif"
+    # --------------------------------------------------------
+    # NETTOYAGE DU TEXTE POUR REPORTLAB
+    # --------------------------------------------------------
+    def nettoyer_pour_pdf(texte):
+        if not texte:
+            return ""
 
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            {font_face}
-            @page {{ margin: 2cm; size: A4; }}
-            body {{
-                font-family: {police_css};
-                direction: {direction};
-                text-align: {align};
-                font-size: 11pt;
-                line-height: 1.7;
-                color: #374151;
-            }}
-            h1 {{
-                font-size: 20pt;
-                color: #1E3A8A;
-                text-align: center;
-                margin-bottom: 20px;
-                margin-top: 0;
-            }}
-            h2 {{
-                font-size: 14pt;
-                color: #10B981;
-                margin-top: 20px;
-                margin-bottom: 10px;
-                border-bottom: 1px solid #e5e7eb;
-                padding-bottom: 4px;
-            }}
-            h3 {{
-                font-size: 12pt;
-                color: #6b21a8;
-                margin-top: 14px;
-                margin-bottom: 6px;
-            }}
-            p {{ margin: 6px 0; unicode-bidi: plaintext; }}
-            .puce-ar {{ padding-right: 22px; text-indent: -14px; margin: 4px 0; }}
-            .puce {{ padding-left: 22px; text-indent: -14px; margin: 4px 0; }}
-            span[dir="ltr"] {{
-                display: inline-block;
-                direction: ltr;
-                unicode-bidi: isolate;
-            }}
-            .footer {{
-                margin-top: 40px;
-                font-size: 8pt;
-                color: #9CA3AF;
-                text-align: center;
-                border-top: 1px solid #e5e7eb;
-                padding-top: 10px;
-            }}
-            .enonce {{
-                background-color: #F9FAFB;
-                padding: 12px;
-                border-radius: 6px;
-                margin-bottom: 20px;
-                color: #4B5563;
-                font-style: italic;
-            }}
-        </style>
-    </head>
-    <body>
-        <h1>{titre_pdf}</h1>
-        <h2>{titre_enonce}</h2>
-        <div class="enonce">{corps_enonce}</div>
-        <h2>{titre_resolution}</h2>
-        {corps_correction}
-        <div class="footer">
-            This document is for informational purposes only. Responses may include mistakes.
-        </div>
-    </body>
-    </html>
-    """
+        # ============================================================
+        # ÉTAPE 0 : SUPPRESSION DU LATEX / KATEX
+        # ============================================================
+        texte = re.sub(r'\$\$(.+?)\$\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\$(.+?)\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\[(.+?)\\\]', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\((.+?)\\\)', r'\1', texte, flags=re.DOTALL)
 
-    pdf_bytes = HTML(string=html).write_pdf()
-    return io.BytesIO(pdf_bytes)
+        texte = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1)/(\2)', texte)
+
+        texte = texte.replace(r'\times', '×')
+        texte = texte.replace(r'\cdot', '·')
+        texte = texte.replace(r'\leq', '≤')
+        texte = texte.replace(r'\geq', '≥')
+        texte = texte.replace(r'\neq', '≠')
+        texte = texte.replace(r'\infty', '∞')
+        texte = texte.replace(r'\pi', 'π')
+        texte = texte.replace(r'\alpha', 'α')
+        texte = texte.replace(r'\beta', 'β')
+        texte = texte.replace(r'\Delta', 'Δ')
+        texte = texte.replace(r'\mathbb{R}', 'ℝ')
+
+        texte = re.sub(r'_1', '₁', texte)
+        texte = re.sub(r'_2', '₂', texte)
+        texte = re.sub(r'_3', '₃', texte)
+
+        texte = re.sub(r'\^2', '²', texte)
+        texte = re.sub(r'\^3', '³', texte)
+
+        texte = re.sub(r'\\[a-zA-Z]+', '', texte)
+        texte = texte.replace('{', '').replace('}', '')
+
+        # ============================================================
+        # ÉTAPE 0bis : SUPPRESSION DES 'n' PARASITES
+        # ============================================================
+        texte = re.sub(r'^-n\s+', '', texte)
+        texte = re.sub(r'(^|\n)\s*n\s+', r'\1', texte)
+        texte = re.sub(r'(\w)-n\s+', r'\1 ', texte)
+        texte = re.sub(r'(\w)n\s+([A-ZÉÈÀÊÎÔÛ])', r'\1 \2', texte)
+        texte = re.sub(r'(\d)n\b', r'\1', texte)
+        texte = re.sub(r'(\w)n([A-ZÉÈÀÊÎÔÛ])', r'\1 \2', texte)
+
+        # ============================================================
+        # ÉTAPE 1 : NORMALISATION
+        # ============================================================
+        texte = texte.replace('\r\n', '\n').replace('\r', '\n')
+        texte = texte.replace('\\n', '\n')
+        texte = re.sub(r'(\S)\n(\S)', r'\1\2', texte)
+
+        # ============================================================
+        # ÉTAPE 2 : ÉCHAPPEMENT XML POUR REPORTLAB
+        # ============================================================
+        texte = texte.replace('&', '&amp;')
+        texte = texte.replace('<', '&lt;').replace('>', '&gt;')
+        texte = texte.replace('&lt;br/&gt;', '<br/>')
+
+        # ============================================================
+        # ÉTAPE 3 : MARKDOWN → HTML REPORTLAB
+        # ============================================================
+        texte = re.sub(r'^###\s+(.*)$', r'<b>\1</b>', texte, flags=re.MULTILINE)
+        texte = re.sub(r'^##\s+(.*)$',  r'<b><font size="13">\1</font></b>', texte, flags=re.MULTILINE)
+        texte = re.sub(r'^#\s+(.*)$',   r'<b><font size="15">\1</font></b>', texte, flags=re.MULTILINE)
+
+        # Saut de ligne après les titres Markdown
+        texte = re.sub(r'(<b><font size="1[35]">.*?</font></b>)([A-ZÉÈÀÊÎÔÛ])', r'\1<br/>\2', texte)
+        texte = re.sub(r'(<b>.*?</b>)([A-ZÉÈÀÊÎÔÛ])', r'\1<br/>\2', texte)
+
+        # ============================================================
+        # TITRES DANS TOUTES LES LANGUES
+        # ============================================================
+        titres_connus = [
+            # Français
+            "Rappel de cours", "Rappel théorique", "Exemple concret",
+            "Exemple théorique", "Application à l'exercice",
+            "Rappel :", "Concret :", "Théorique :", "Application :",
+            "Conclusion :", "Définition :", "Situation :", "Tarif :",
+            "Fonction :", "Énoncé :",
+            # Anglais
+            "Course reminder", "Theoretical reminder", "Concrete example",
+            "Theoretical example", "Application to the exercise",
+            "Reminder:", "Real-life example:", "Theory:",
+            # Allemand
+            "Kurserinnerung", "Theoretische Erinnerung", "Konkretes Beispiel",
+            "Theoretisches Beispiel", "Anwendung auf die Übung",
+            # Espagnol
+            "Recordatorio del curso", "Recordatorio teórico", "Ejemplo concreto",
+            "Ejemplo teórico", "Aplicación al ejercicio",
+            # Italien
+            "Promemoria del corso", "Promemoria teorico", "Esempio concreto",
+            "Esempio teorico", "Applicazione all'esercizio",
+            # Arabe
+            "تذكير بالدرس", "تذكير نظري", "مثال ملموس", "مثال نظري",
+            "تطبيق على التمرين",
+        ]
+        for titre in titres_connus:
+            for lettre in "ABCDEFGHIJKLMNOPQRSTUVWXYZÉÈÀÊÎÔÛ":
+                texte = texte.replace(titre + lettre, titre + "<br/>" + lettre)
+            texte = texte.replace(titre + " ", titre + "<br/>")
+
+        # Listes Markdown
+        texte = re.sub(r'^\s*[-*]\s+(.*)$', r'• \1', texte, flags=re.MULTILINE)
+
+        # Gras / italique
+        texte = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', texte)
+        texte = re.sub(r'\*(.+?)\*',     r'<i>\1</i>', texte)
+
+        # Séparateurs
+        texte = re.sub(r'^\s*---\s*$', '<br/>', texte, flags=re.MULTILINE)
+
+        # ============================================================
+        # ÉTAPE 4 : SAUTS DE LIGNE FINAUX
+        # ============================================================
+        texte = texte.replace('\n', '<br/>')
+        texte = re.sub(r'(<br/>){3,}', '<br/><br/>', texte)
+
+        return texte
+
+    # --------------------------------------------------------
+    # CONSTRUCTION DU PDF
+    # --------------------------------------------------------
+    histoire = []
+    histoire.append(Paragraph(t("pdf_title"), style_titre))
+    histoire.append(Spacer(1, 10))
+
+    histoire.append(Paragraph(t("pdf_enonce"), style_sous_titre))
+    enonce_propre = nettoyer_pour_pdf(enonce_exercice)
+    histoire.append(Paragraph(enonce_propre, style_enonce))
+    histoire.append(Spacer(1, 10))
+
+    histoire.append(Paragraph(t("pdf_resolution"), style_sous_titre))
+    corps_propre = nettoyer_pour_pdf(texte_correction)
+
+    blocs = corps_propre.split('<br/><br/>')
+    for bloc in blocs:
+        bloc = bloc.strip()
+        if not bloc:
+            continue
+        try:
+            histoire.append(Paragraph(bloc, style_corps))
+        except Exception:
+            bloc_secours = re.sub(r'<[^>]+>', '', bloc)
+            histoire.append(Paragraph(bloc_secours, style_corps))
+
+    histoire.append(Spacer(1, 20))
+    histoire.append(Paragraph(
+        "This document is for informational purposes only. Responses may include mistakes.",
+        style_footer
+    ))
+
+    doc.build(histoire)
+    buffer.seek(0)
+    return buffer
 
 # ============================================================
-# GÉNÉRATION DE CORRECTION (avec retry automatique)
+# MODÈLES DISPONIBLES (fallback)
 # ============================================================
-def generer_correction(exercice):
+MODELES_DISPONIBLES = [
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-flash-lite',
+]
+
+def _appeler_gemini(instructions, contenu="Génère l'étape demandée."):
+    derniere_erreur = None
+    for modele in MODELES_DISPONIBLES:
+        try:
+            reponse = client_ia.models.generate_content(
+                model=modele,
+                contents=contenu,
+                config=types.GenerateContentConfig(system_instruction=instructions)
+            )
+            return reponse.text
+        except Exception as e:
+            derniere_erreur = e
+            msg = str(e)
+            if "404" in msg or "NOT_FOUND" in msg:
+                continue
+            if "503" in msg or "UNAVAILABLE" in msg:
+                time.sleep(2 + random.uniform(0, 1))
+                continue
+            raise
+    raise derniere_erreur
+
+# ============================================================
+# GÉNÉRATION D'UNE ÉTAPE (MULTILINGUE)
+# ============================================================
+def generer_etape(exercice, etape_numero, historique_explications=None, mode="standard"):
     noms_langues = {
         "fr": "français", "en": "anglais", "de": "allemand",
         "es": "espagnol", "it": "italien", "ar": "arabe",
     }
     nom_langue = noms_langues.get(st.session_state.langue, "anglais")
 
+    # Titres traduits
+    titres = {
+        "fr": {"rappel": "Rappel théorique", "concret": "Exemple concret",
+               "theorique": "Exemple théorique", "application": "Application à l'exercice"},
+        "en": {"rappel": "Theoretical reminder", "concret": "Concrete example",
+               "theorique": "Theoretical example", "application": "Application to the exercise"},
+        "de": {"rappel": "Theoretische Erinnerung", "concret": "Konkretes Beispiel",
+               "theorique": "Theoretisches Beispiel", "application": "Anwendung auf die Übung"},
+        "es": {"rappel": "Recordatorio teórico", "concret": "Ejemplo concreto",
+               "theorique": "Ejemplo teórico", "application": "Aplicación al ejercicio"},
+        "it": {"rappel": "Promemoria teorico", "concret": "Esempio concreto",
+               "theorique": "Esempio teorico", "application": "Applicazione all'esercizio"},
+        "ar": {"rappel": "تذكير نظري", "concret": "مثال ملموس",
+               "theorique": "مثال نظري", "application": "تطبيق على التمرين"},
+    }
+    titres_langue = titres.get(st.session_state.langue, titres["en"])
+
+    historique_txt = ""
+    if historique_explications:
+        historique_txt = "\n".join(
+            f"Étape {i+1} déjà validée : {exp}"
+            for i, exp in enumerate(historique_explications)
+        )
+
+    if mode == "standard":
+        instructions = (
+            f"You are a private math coach. Answer ONLY in {nom_langue}.\n"
+            f"The student is working on this exercise:\n{exercice}\n\n"
+            f"{historique_txt}\n\n"
+            f"STRICT RULES:\n"
+            f"1. Explain ONLY step {etape_numero} (not the following ones, not the final answer).\n"
+            f"2. Use simple words adapted to a high school student.\n"
+            f"3. MANDATORY STRUCTURE of your answer (in this order):\n"
+            f"   📖 **{titres_langue['rappel']}** : the rule/definition/formula used\n"
+            f"   💡 **{titres_langue['concret']}** : a daily life situation (money, distances, pizza...)\n"
+            f"   🧮 **{titres_langue['theorique']}** : a small fully solved example with DIFFERENT numbers\n"
+            f"   🎯 **{titres_langue['application']}** : what we concretely do here\n"
+            f"4. NEVER give the complete solution or the final result of the student's exercise.\n"
+            f"5. End with an encouraging tone.\n"
+            f"6. Maximum 15 lines.\n"
+            f"7. IMPORTANT: Write the titles EXACTLY as given above, in {nom_langue}, NOT in French.\n"
+        )
+    else:
+        instructions = (
+            f"You are a private math coach. Answer ONLY in {nom_langue}.\n"
+            f"The student is working on: {exercice}\n"
+            f"{historique_txt}\n\n"
+            f"The student did NOT UNDERSTAND step {etape_numero}. You must REFORMULATE it:\n"
+            f"- Use EVEN SIMPLER words.\n"
+            f"- OR propose ANOTHER METHOD (diagram, decomposition, analogy).\n"
+            f"- OR give a CONCRETE example from daily life.\n"
+            f"- Keep the structure: 📖 {titres_langue['rappel']} / 💡 {titres_langue['concret']} "
+            f"/ 🧮 {titres_langue['theorique']} / 🎯 {titres_langue['application']}\n"
+            f"- Still do NOT give the final answer.\n"
+            f"- Maximum 15 lines.\n"
+            f"- IMPORTANT: Write the titles in {nom_langue}, NOT in French.\n"
+        )
+
+    return _appeler_gemini(instructions, contenu="Génère l'étape demandée.")
+
+# ============================================================
+# PRÉAMBULE THÉORIQUE (MULTILINGUE)
+# ============================================================
+def generer_preambule_theorique(exercice):
+    noms_langues = {
+        "fr": "français", "en": "anglais", "de": "allemand",
+        "es": "espagnol", "it": "italien", "ar": "arabe",
+    }
+    nom_langue = noms_langues.get(st.session_state.langue, "français")
+
+    # Titres traduits
+    titres = {
+        "fr": {"rappel": "Rappel de cours", "concret": "Exemple concret",
+               "theorique": "Exemple théorique"},
+        "en": {"rappel": "Course reminder", "concret": "Concrete example",
+               "theorique": "Theoretical example"},
+        "de": {"rappel": "Kurserinnerung", "concret": "Konkretes Beispiel",
+               "theorique": "Theoretisches Beispiel"},
+        "es": {"rappel": "Recordatorio del curso", "concret": "Ejemplo concreto",
+               "theorique": "Ejemplo teórico"},
+        "it": {"rappel": "Promemoria del corso", "concret": "Esempio concreto",
+               "theorique": "Esempio teorico"},
+        "ar": {"rappel": "تذكير بالدرس", "concret": "مثال ملموس",
+               "theorique": "مثال نظري"},
+    }
+    titres_langue = titres.get(st.session_state.langue, titres["en"])
+
     instructions = (
-        f"Tu es un coach privé de mathématiques hautement qualifié, pédagogue et bienveillant. "
-        f"Réponds IMPÉRATIVEMENT en {nom_langue}. "
-        "Ton but est d'aider l'élève à comprendre son exercice, pas seulement de lui donner la réponse brute. "
-        "1. Salue brièvement l'élève de manière encourageante.\n"
-        "2. Rappelle brièvement les propriétés ou formules mathématiques nécessaires.\n"
-        "3. Propose une correction extrêmement détaillée, rédigée étape par étape.\n"
-        "4. Utilise un langage clair, accessible et structure tes calculs avec une mise en forme soignée.\n"
-        "5. Termine par un petit conseil ou un mot d'encouragement pour ses révisions.\n"
+        f"You are a math coach. Answer ONLY in {nom_langue}.\n"
+        f"The student submitted: {exercice}\n\n"
+        f"Generate a STRUCTURED PREAMBLE (max 25 lines):\n\n"
+        f"## 📖 {titres_langue['rappel']}\n"
+        f"- Necessary definition(s) and formula(s)\n"
+        f"- Important properties to know\n\n"
+        f"## 💡 {titres_langue['concret']}\n"
+        f"- A daily life situation illustrating the concept\n"
+        f"- Simple and explicit numbers\n\n"
+        f"## 🧮 {titres_langue['theorique']}\n"
+        f"- A small numerical example DIFFERENT from the student's exercise\n"
+        f"- Fully solved step by step\n\n"
+        f"Be clear, pedagogical, structured with Markdown titles.\n"
+        f"IMPORTANT: Write the titles in {nom_langue}, NOT in French.\n"
+        f"IMPORTANT: Always put a line break after each title."
     )
 
-    if st.session_state.langue == "ar":
-        instructions += (
-            "IMPORTANT pour l'arabe :\n"
-            "- Rédige tout le texte explicatif en arabe standard moderne.\n"
-            "- Utilise des formules LaTeX entre $ ... $ pour les maths inline "
-            "et $$ ... $$ pour les formules en bloc.\n"
-            "- ⚠️ N'ajoute JAMAIS d'espace avant les accents arabes "
-            "(أهلاً، حقاً، دائماً — PAS أهال ً، حقا ً، دائما ً).\n"
-            "- ⚠️ Colle toujours les accents au caractère qui les précède.\n"
-            "- ⚠️ Ne mets jamais d'espace avant la ponctuation (. ، ؟ !).\n"
-            "- ⚠️ N'utilise JAMAIS deux alifs consécutifs dans un mot "
-            "(écris الاستيعاب، الأساسية — PAS االستيعاب، األساسية)."
-        )
+    try:
+        return _appeler_gemini(instructions, contenu="Génère le préambule théorique.")
+    except Exception as e:
+        return f"_(Préambule indisponible : {e})_"
 
-  
-    modeles = [
-    "gemini-3.8-flash",       # Le plus récent et le plus capable
-    "gemini-3.6-flash",       # Alternative stable
-    "gemini-flash-latest",    # Toujours la dernière version
-]
+# ============================================================
+# GESTION DE L'ÉTAT PÉDAGOGIQUE
+# ============================================================
+def initialiser_session_pedago(exercice):
+    st.session_state.etape_actuelle = 1
+    st.session_state.historique_explications = []
+    st.session_state.explication_en_cours = None
+    st.session_state.dernier_enonce = exercice
+    st.session_state.correction_terminee = False
+    st.session_state.mode_explication = "standard"
+    st.session_state.preambule_theorique = None
 
-    derniere_erreur = None
+def reinitialiser_session_pedago():
+    for k in ["etape_actuelle", "historique_explications",
+              "explication_en_cours", "correction_terminee",
+              "mode_explication", "derniere_correction",
+              "preambule_theorique"]:
+        st.session_state.pop(k, None)
 
-    for mod in modeles:
-        for tentative in range(3):
+# ============================================================
+# AFFICHAGE DU COACH INTERACTIF
+# ============================================================
+def afficher_coach_interactif(exercice):
+    if st.session_state.etape_actuelle > 15:
+        st.session_state.correction_terminee = True
+        st.rerun()
+
+    if st.session_state.explication_en_cours is None:
+        with st.spinner(t("spinner")):
             try:
-                reponse_ia = client_ia.models.generate_content(
-                    model=mod,
-                    contents=exercice,
-                    config=types.GenerateContentConfig(
-                        system_instruction=instructions,
-                        temperature=0.3
-                    )
+                explication = generer_etape(
+                    exercice,
+                    st.session_state.etape_actuelle,
+                    st.session_state.historique_explications,
+                    mode=st.session_state.mode_explication
                 )
-                if reponse_ia and reponse_ia.text:
-                    return reponse_ia.text
-            except Exception as e:
-                derniere_erreur = str(e)
-                if "503" in derniere_erreur or "UNAVAILABLE" in derniere_erreur:
-                    time.sleep(2 + tentative * 2)
-                    continue
-                if "404" in derniere_erreur or "NOT_FOUND" in derniere_erreur:
-                    break
-                time.sleep(1)
-                continue
+                st.session_state.explication_en_cours = explication
+            except Exception as api_error:
+                afficher_erreur_ia(api_error)
+                if st.button("🔄 " + t("retry_button"),
+                             key=f"retry_{st.session_state.etape_actuelle}"):
+                    st.session_state.explication_en_cours = None
+                    st.rerun()
+                return
 
-    if "503" in str(derniere_erreur) or "UNAVAILABLE" in str(derniere_erreur):
-        return (
-            "⏳ Le service est momentanément surchargé. "
-            "Merci de réessayer dans 1 à 2 minutes. "
-            "Votre question gratuite n'a PAS été consommée."
-        )
+    st.progress(
+        min(st.session_state.etape_actuelle / 10, 1.0),
+        text=f"{t('coach_step')} {st.session_state.etape_actuelle}"
+    )
 
-    return f"❌ Erreur : {derniere_erreur}"
+    st.markdown(f"### 📘 {t('coach_step')} {st.session_state.etape_actuelle}")
+    st.markdown(st.session_state.explication_en_cours)
+    st.write("---")
+
+    st.markdown(f"**{t('coach_question')}**")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("✅ " + t("coach_yes"), use_container_width=True,
+                     type="primary", key=f"yes_{st.session_state.etape_actuelle}"):
+            st.session_state.historique_explications.append(
+                st.session_state.explication_en_cours
+            )
+            st.session_state.etape_actuelle += 1
+            st.session_state.explication_en_cours = None
+            st.session_state.mode_explication = "standard"
+            st.rerun()
+
+    with col2:
+        if st.button("🔄 " + t("coach_no"), use_container_width=True,
+                     key=f"no_{st.session_state.etape_actuelle}"):
+            st.session_state.mode_explication = "alternative"
+            st.session_state.explication_en_cours = None
+            st.rerun()
+
+    if st.session_state.etape_actuelle >= 3:
+        if st.button("🎉 " + t("coach_finish"), use_container_width=True,
+                     key=f"finish_{st.session_state.etape_actuelle}"):
+            st.session_state.correction_terminee = True
+            st.rerun()
 
 # ============================================================
-# AFFICHAGE CORRECTION + PDF
+# AFFICHAGE RÉCAPITULATIF FINAL + PDF
 # ============================================================
-def afficher_correction_et_pdf(nom_fichier="correction_coach_math.pdf"):
-    if 'derniere_correction' in st.session_state:
-        try:
-            pdf_buffer = generer_pdf(
-                st.session_state['derniere_correction'],
-                st.session_state['dernier_enonce']
-            )
-            st.download_button(
-                label=t("button_download_pdf"),
-                data=pdf_buffer,
-                file_name=nom_fichier,
-                mime="application/pdf",
-                use_container_width=True
-            )
-        except Exception as e:
-            st.warning(f"PDF indisponible : {e}")
+def afficher_recapitulatif_final(nom_fichier="correction_coach_math.pdf"):
+    st.success(t("coach_done"))
+
+    exercice = st.session_state.get('dernier_enonce', '')
+
+    if st.session_state.get("preambule_theorique") is None:
+        with st.spinner("📖 Génération du rappel de cours..."):
+            preambule = generer_preambule_theorique(exercice)
+            st.session_state.preambule_theorique = preambule
+
+    preambule = st.session_state.preambule_theorique
+
+    resolution = "\n\n".join(
+        f"### {t('coach_step')} {i+1}\n{exp}"
+        for i, exp in enumerate(st.session_state.get("historique_explications", []))
+    )
+
+    recapitulatif_complet = (
+        f"# 📖 {t('preambule_title')}\n\n{preambule}\n\n"
+        f"---\n\n# 📝 {t('pdf_resolution')}\n\n{resolution}"
+    )
+    st.session_state['derniere_correction'] = recapitulatif_complet
+
+    st.write("---")
+    st.markdown(f"#### {t('coach_summary')}")
+    st.markdown(recapitulatif_complet)
+
+    pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
+    st.download_button(
+        label=t("button_download_pdf"),
+        data=pdf_buffer,
+        file_name=nom_fichier,
+        mime="application/pdf",
+        use_container_width=True
+    )
+
+    if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
+        reinitialiser_session_pedago()
+        st.rerun()
+
+# ============================================================
+# GESTION D'ERREUR IA LISIBLE
+# ============================================================
+def afficher_erreur_ia(api_error):
+    message = str(api_error)
+    if "401" in message or "UNAUTHENTICATED" in message or "API_KEY_INVALID" in message:
+        st.error("🔑 Problème d'authentification avec l'API. Vérifiez votre clé API dans les secrets Streamlit.")
+    elif "404" in message or "NOT_FOUND" in message:
+        st.error("🤖 Le modèle demandé n'est pas disponible avec votre clé API. Vérifiez la région ou le nom du modèle.")
+    elif "503" in message or "UNAVAILABLE" in message:
+        st.error("⏳ Le service est momentanément surchargé. Merci de réessayer dans quelques instants.")
+    elif "429" in message or "RESOURCE_EXHAUSTED" in message:
+        st.error("⏳ Trop de requêtes envoyées. Merci de patienter une minute avant de réessayer.")
+    else:
+        st.error(f"Erreur lors de la génération : {api_error}")
 
 # ============================================================
 # INTERFACE
@@ -709,6 +971,7 @@ if est_rembourse:
 elif not est_abonne:
     if "free_question_used" not in st.session_state:
         st.session_state.free_question_used = False
+
     if "email_verifie" not in st.session_state:
         st.session_state.email_verifie = None
 
@@ -726,84 +989,104 @@ elif not est_abonne:
     )
     st.markdown(
         f"<p style='text-align: center; font-size: 1.2em; color: #4B5563;'>{t('hero_subtitle')}</p>",
-        unsafe_allow_html=True    )
+        unsafe_allow_html=True
+    )
     st.write("---")
 
-    # ---------- BLOC : ÉTAPE 1 (email) ----------
-    if st.session_state.email_verifie is None and not st.session_state.free_question_used:
-        st.markdown(f"#### {t('email_step_title')}")
-        email_saisi = st.text_input(
-            t("email_label"),
-            placeholder=t("email_placeholder"),
-            help=t("email_help"),
-            key="email_input"
-        )
-        if st.button(t("email_continue_btn"), type="primary", use_container_width=True, key="btn_email"):
-            email_clean = email_saisi.strip().lower()
-            if not email_valide(email_clean):
-                st.error(t("email_invalid"))
-            elif email_deja_utilise(email_clean):
-                st.error(t("email_already_used"))
-                st.info(t("free_question_used_msg"))
-            else:
-                st.session_state.email_verifie = email_clean
-                st.rerun()
-
-    # ---------- BLOC : ÉTAPE 2 (question gratuite) ----------
-    elif not st.session_state.free_question_used:
-        st.success(t("email_verified"))
-        st.markdown(f"#### {t('question_step_title')}")
-        st.info(t("free_question_remaining"))
-        st.write("---")
-
-        exercice_gratuit = st.text_area(
-            t("free_question_label"),
-            height=150,
-            key="free_question_input"
+    if not st.session_state.free_question_used:
+        st.markdown(
+            f"""
+            <div style="
+                background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+                padding: 20px;
+                border-radius: 12px;
+                text-align: center;
+                margin-bottom: 20px;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            ">
+                <h2 style="color: white; margin: 0 0 8px 0; font-size: 1.6em;">
+                    {t('free_question_title')}
+                </h2>
+                <p style="color: #ECFDF5; margin: 0; font-size: 1.05em;">
+                    {t('free_question_subtitle')}
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-        if st.button(t("free_question_button"), type="primary", use_container_width=True, key="btn_free"):
-            if not exercice_gratuit.strip():
-                st.warning(t("warning_empty"))
+    if not st.session_state.free_question_used:
+        if st.session_state.email_verifie is None:
+            st.markdown(f"#### {t('email_step_title')}")
+            email_saisi = st.text_input(
+                t("email_label"),
+                placeholder=t("email_placeholder"),
+                help=t("email_help"),
+                key="email_input"
+            )
+            if st.button(t("email_continue_btn"), type="primary",
+                         use_container_width=True, key="btn_email"):
+                email_clean = email_saisi.strip().lower()
+                if not email_valide(email_clean):
+                    st.error(t("email_invalid"))
+                elif email_deja_utilise(email_clean):
+                    st.error(t("email_already_used"))
+                    st.info(t("free_question_used_msg"))
+                else:
+                    st.session_state.email_verifie = email_clean
+                    st.rerun()
+        else:
+            st.success(t("email_verified"))
+            st.markdown(f"#### {t('question_step_title')}")
+
+            if "etape_actuelle" not in st.session_state:
+                st.info(t("free_question_remaining"))
+                st.write("---")
+                exercice_gratuit = st.text_area(
+                    t("free_question_label"),
+                    height=150,
+                    key="free_question_input"
+                )
+                if st.button(t("free_question_button"), type="primary",
+                             use_container_width=True, key="btn_free"):
+                    if not exercice_gratuit.strip():
+                        st.warning(t("warning_empty"))
+                    else:
+                        sauvegarder_email(st.session_state.email_verifie)
+                        st.session_state.free_question_used = True
+                        if cookie_manager is not None:
+                            try:
+                                cookie_manager.set(
+                                    "free_question_used", "1",
+                                    expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
+                                )
+                            except Exception:
+                                pass
+                        initialiser_session_pedago(exercice_gratuit)
+                        st.rerun()
             else:
-                with st.spinner(t("spinner")):
-                    try:
-                        correction = generer_correction(exercice_gratuit)
-
-                        if correction.startswith("❌") or correction.startswith("⏳"):
-                            st.warning(correction)
-                        else:
-                            sauvegarder_email(st.session_state.email_verifie)
-                            st.session_state.free_question_used = True
-                            st.session_state['derniere_correction'] = correction
-                            st.session_state['dernier_enonce'] = exercice_gratuit
-                            if cookie_manager is not None:
-                                try:
-                                    cookie_manager.set(
-                                        "free_question_used", "1",
-                                        expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
-                                    )
-                                except Exception:
-                                    pass
-                            st.rerun()
-                    except Exception as api_error:
-                        st.error(f"Erreur lors de la génération : {api_error}")
-
-    # ---------- BLOC : AFFICHAGE DE LA CORRECTION GRATUITE ----------
+                if st.session_state.get("correction_terminee"):
+                    afficher_recapitulatif_final("correction_gratuite.pdf")
+                    st.write("---")
+                    st.success(t("free_question_used"))
+                    st.markdown(t("free_question_used_msg"))
+                    st.write("---")
+                else:
+                    afficher_coach_interactif(st.session_state['dernier_enonce'])
     else:
-        st.success(t("free_question_used"))
-        st.write("---")
-
-        if 'derniere_correction' in st.session_state:
-            st.markdown(f"### ✨ {t('correction_title')}")
-            st.markdown(st.session_state['derniere_correction'])
+        if "etape_actuelle" in st.session_state:
+            if st.session_state.get("correction_terminee"):
+                afficher_recapitulatif_final("correction_gratuite.pdf")
+            else:
+                afficher_coach_interactif(st.session_state['dernier_enonce'])
             st.write("---")
-            afficher_correction_et_pdf("correction_gratuite.pdf")
+            st.success(t("free_question_used"))
+            st.markdown(t("free_question_used_msg"))
+            st.write("---")
+        else:
+            st.info(t("free_question_used_msg"))
+            st.write("---")
 
-        st.write("---")
-        st.info(t("free_question_used_msg"))
-
-    # ---------- BLOC : OFFRE PAYANTE ----------
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"**{t('feature1_title')}**")
@@ -828,7 +1111,8 @@ elif not est_abonne:
                 <li>{t('offer_bullet4')}</li>
             </ul>
         </div>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
 
     if st.button(t("button_pay"), use_container_width=True, type="primary", key="btn_pay"):
@@ -854,30 +1138,23 @@ elif not est_abonne:
 
 # Cas 3 : Payé
 else:
-    st.markdown(f"<h1 style='text-align: center; color: #10B981;'>{t('premium_activated')}</h1>", unsafe_allow_html=True)
+    st.markdown(
+        f"<h1 style='text-align: center; color: #10B981;'>{t('premium_activated')}</h1>",
+        unsafe_allow_html=True
+    )
     st.success(t("premium_msg", email=email_eleve))
 
-    exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
-
-    if st.button(t("button_correct"), type="primary", use_container_width=True, key="btn_correct"):
-        if not exercice.strip():
-            st.warning(t("warning_empty"))
+    if "etape_actuelle" not in st.session_state:
+        exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
+        if st.button(t("button_correct"), type="primary",
+                     use_container_width=True, key="btn_correct"):
+            if not exercice.strip():
+                st.warning(t("warning_empty"))
+            else:
+                initialiser_session_pedago(exercice)
+                st.rerun()
+    else:
+        if st.session_state.get("correction_terminee"):
+            afficher_recapitulatif_final("correction_coach_math.pdf")
         else:
-            with st.spinner(t("spinner")):
-                try:
-                    correction = generer_correction(exercice)
-
-                    if correction.startswith("❌") or correction.startswith("⏳"):
-                        st.warning(correction)
-                    else:
-                        st.session_state['derniere_correction'] = correction
-                        st.session_state['dernier_enonce'] = exercice
-                        st.rerun()
-                except Exception as api_error:
-                    st.error(f"Erreur lors de la génération : {api_error}")
-
-    if 'derniere_correction' in st.session_state:
-        st.markdown(f"### ✨ {t('correction_title')}")
-        st.markdown(st.session_state['derniere_correction'])
-        st.write("---")
-        afficher_correction_et_pdf("correction_coach_math.pdf")
+            afficher_coach_interactif(st.session_state['dernier_enonce'])
