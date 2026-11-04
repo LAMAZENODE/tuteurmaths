@@ -852,6 +852,8 @@ def afficher_video(exercice, etape=None):
         st.markdown(f"### [{query}]({lien})")
         st.caption("Clique sur le lien pour voir les vidéos YouTube.")
 def afficher_coach_interactif(exercice):
+     if "video_query" not in st.session_state:
+        st.session_state.video_query = exercice[:80]
     if st.session_state.etape_actuelle > 15:
         st.session_state.correction_terminee = True
         st.rerun()
