@@ -386,39 +386,41 @@ else:
     cookie_manager = None
 
 # ============================================================
-# GESTION DES EMAILS UTILISÉS
+# GESTION DES EMAILS (persistant, via Stripe)
 # ============================================================
-CHEMIN_EMAILS = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "emails_utilises.json"
-)
-
-def charger_emails_utilises():
-    if not os.path.exists(CHEMIN_EMAILS):
-        return []
-    try:
-        with open(CHEMIN_EMAILS, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
-
-def sauvegarder_email(email):
-    emails = charger_emails_utilises()
-    if email not in emails:
-        emails.append(email)
-        try:
-            with open(CHEMIN_EMAILS, "w", encoding="utf-8") as f:
-                json.dump(emails, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
 
 def email_deja_utilise(email):
-    return email.lower().strip() in [e.lower().strip() for e in charger_emails_utilises()]
+    """Vérifie dans Stripe si cet email a déjà utilisé son essai gratuit."""
+    email = email.lower().strip()
+    try:
+        customers = stripe.Customer.list(email=email, limit=1)
+        if customers.data:
+            return customers.data[0].metadata.get("free_trial_used") == "true"
+    except Exception:
+        pass
+    return False
+
+
+def sauvegarder_email(email):
+    """Marque l'email comme 'essai utilisé' dans Stripe."""
+    email = email.lower().strip()
+    try:
+        customers = stripe.Customer.list(email=email, limit=1)
+        if customers.data:
+            customer = customers.data[0]
+        else:
+            customer = stripe.Customer.create(email=email)
+        stripe.Customer.modify(
+            customer.id,
+            metadata={"free_trial_used": "true"}
+        )
+    except Exception as e:
+        print(f"Erreur sauvegarde email : {e}")
+
 
 def email_valide(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return re.match(pattern, email.strip()) is not None
-
 # ============================================================
 # SECRETS
 # ============================================================
