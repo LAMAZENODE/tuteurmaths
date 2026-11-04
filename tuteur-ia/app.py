@@ -828,8 +828,7 @@ def initialiser_session_pedago(exercice):
     st.session_state.correction_terminee = False
     st.session_state.mode_explication = "standard"
     st.session_state.preambule_theorique = None
-     st.session_state.video_query = exercice[:80]
-
+    st.session_state.video_query = exercice[:80]
 def reinitialiser_session_pedago():
     for k in ["etape_actuelle", "historique_explications",
               "explication_en_cours", "correction_terminee",
