@@ -882,6 +882,7 @@ def afficher_coach_interactif(exercice):
 
     st.markdown(f"### 📘 {t('coach_step')} {st.session_state.etape_actuelle}")
     st.markdown(st.session_state.explication_en_cours)
+afficher_video(st.session_state.dernier_enonce, etape=st.session_state.etape_actuelle)
     st.write("---")
 
     st.markdown(f"**{t('coach_question')}**")
