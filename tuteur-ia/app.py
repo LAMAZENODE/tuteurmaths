@@ -1,3 +1,4 @@
+import urllib.parse
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -827,6 +828,7 @@ def initialiser_session_pedago(exercice):
     st.session_state.correction_terminee = False
     st.session_state.mode_explication = "standard"
     st.session_state.preambule_theorique = None
+     st.session_state.video_query = exercice[:80]
 
 def reinitialiser_session_pedago():
     for k in ["etape_actuelle", "historique_explications",
@@ -838,6 +840,18 @@ def reinitialiser_session_pedago():
 # ============================================================
 # AFFICHAGE DU COACH INTERACTIF
 # ============================================================
+def afficher_video(exercice, etape=None):
+    """Affiche un bouton qui ouvre YouTube sur le bon concept."""
+    with st.expander("📺 Voir une vidéo explicative", expanded=False):
+        # Utilise la requête préparée par l'IA, sinon le début de l'exercice
+        query = st.session_state.get("video_query") or exercice[:80]
+        if not query:
+            st.info("Pas de vidéo disponible.")
+            return
+        
+        lien = "https://www.youtube.com/results?search_query=" + urllib.parse.quote(query)
+        st.markdown(f"### [{query}]({lien})")
+        st.caption("Clique sur le lien pour voir les vidéos YouTube.")
 def afficher_coach_interactif(exercice):
     if st.session_state.etape_actuelle > 15:
         st.session_state.correction_terminee = True
