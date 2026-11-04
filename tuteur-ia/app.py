@@ -851,9 +851,11 @@ def afficher_video(exercice, etape=None):
         lien = "https://www.youtube.com/results?search_query=" + urllib.parse.quote(query)
         st.markdown(f"### [{query}]({lien})")
         st.caption("Clique sur le lien pour voir les vidéos YouTube.")
+
 def afficher_coach_interactif(exercice):
-     if "video_query" not in st.session_state:
+    if "video_query" not in st.session_state:
         st.session_state.video_query = exercice[:80]
+
     if st.session_state.etape_actuelle > 15:
         st.session_state.correction_terminee = True
         st.rerun()
@@ -883,7 +885,9 @@ def afficher_coach_interactif(exercice):
 
     st.markdown(f"### 📘 {t('coach_step')} {st.session_state.etape_actuelle}")
     st.markdown(st.session_state.explication_en_cours)
-afficher_video(st.session_state.dernier_enonce, etape=st.session_state.etape_actuelle)
+
+    afficher_video(st.session_state.dernier_enonce)
+
     st.write("---")
 
     st.markdown(f"**{t('coach_question')}**")
@@ -912,7 +916,6 @@ afficher_video(st.session_state.dernier_enonce, etape=st.session_state.etape_act
                      key=f"finish_{st.session_state.etape_actuelle}"):
             st.session_state.correction_terminee = True
             st.rerun()
-
 # ============================================================
 # AFFICHAGE RÉCAPITULATIF FINAL + PDF
 # ============================================================
