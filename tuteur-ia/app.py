@@ -1143,36 +1143,25 @@ Réponds en français avec une présentation soignée.
                         st.error(f"Erreur de génération : {e}")
 
         
-        if st.session_state.get("sujet_genere"):
 
-    st.markdown("---")
-    st.markdown("### 📄 Votre sujet est prêt")
+                if st.session_state.get("sujet_genere"):
 
-    st.markdown(st.session_state.sujet_genere)
+            st.markdown("---")
+            st.markdown("### 📄 Votre sujet est prêt")
 
-    pdf_sujet = generer_pdf_sujet(
-        st.session_state.sujet_genere
-    )
+            st.markdown(st.session_state.sujet_genere)
 
-    st.download_button(
-        "📥 Télécharger le sujet en PDF",
-        data=pdf_sujet.getvalue(),
-        file_name="sujet_evaluation.pdf",
-        mime="application/pdf",
-        use_container_width=True
-    )
+            pdf_sujet = generer_pdf_sujet(
+                st.session_state.sujet_genere
+            )
 
-pdf_sujet = generer_pdf_sujet(
-    st.session_state.sujet_genere
-)
-
-st.download_button(
-    "📥 Télécharger le sujet en PDF",
-    data=pdf_sujet.getvalue(),
-    file_name="sujet_evaluation.pdf",
-    mime="application/pdf",
-    use_container_width=True
-)
+            st.download_button(
+                "📥 Télécharger le sujet en PDF",
+                data=pdf_sujet.getvalue(),
+                file_name="sujet_evaluation.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
 # ============================================================
 # INTERFACE
 # ============================================================
