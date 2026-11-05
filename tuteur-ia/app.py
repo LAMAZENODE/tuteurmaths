@@ -10,6 +10,8 @@ import os
 import time
 import random
 import datetime
+if "sujet_genere" not in st.session_state:
+    st.session_state.sujet_genere = ""
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -1140,20 +1142,25 @@ Réponds en français avec une présentation soignée.
                     except Exception as e:
                         st.error(f"Erreur de génération : {e}")
 
+        
         if st.session_state.get("sujet_genere"):
 
-            st.markdown("---")
-            st.markdown("### 📄 Votre sujet est prêt")
+    st.markdown("---")
+    st.markdown("### 📄 Votre sujet est prêt")
 
-            st.markdown(st.session_state.sujet_genere)
+    st.markdown(st.session_state.sujet_genere)
 
-            pdf_sujet = generer_pdf_sujet(
-    st.session_state.sujet_genere
-)
+    pdf_sujet = generer_pdf_sujet(
+        st.session_state.sujet_genere
+    )
 
-pdf_sujet = generer_pdf_sujet(
-    st.session_state.sujet_genere
-)
+    st.download_button(
+        "📥 Télécharger le sujet en PDF",
+        data=pdf_sujet.getvalue(),
+        file_name="sujet_evaluation.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )
 
 pdf_sujet = generer_pdf_sujet(
     st.session_state.sujet_genere
