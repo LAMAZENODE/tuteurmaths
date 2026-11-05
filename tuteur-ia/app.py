@@ -977,6 +977,80 @@ def afficher_erreur_ia(api_error):
 # ============================================================
 # GÉNÉRATEUR DE SUJETS D'ÉVALUATION ET DE CONCOURS
 # ============================================================
+def generer_pdf_sujet(texte_sujet):
+    from reportlab.lib.pagesizes import A4
+    from xml.sax.saxutils import escape
+
+    buffer = io.BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=45,
+        leftMargin=45,
+        topMargin=45,
+        bottomMargin=45
+    )
+
+    styles = getSampleStyleSheet()
+
+    titre = ParagraphStyle(
+        "TitreSujet",
+        parent=styles["Title"],
+        fontSize=20,
+        textColor="#1E3A8A",
+        alignment=TA_CENTER,
+        spaceAfter=25
+    )
+
+    corps = ParagraphStyle(
+        "CorpsSujet",
+        parent=styles["BodyText"],
+        fontSize=11,
+        leading=17,
+        spaceAfter=10
+    )
+
+    sous_titre = ParagraphStyle(
+        "SousTitreSujet",
+        parent=styles["Heading2"],
+        textColor="#1E3A8A",
+        spaceBefore=12,
+        spaceAfter=8
+    )
+
+    contenu = [
+        Paragraph("SUJET D'ÉVALUATION / CONCOURS", titre)
+    ]
+
+    for ligne in texte_sujet.splitlines():
+        ligne = ligne.strip()
+
+        if not ligne:
+            contenu.append(Spacer(1, 8))
+
+        elif ligne.startswith("#"):
+            texte = ligne.lstrip("#").strip()
+            contenu.append(
+                Paragraph(escape(texte), sous_titre)
+            )
+
+        else:
+            texte = escape(ligne)
+            texte = re.sub(
+                r"\*\*(.*?)\*\*",
+                r"<b>\1</b>",
+                texte
+            )
+
+            contenu.append(
+                Paragraph(texte, corps)
+            )
+
+    doc.build(contenu)
+
+    buffer.seek(0)
+    return buffer
 
 def afficher_generateur_sujet():
 
@@ -1073,13 +1147,25 @@ Réponds en français avec une présentation soignée.
 
             st.markdown(st.session_state.sujet_genere)
 
-            st.download_button(
-                "📥 Télécharger le sujet",
-                data=st.session_state.sujet_genere.encode("utf-8"),
-                file_name="sujet_evaluation.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
+            pdf_sujet = generer_pdf_sujet(
+    st.session_state.sujet_genere
+)
+
+pdf_sujet = generer_pdf_sujet(
+    st.session_state.sujet_genere
+)
+
+pdf_sujet = generer_pdf_sujet(
+    st.session_state.sujet_genere
+)
+
+st.download_button(
+    "📥 Télécharger le sujet en PDF",
+    data=pdf_sujet.getvalue(),
+    file_name="sujet_evaluation.pdf",
+    mime="application/pdf",
+    use_container_width=True
+)
 # ============================================================
 # INTERFACE
 # ============================================================
