@@ -1105,8 +1105,7 @@ elif not est_abonne:
             if cookie_val == "1":
                 st.session_state.free_question_used = True
         except Exception:
-            pass
-
+            pass 
     st.markdown(
         f"<h1 style='text-align: center; color: #1E3A8A;'>{t('hero_title')}</h1>",
         unsafe_allow_html=True
@@ -1115,7 +1114,7 @@ elif not est_abonne:
         f"<p style='text-align: center; font-size: 1.2em; color: #4B5563;'>{t('hero_subtitle')}</p>",
         unsafe_allow_html=True
     )
-        st.write("---")
+    st.write("---")
 
     if not st.session_state.free_question_used:
         st.markdown(
