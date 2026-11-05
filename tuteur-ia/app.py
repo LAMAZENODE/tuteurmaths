@@ -979,6 +979,7 @@ def afficher_erreur_ia(api_error):
 # ============================================================
 # GÉNÉRATEUR DE SUJETS D'ÉVALUATION ET DE CONCOURS
 # ============================================================
+
 def generer_pdf_sujet(texte_sujet):
     from reportlab.lib.pagesizes import A4
     from xml.sax.saxutils import escape
@@ -1021,6 +1022,52 @@ def generer_pdf_sujet(texte_sujet):
         spaceAfter=8
     )
 
+    def nettoyer_formules(texte):
+        # Enlever les délimiteurs LaTeX
+        texte = re.sub(r'\$\$(.*?)\$\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\$(.*?)\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
+
+        # Remplacer les commandes mathématiques courantes
+        remplacements = {
+            r'\in': '∈',
+            r'\notin': '∉',
+            r'\neq': '≠',
+            r'\leq': '≤',
+            r'\geq': '≥',
+            r'\times': '×',
+            r'\cdot': '·',
+            r'\pi': 'π',
+            r'\Delta': 'Δ',
+            r'\infty': '∞',
+            r'\pm': '±',
+            r'\approx': '≈',
+            r'\rightarrow': '→',
+            r'\Rightarrow': '⇒',
+            r'\sqrt': '√',
+        }
+
+        for ancien, nouveau in remplacements.items():
+            texte = texte.replace(ancien, nouveau)
+
+        # Fractions simples
+        texte = re.sub(
+            r'\\frac\{([^{}]+)\}\{([^{}]+)\}',
+            r'(\1)/(\2)',
+            texte
+        )
+
+        # Exposants et indices simples
+        texte = re.sub(r'\^\{?2\}?', '²', texte)
+        texte = re.sub(r'\^\{?3\}?', '³', texte)
+
+        # Supprimer les étoiles Markdown autour du texte
+        texte = re.sub(r'\*\*(.*?)\*\*', r'\1', texte)
+        texte = re.sub(r'\*(.*?)\*', r'\1', texte)
+
+        return texte
+
     contenu = [
         Paragraph("SUJET D'ÉVALUATION / CONCOURS", titre)
     ]
@@ -1030,18 +1077,22 @@ def generer_pdf_sujet(texte_sujet):
 
         if not ligne:
             contenu.append(Spacer(1, 8))
+            continue
 
-        elif ligne.startswith("#"):
+        ligne = nettoyer_formules(ligne)
+
+        if ligne.startswith("#"):
             texte = ligne.lstrip("#").strip()
             contenu.append(
                 Paragraph(escape(texte), sous_titre)
             )
-
         else:
             texte = escape(ligne)
+
+            # Gras Markdown
             texte = re.sub(
-                r"\*\*(.*?)\*\*",
-                r"<b>\1</b>",
+                r'\*\*(.*?)\*\*',
+                r'<b>\1</b>',
                 texte
             )
 
@@ -1053,6 +1104,7 @@ def generer_pdf_sujet(texte_sujet):
 
     buffer.seek(0)
     return buffer
+
 
 def afficher_generateur_sujet():
 
