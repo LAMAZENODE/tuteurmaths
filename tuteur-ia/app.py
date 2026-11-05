@@ -1159,6 +1159,18 @@ elif not est_abonne:
                 else:
                     st.session_state.email_verifie = email_clean
                     st.rerun()
+                                st.write("---")
+
+            if st.button(
+                "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
+                use_container_width=True,
+                key="btn_sujet_gratuit"
+            ):
+                st.session_state.ouvrir_generateur_sujet = True
+                st.rerun()
+
+            if st.session_state.get("ouvrir_generateur_sujet", False):
+                afficher_generateur_sujet()
         else:
             st.success(t("email_verified"))
             st.markdown(f"#### {t('question_step_title')}")
