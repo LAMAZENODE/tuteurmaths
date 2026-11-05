@@ -888,7 +888,7 @@ def afficher_coach_interactif(exercice):
 
     afficher_video(st.session_state.dernier_enonce)
 
-     st.write("---")
+    st.write("---")
 
     st.markdown(f"**{t('coach_question')}**")
 
