@@ -888,7 +888,7 @@ def afficher_coach_interactif(exercice):
 
     afficher_video(st.session_state.dernier_enonce)
 
-    st.write("---")
+     st.write("---")
 
     st.markdown(f"**{t('coach_question')}**")
 
@@ -1115,7 +1115,7 @@ elif not est_abonne:
         f"<p style='text-align: center; font-size: 1.2em; color: #4B5563;'>{t('hero_subtitle')}</p>",
         unsafe_allow_html=True
     )
-    st.write("---")
+        st.write("---")
 
     if not st.session_state.free_question_used:
         st.markdown(
@@ -1159,7 +1159,7 @@ elif not est_abonne:
                 else:
                     st.session_state.email_verifie = email_clean
                     st.rerun()
-                                st.write("---")
+                    st.write("---")
 
             if st.button(
                 "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
