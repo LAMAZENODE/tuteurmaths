@@ -1145,7 +1145,7 @@ Réponds en français avec une présentation soignée.
         
 
                
-          if st.session_state.get("sujet_genere"):
+        if st.session_state.get("sujet_genere"):
 
             st.markdown("---")
             st.markdown("### 📄 Votre sujet est prêt")
