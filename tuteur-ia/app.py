@@ -974,7 +974,112 @@ def afficher_erreur_ia(api_error):
         st.error("⏳ Trop de requêtes envoyées. Merci de patienter une minute avant de réessayer.")
     else:
         st.error(f"Erreur lors de la génération : {api_error}")
+# ============================================================
+# GÉNÉRATEUR DE SUJETS D'ÉVALUATION ET DE CONCOURS
+# ============================================================
 
+def afficher_generateur_sujet():
+
+    if "ouvrir_generateur_sujet" not in st.session_state:
+        st.session_state.ouvrir_generateur_sujet = False
+
+    if st.button(
+        "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
+        use_container_width=True
+    ):
+        st.session_state.ouvrir_generateur_sujet = True
+
+    if st.session_state.ouvrir_generateur_sujet:
+
+        with st.form("form_sujet_evaluation"):
+
+            st.markdown("### 📚 Création de votre sujet")
+
+            niveau = st.selectbox(
+                "Choisissez votre niveau :",
+                ["6ème", "5ème", "4ème", "3ème",
+                 "Seconde", "Première", "Terminale",
+                 "Concours"]
+            )
+
+            type_sujet = st.selectbox(
+                "Type de sujet :",
+                ["Évaluation", "Concours", "Brevet", "Baccalauréat"]
+            )
+
+            chapitre = st.text_input(
+                "Chapitre ou thème souhaité :",
+                placeholder="Exemple : Théorème de Pythagore"
+            )
+
+            difficulte = st.selectbox(
+                "Niveau de difficulté :",
+                ["Facile", "Moyen", "Difficile"]
+            )
+
+            duree = st.selectbox(
+                "Durée du sujet :",
+                ["30 minutes", "1 heure", "1 heure 30", "2 heures"]
+            )
+
+            generer = st.form_submit_button(
+                "🚀 Générer mon sujet",
+                use_container_width=True
+            )
+
+        if generer:
+
+            if not chapitre.strip():
+                st.warning("Veuillez indiquer un chapitre ou un thème.")
+            else:
+                with st.spinner("⏳ Création de votre sujet..."):
+
+                    try:
+                        instructions = f"""
+Tu es un professeur de mathématiques expérimenté.
+
+Crée un sujet de {type_sujet} en mathématiques.
+
+Niveau : {niveau}
+Chapitre : {chapitre}
+Difficulté : {difficulte}
+Durée : {duree}
+
+Le sujet doit contenir :
+1. Un titre clair.
+2. Plusieurs exercices progressifs.
+3. Des consignes précises.
+4. Un barème sur 20 points.
+5. Un niveau adapté aux élèves.
+
+Ne donne pas les corrections dans le sujet.
+Réponds en français avec une présentation soignée.
+"""
+
+                        sujet = _appeler_gemini(
+                            instructions,
+                            contenu="Génère le sujet demandé."
+                        )
+
+                        st.session_state.sujet_genere = sujet
+
+                    except Exception as e:
+                        st.error(f"Erreur de génération : {e}")
+
+        if st.session_state.get("sujet_genere"):
+
+            st.markdown("---")
+            st.markdown("### 📄 Votre sujet est prêt")
+
+            st.markdown(st.session_state.sujet_genere)
+
+            st.download_button(
+                "📥 Télécharger le sujet",
+                data=st.session_state.sujet_genere.encode("utf-8"),
+                file_name="sujet_evaluation.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
 # ============================================================
 # INTERFACE
 # ============================================================
