@@ -10,6 +10,8 @@ import os
 import time
 import random
 import datetime
+if "sujet_genere" not in st.session_state:
+    st.session_state.sujet_genere = ""
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -828,15 +830,17 @@ def initialiser_session_pedago(exercice):
     st.session_state.correction_terminee = False
     st.session_state.mode_explication = "standard"
     st.session_state.preambule_theorique = None
-    st.session_state.video_query = exercice[:80] 
-
+    st.session_state.video_query = exercice[:80]
 def reinitialiser_session_pedago():
     for k in ["etape_actuelle", "historique_explications",
               "explication_en_cours", "correction_terminee",
               "mode_explication", "derniere_correction",
               "preambule_theorique"]:
         st.session_state.pop(k, None)
-                  
+
+# ============================================================
+# AFFICHAGE DU COACH INTERACTIF
+# ============================================================
 def afficher_video(exercice, etape=None):
     """Affiche un bouton qui ouvre YouTube sur le bon concept."""
     with st.expander("📺 Voir une vidéo explicative", expanded=False):
@@ -849,10 +853,11 @@ def afficher_video(exercice, etape=None):
         lien = "https://www.youtube.com/results?search_query=" + urllib.parse.quote(query)
         st.markdown(f"### [{query}]({lien})")
         st.caption("Clique sur le lien pour voir les vidéos YouTube.")
-# ============================================================
-# AFFICHAGE DU COACH INTERACTIF
-# ============================================================
+
 def afficher_coach_interactif(exercice):
+    if "video_query" not in st.session_state:
+        st.session_state.video_query = exercice[:80]
+
     if st.session_state.etape_actuelle > 15:
         st.session_state.correction_terminee = True
         st.rerun()
@@ -882,7 +887,9 @@ def afficher_coach_interactif(exercice):
 
     st.markdown(f"### 📘 {t('coach_step')} {st.session_state.etape_actuelle}")
     st.markdown(st.session_state.explication_en_cours)
-    afficher_video(st.session_state.dernier_enonce, etape=st.session_state.etape_actuelle)
+
+    afficher_video(st.session_state.dernier_enonce)
+
     st.write("---")
 
     st.markdown(f"**{t('coach_question')}**")
@@ -911,7 +918,6 @@ def afficher_coach_interactif(exercice):
                      key=f"finish_{st.session_state.etape_actuelle}"):
             st.session_state.correction_terminee = True
             st.rerun()
-
 # ============================================================
 # AFFICHAGE RÉCAPITULATIF FINAL + PDF
 # ============================================================
@@ -970,7 +976,245 @@ def afficher_erreur_ia(api_error):
         st.error("⏳ Trop de requêtes envoyées. Merci de patienter une minute avant de réessayer.")
     else:
         st.error(f"Erreur lors de la génération : {api_error}")
+# ============================================================
+# GÉNÉRATEUR DE SUJETS D'ÉVALUATION ET DE CONCOURS
+# ============================================================
 
+def generer_pdf_sujet(texte_sujet):
+    from reportlab.lib.pagesizes import A4
+    from xml.sax.saxutils import escape
+
+    buffer = io.BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=45,
+        leftMargin=45,
+        topMargin=45,
+        bottomMargin=45
+    )
+
+    styles = getSampleStyleSheet()
+
+    titre = ParagraphStyle(
+        "TitreSujet",
+        parent=styles["Title"],
+        fontSize=20,
+        textColor="#1E3A8A",
+        alignment=TA_CENTER,
+        spaceAfter=25
+    )
+
+    corps = ParagraphStyle(
+        "CorpsSujet",
+        parent=styles["BodyText"],
+        fontSize=11,
+        leading=17,
+        spaceAfter=10
+    )
+
+    sous_titre = ParagraphStyle(
+        "SousTitreSujet",
+        parent=styles["Heading2"],
+        textColor="#1E3A8A",
+        spaceBefore=12,
+        spaceAfter=8
+    )
+
+    def nettoyer_formules(texte):
+        # Enlever les délimiteurs LaTeX
+        texte = re.sub(r'\$\$(.*?)\$\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\$(.*?)\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
+
+        # Remplacer les commandes mathématiques courantes
+        remplacements = {
+            r'\in': '∈',
+            r'\notin': '∉',
+            r'\neq': '≠',
+            r'\leq': '≤',
+            r'\geq': '≥',
+            r'\times': '×',
+            r'\cdot': '·',
+            r'\pi': 'π',
+            r'\Delta': 'Δ',
+            r'\infty': '∞',
+            r'\pm': '±',
+            r'\approx': '≈',
+            r'\rightarrow': '→',
+            r'\Rightarrow': '⇒',
+            r'\sqrt': '√',
+        }
+
+        for ancien, nouveau in remplacements.items():
+            texte = texte.replace(ancien, nouveau)
+
+        # Fractions simples
+        texte = re.sub(
+            r'\\frac\{([^{}]+)\}\{([^{}]+)\}',
+            r'(\1)/(\2)',
+            texte
+        )
+
+        # Exposants et indices simples
+        texte = re.sub(r'\^\{?2\}?', '²', texte)
+        texte = re.sub(r'\^\{?3\}?', '³', texte)
+
+        # Supprimer les étoiles Markdown autour du texte
+        texte = re.sub(r'\*\*(.*?)\*\*', r'\1', texte)
+        texte = re.sub(r'\*(.*?)\*', r'\1', texte)
+
+        return texte
+
+    contenu = [
+        Paragraph("SUJET D'ÉVALUATION / CONCOURS", titre)
+    ]
+
+    for ligne in texte_sujet.splitlines():
+        ligne = ligne.strip()
+
+        if not ligne:
+            contenu.append(Spacer(1, 8))
+            continue
+
+        ligne = nettoyer_formules(ligne)
+
+        if ligne.startswith("#"):
+            texte = ligne.lstrip("#").strip()
+            contenu.append(
+                Paragraph(escape(texte), sous_titre)
+            )
+        else:
+            texte = escape(ligne)
+
+            # Gras Markdown
+            texte = re.sub(
+                r'\*\*(.*?)\*\*',
+                r'<b>\1</b>',
+                texte
+            )
+
+            contenu.append(
+                Paragraph(texte, corps)
+            )
+
+    doc.build(contenu)
+
+    buffer.seek(0)
+    return buffer
+
+
+def afficher_generateur_sujet():
+
+    if "ouvrir_generateur_sujet" not in st.session_state:
+        st.session_state.ouvrir_generateur_sujet = False
+
+    if st.button(
+        "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
+        use_container_width=True
+    ):
+        st.session_state.ouvrir_generateur_sujet = True
+
+    if st.session_state.ouvrir_generateur_sujet:
+
+        with st.form("form_sujet_evaluation"):
+
+            st.markdown("### 📚 Création de votre sujet")
+
+            niveau = st.selectbox(
+                "Choisissez votre niveau :",
+                ["6ème", "5ème", "4ème", "3ème",
+                 "Seconde", "Première", "Terminale",
+                 "Concours"]
+            )
+
+            type_sujet = st.selectbox(
+                "Type de sujet :",
+                ["Évaluation", "Concours", "Brevet", "Baccalauréat"]
+            )
+
+            chapitre = st.text_input(
+                "Chapitre ou thème souhaité :",
+                placeholder="Exemple : Théorème de Pythagore"
+            )
+
+            difficulte = st.selectbox(
+                "Niveau de difficulté :",
+                ["Facile", "Moyen", "Difficile"]
+            )
+
+            duree = st.selectbox(
+                "Durée du sujet :",
+                ["30 minutes", "1 heure", "1 heure 30", "2 heures"]
+            )
+
+            generer = st.form_submit_button(
+                "🚀 Générer mon sujet",
+                use_container_width=True
+            )
+
+        if generer:
+
+            if not chapitre.strip():
+                st.warning("Veuillez indiquer un chapitre ou un thème.")
+            else:
+                with st.spinner("⏳ Création de votre sujet..."):
+
+                    try:
+                        instructions = f"""
+Tu es un professeur de mathématiques expérimenté.
+
+Crée un sujet de {type_sujet} en mathématiques.
+
+Niveau : {niveau}
+Chapitre : {chapitre}
+Difficulté : {difficulte}
+Durée : {duree}
+
+Le sujet doit contenir :
+1. Un titre clair.
+2. Plusieurs exercices progressifs.
+3. Des consignes précises.
+4. Un barème sur 20 points.
+5. Un niveau adapté aux élèves.
+
+Ne donne pas les corrections dans le sujet.
+Réponds en français avec une présentation soignée.
+"""
+
+                        sujet = _appeler_gemini(
+                            instructions,
+                            contenu="Génère le sujet demandé."
+                        )
+
+                        st.session_state.sujet_genere = sujet
+
+                    except Exception as e:
+                        st.error(f"Erreur de génération : {e}")
+
+        
+
+               
+        if st.session_state.get("sujet_genere"):
+
+            st.markdown("---")
+            st.markdown("### 📄 Votre sujet est prêt")
+
+            st.markdown(st.session_state.sujet_genere)
+
+            pdf_sujet = generer_pdf_sujet(
+                st.session_state.sujet_genere
+            )
+
+            st.download_button(
+                "📥 Télécharger le sujet en PDF",
+                data=pdf_sujet.getvalue(),
+                file_name="sujet_evaluation.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
 # ============================================================
 # INTERFACE
 # ============================================================
@@ -996,8 +1240,7 @@ elif not est_abonne:
             if cookie_val == "1":
                 st.session_state.free_question_used = True
         except Exception:
-            pass
-
+            pass 
     st.markdown(
         f"<h1 style='text-align: center; color: #1E3A8A;'>{t('hero_title')}</h1>",
         unsafe_allow_html=True
@@ -1050,6 +1293,18 @@ elif not est_abonne:
                 else:
                     st.session_state.email_verifie = email_clean
                     st.rerun()
+                    st.write("---")
+
+            if st.button(
+                "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
+                use_container_width=True,
+                key="btn_sujet_gratuit"
+            ):
+                st.session_state.ouvrir_generateur_sujet = True
+                st.rerun()
+
+            if st.session_state.get("ouvrir_generateur_sujet", False):
+                afficher_generateur_sujet()
         else:
             st.success(t("email_verified"))
             st.markdown(f"#### {t('question_step_title')}")
@@ -1158,6 +1413,7 @@ else:
         unsafe_allow_html=True
     )
     st.success(t("premium_msg", email=email_eleve))
+    afficher_generateur_sujet()
 
     if "etape_actuelle" not in st.session_state:
         exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
@@ -1173,5 +1429,3 @@ else:
             afficher_recapitulatif_final("correction_coach_math.pdf")
         else:
             afficher_coach_interactif(st.session_state['dernier_enonce'])
-
-    
