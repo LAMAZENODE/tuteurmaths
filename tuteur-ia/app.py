@@ -1273,7 +1273,7 @@ elif not est_abonne:
             """,
             unsafe_allow_html=True
         )
- afficher_generateur_sujet()    
+       afficher_generateur_sujet()    
 
     if not st.session_state.free_question_used:
         if st.session_state.email_verifie is None:
