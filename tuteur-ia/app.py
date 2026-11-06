@@ -1111,10 +1111,11 @@ def afficher_generateur_sujet():
     if "ouvrir_generateur_sujet" not in st.session_state:
         st.session_state.ouvrir_generateur_sujet = False
 
-    if st.button(
-        "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
-        use_container_width=True
-    ):
+  if st.button(
+    "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
+    use_container_width=True,
+    key="btn_generateur_sujet"
+):
         st.session_state.ouvrir_generateur_sujet = True
 
     if st.session_state.ouvrir_generateur_sujet:
