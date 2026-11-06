@@ -1249,6 +1249,7 @@ elif not est_abonne:
         f"<p style='text-align: center; font-size: 1.2em; color: #4B5563;'>{t('hero_subtitle')}</p>",
         unsafe_allow_html=True
     )
+
     st.write("---")
 
     if not st.session_state.free_question_used:
