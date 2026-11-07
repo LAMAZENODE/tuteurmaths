@@ -1117,7 +1117,8 @@ def afficher_generateur_sujet():
         # Garde ici la suite de ton code de création du sujet
 
        
-        with st.form("form_sujet_evaluation_unique"):
+       
+        with st.form("form_sujet_evaluation_unique_2"):
 
             st.markdown("### 📚 Création de votre sujet")
 
