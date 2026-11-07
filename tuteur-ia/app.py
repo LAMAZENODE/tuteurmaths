@@ -1439,7 +1439,7 @@ elif not est_abonne:
         st.caption(t("feature3_desc"))
 
     st.write("---")
-           st.markdown(
+          st.markdown( 
             f"""
             <div style="background-color: #F3F4F6; padding: 20px; border-radius: 10px; border-left: 5px solid #10B981; margin-bottom: 20px;">
                 <h4 style="margin: 0; color: #111827;">{t('offer_title')}</h4>
