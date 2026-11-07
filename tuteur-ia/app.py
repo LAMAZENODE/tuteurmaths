@@ -1460,7 +1460,7 @@ elif not est_abonne:
                     <li>{t('offer_bullet3')}</li>
                     <li>{t('offer_bullet4')}</li>
                 </ul>
-            </div>
+                      </div>
             """,
             unsafe_allow_html=True
         )
@@ -1471,22 +1471,37 @@ elif not est_abonne:
         type="primary",
         key="btn_pay"
     ):
-            try:
-                checkout_session = stripe.checkout.Session.create(
-                    line_items=[{'price': ID_PRIX_UNIQUE, 'quantity': 1}],
-                    mode='payment',
-                    success_url=f"{URL_APP}?session_id={{CHECKOUT_SESSION_ID}}",
-                    cancel_url=URL_APP,
-                )
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                line_items=[{'price': ID_PRIX_UNIQUE, 'quantity': 1}],
+                mode='payment',
+                success_url=f"{URL_APP}?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=URL_APP,
+            )
 
-                st.markdown(
-                    f"### [{t('button_pay_link')}]({checkout_session.url})"
-                )
-                st.caption(t("stripe_secure"))
+            st.markdown(
+                f"### [{t('button_pay_link')}]({checkout_session.url})"
+            )
+            st.caption(t("stripe_secure"))
 
-                st.markdown(
-                    f"<p style='font-size: 0.8em; color: #9CA3AF; text-align: center; margin-top: 10px;'>{t('legal_notice')}</p>",
-                    unsafe_allow_html=True
+            st.markdown(
+                f"<p style='font-size: 0.8em; color: #9CA3AF; text-align: center; margin-top: 10px;'>{t('legal_notice')}</p>",
+                unsafe_allow_html=True
+            )
+
+        except Exception as e:
+            st.error(t("stripe_error", error=str(e)))
+
+    st.write("---")
+    st.markdown(f"##### {t('testimonials_title')}")
+    st.info(t("testimonial_text"))
+
+# Cas 3 : Payé
+else:
+    st.markdown(
+        f"<h1 style='text-align: center; color: #10B981;'>{t('premium_activated')}</h1>",
+        unsafe_allow_html=True
+    )
                 )
 
             except Exception as e:
