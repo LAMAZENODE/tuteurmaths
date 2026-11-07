@@ -1218,6 +1218,58 @@ Réponds en français avec une présentation soignée.
                 mime="application/pdf",
                 use_container_width=True
             )
+                        st.markdown("---")
+            st.markdown("### ✅ Correction du sujet")
+
+            if "correction_sujet" not in st.session_state:
+                st.session_state.correction_sujet = ""
+
+            if st.button(
+                "✏️ Générer la correction détaillée",
+                use_container_width=True,
+                key="btn_correction_sujet"
+            ):
+                with st.spinner("Correction en cours..."):
+
+                    prompt = f"""
+                    Tu es un professeur expérimenté de mathématiques.
+
+                    Voici le sujet à corriger :
+                    {st.session_state.sujet_genere}
+
+                    Donne la correction complète de CE sujet.
+                    Respecte exactement les exercices et les questions.
+                    Détaille les calculs étape par étape.
+                    Explique les méthodes utilisées.
+                    Donne les réponses finales et un barème indicatif.
+                    """
+
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt
+                    )
+
+                    st.session_state.correction_sujet = response.text
+
+            if st.session_state.correction_sujet:
+
+                st.markdown("#### 📘 Correction détaillée")
+
+                st.markdown(
+                    st.session_state.correction_sujet
+                )
+
+                pdf_correction = generer_pdf_sujet(
+                    st.session_state.correction_sujet
+                )
+
+                st.download_button(
+                    "📥 Télécharger la correction en PDF",
+                    data=pdf_correction.getvalue(),
+                    file_name="correction_evaluation.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
 # ============================================================
 # INTERFACE
 # ============================================================
