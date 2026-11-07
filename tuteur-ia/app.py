@@ -1484,7 +1484,7 @@ elif not est_abonne:
             )
             st.caption(t("stripe_secure"))
 
-           st.markdown(
+            st.markdown(
                 f"<p style='font-size: 0.8em; color: #9CA3AF; text-align: center; margin-top: 10px;'>{t('legal_notice')}</p>",
                 unsafe_allow_html=True
             )
