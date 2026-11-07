@@ -1479,7 +1479,7 @@ elif not est_abonne:
                 cancel_url=URL_APP,
             )
 
-         st.markdown(
+            st.markdown(
                 f"### [{t('button_pay_link')}]({checkout_session.url})"
             )
             st.caption(t("stripe_secure"))
