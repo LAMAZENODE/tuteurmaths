@@ -1492,7 +1492,7 @@ elif not est_abonne:
             except Exception as e:
                 st.error(t("stripe_error", error=str(e)))
 
-     st.write("---")
+       st.write("---")
         st.markdown(f"##### {t('testimonials_title')}")
         st.info(t("testimonial_text"))
 
