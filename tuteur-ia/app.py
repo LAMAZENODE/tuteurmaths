@@ -1218,7 +1218,7 @@ Réponds en français avec une présentation soignée.
                 mime="application/pdf",
                 use_container_width=True
             )
-                        st.markdown("---")
+               st.markdown("---")
             st.markdown("### ✅ Correction du sujet")
 
             if "correction_sujet" not in st.session_state:
