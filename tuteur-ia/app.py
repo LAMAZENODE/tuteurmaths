@@ -1370,7 +1370,7 @@ elif not est_abonne:
                 st.error(t("email_invalid"))
             elif email_deja_utilise(email_clean):
                 st.error(t("email_already_used")) 
-                    st.info(t("free_question_used_msg"))
+                    
                 else:
                     st.session_state.email_verifie = email_clean
                     st.rerun()
