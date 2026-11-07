@@ -1244,6 +1244,10 @@ Réponds en français.
         if st.button(
             "✏️ Générer la correction détaillée",
             use_container_width=True,
+          
+                    if st.button(
+            "✏️ Générer la correction détaillée",
+            use_container_width=True,
             key="btn_correction_sujet"
         ):
 
@@ -1270,11 +1274,9 @@ Vérifie la cohérence des résultats.
 Réponds en français.
 """
 
-                   
-                 
                     response = _appeler_gemini(
-                          prompt,
-                         contenu="Génère la correction détaillée du sujet."
+                        prompt,
+                        contenu="Génère la correction détaillée du sujet."
                     )
 
                     st.session_state.correction_sujet = response or ""
@@ -1285,7 +1287,7 @@ Réponds en français.
                 except Exception as e:
                     st.error(f"Erreur de correction : {e}")
 
-        # Le corrigé est affiché et téléchargeable séparément
+        # Affichage et téléchargement du corrigé
         if st.session_state.correction_sujet:
 
             st.success("✅ Le corrigé enseignant est prêt.")
@@ -1302,7 +1304,6 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
-
 # ============================================================
 # INTERFACE
 # ============================================================
