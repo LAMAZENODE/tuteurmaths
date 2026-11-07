@@ -1119,7 +1119,7 @@ def afficher_generateur_sujet():
        
        
         
-        with st.form(key="form_sujet_evaluation_unique_2", clear_on_submit=False):
+        with st.form(key="form_sujet_evaluation_principal", clear_on_submit=False):
 
             st.markdown("### 📚 Création de votre sujet")
 
