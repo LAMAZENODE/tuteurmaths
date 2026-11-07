@@ -1466,7 +1466,7 @@ else:
         unsafe_allow_html=True
     )
     st.success(t("premium_msg", email=email_eleve))
-    afficher_generateur_sujet()
+   
 
     if "etape_actuelle" not in st.session_state:
         exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
