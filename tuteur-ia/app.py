@@ -1337,10 +1337,11 @@ elif not est_abonne:
         unsafe_allow_html=True
     )
 
-    st.write("---")
+   
+       st.write("---")
+
     if not st.session_state.free_question_used:
         st.markdown(
-   
             f"""
             <div style="
                 background: linear-gradient(135deg, #10B981 0%, #059669 100%);
@@ -1350,14 +1351,25 @@ elif not est_abonne:
                 margin-bottom: 20px;
                 box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
             ">
-              afficher_generateur_sujet()
-            if st.button(t("email_continue_btn"), type="primary",
-                         use_container_width=True, key="btn_email"):
-                email_clean = email_saisi.strip().lower()
-                if not email_valide(email_clean):
-                    st.error(t("email_invalid"))
-                elif email_deja_utilise(email_clean):
-                    st.error(t("email_already_used"))
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        afficher_generateur_sujet()
+
+        if st.button(
+            t("email_continue_btn"),
+            type="primary",
+            use_container_width=True,
+            key="btn_email"
+        ):
+            email_clean = email_saisi.strip().lower()
+
+            if not email_valide(email_clean):
+                st.error(t("email_invalid"))
+            elif email_deja_utilise(email_clean):
+                st.error(t("email_already_used")) 
                     st.info(t("free_question_used_msg"))
                 else:
                     st.session_state.email_verifie = email_clean
