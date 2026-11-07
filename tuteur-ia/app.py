@@ -1355,39 +1355,52 @@ elif not est_abonne:
             """,
             unsafe_allow_html=True
         )
-        email_saisi = st.text_input(
-            t("email_label"),
-            key="email_saisi"
-        ) 
+       
+        # Vérifier si l'adresse e-mail a déjà été validée
+if st.session_state.get("email_verifie"):
 
+    st.success(t("email_verified"))
+
+    # Bouton pour ouvrir le générateur de sujets
+    if st.button(
+        "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
+        use_container_width=True,
+        key="btn_sujet_gratuit"
+    ):
+        st.session_state.ouvrir_generateur_sujet = True
+        st.rerun()
+
+    # Afficher le générateur uniquement sur demande
+    if st.session_state.get("ouvrir_generateur_sujet", False):
         afficher_generateur_sujet()
 
-        if st.button(
-            t("email_continue_btn"),
-            type="primary",
-            use_container_width=True,
-            key="btn_email"
-        ):
-            email_clean = email_saisi.strip().lower()
+else:
 
-            if not email_valide(email_clean):
-                st.error(t("email_invalid"))
-            elif email_deja_utilise(email_clean):
-                st.error(t("email_already_used")) 
-                    
-            else:
-                    st.session_state.email_verifie = email_clean
-                    st.rerun()
-                    st.write("---")
+    st.info("Veuillez saisir votre adresse e-mail pour continuer.")
 
-            if st.button(
-                "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
-                use_container_width=True,
-                key="btn_sujet_gratuit"
-            ):
-                st.session_state.ouvrir_generateur_sujet = True
-                st.rerun()
+    email_saisi = st.text_input(
+        t("email_label"),
+        key="email_saisi"
+    )
 
+    if st.button(
+        t("email_continue_btn"),
+        type="primary",
+        use_container_width=True,
+        key="btn_email"
+    ):
+        email_clean = email_saisi.strip().lower()
+
+        if not email_valide(email_clean):
+            st.error(t("email_invalid"))
+
+        elif email_deja_utilise(email_clean):
+            st.error(t("email_already_used"))
+
+        else:
+            st.session_state.email_verifie = email_clean
+            st.session_state.ouvrir_generateur_sujet = False
+            st.rerun()
         else:
             st.success(t("email_verified"))
             
