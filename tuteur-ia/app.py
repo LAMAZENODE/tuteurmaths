@@ -1374,8 +1374,34 @@ if st.session_state.get("email_verifie"):
     if st.session_state.get("ouvrir_generateur_sujet", False):
         afficher_generateur_sujet()
 
-else:
+    else:
+        st.markdown(f"#### {t('question_step_title')}")
 
+        if "etape_actuelle" not in st.session_state:
+            st.info(t("free_question_remaining"))
+            st.write("---")
+
+            exercice_gratuit = st.text_area(
+                t("free_question_label"),
+                height=150,
+                key="free_question_input"
+            )
+
+            if st.button(
+                t("free_question_button"),
+                type="primary",
+                use_container_width=True,
+                key="btn_free"
+            ):
+                if not exercice_gratuit.strip():
+                    st.warning(t("warning_empty"))
+
+                else:
+                    # Conserver ici ton code existant
+                    # de traitement de la question gratuite
+                    pass
+
+else:
     st.info("Veuillez saisir votre adresse e-mail pour continuer.")
 
     email_saisi = st.text_input(
@@ -1401,23 +1427,33 @@ else:
             st.session_state.email_verifie = email_clean
             st.session_state.ouvrir_generateur_sujet = False
             st.rerun()
-        else:
-            st.success(t("email_verified"))
-            
-            st.markdown(f"#### {t('question_step_title')}")
 
-            if "etape_actuelle" not in st.session_state:
-                st.info(t("free_question_remaining"))
-                st.write("---")
-                exercice_gratuit = st.text_area(
-                    t("free_question_label"),
-                    height=150,
-                    key="free_question_input"
-                )
-                if st.button(t("free_question_button"), type="primary",
-                             use_container_width=True, key="btn_free"):
-                    if not exercice_gratuit.strip():
-                        st.warning(t("warning_empty"))
+    if st.session_state.get("email_verifie"):
+        st.success(t("email_verified"))
+
+        st.markdown(f"#### {t('question_step_title')}")
+
+        if "etape_actuelle" not in st.session_state:
+            st.info(t("free_question_remaining"))
+            st.write("---")
+
+            exercice_gratuit = st.text_area(
+                t("free_question_label"),
+                height=150,
+                key="free_question_input"
+            )
+
+            if st.button(
+                t("free_question_button"),
+                type="primary",
+                use_container_width=True,
+                key="btn_free"
+            ):
+                if not exercice_gratuit.strip():
+                    st.warning(t("warning_empty"))
+
+
+                       
                     else:
                         sauvegarder_email(st.session_state.email_verifie)
                         st.session_state.free_question_used = True
