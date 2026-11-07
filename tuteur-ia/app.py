@@ -1455,13 +1455,13 @@ elif not est_abonne:
                 <h4 style="margin: 0; color: #111827;">{t('offer_title')}</h4>
                 <p style="font-size: 1.8em; font-weight: bold; margin: 10px 0; color: #10B981;">{t('offer_price')} <span style="font-size: 0.5em; color: #6B7280; font-weight: normal;">{t('offer_price_sub')}</span></p>
                 <ul style="margin-bottom: 0; padding-left: 20px; color: #374151;">
-                    <li>{t('offer_bullet1')}</li>
+                                       <li>{t('offer_bullet1')}</li>
                     <li>{t('offer_bullet2')}</li>
                     <li>{t('offer_bullet3')}</li>
                     <li>{t('offer_bullet4')}</li>
                 </ul>
             </div>
-                   
+            """,
             unsafe_allow_html=True
         )
 
