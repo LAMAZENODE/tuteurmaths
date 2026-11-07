@@ -1497,14 +1497,6 @@ elif not est_abonne:
     st.write("---")
     st.markdown(f"##### {t('testimonials_title')}")
     st.info(t("testimonial_text"))
-
-
-# Cas 3 : Payé
-else:
-    st.markdown(
-        f"<h1 style='text-align: center; color: #10B981;'>{t('premium_activated')}</h1>",
-        unsafe_allow_html=True
-    )
                 
 
       
