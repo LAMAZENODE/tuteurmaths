@@ -1489,7 +1489,7 @@ elif not est_abonne:
                 unsafe_allow_html=True
             )
 
-         except Exception as e:
+          except Exception as e:
             st.error(t("stripe_error", error=str(e)))
 
     st.write("---")
