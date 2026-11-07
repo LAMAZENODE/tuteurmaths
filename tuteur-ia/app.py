@@ -1401,7 +1401,7 @@ if st.session_state.get("email_verifie"):
                     # de traitement de la question gratuite
                     pass
 
-else:
+     else:
     st.info("Veuillez saisir votre adresse e-mail pour continuer.")
 
     email_saisi = st.text_input(
