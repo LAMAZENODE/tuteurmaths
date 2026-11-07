@@ -1107,63 +1107,84 @@ def generer_pdf_sujet(texte_sujet):
 
 
 
+
 def afficher_generateur_sujet():
 
     if "ouvrir_generateur_sujet" not in st.session_state:
         st.session_state.ouvrir_generateur_sujet = False
 
+    if "sujet_genere" not in st.session_state:
+        st.session_state.sujet_genere = ""
 
-    if st.session_state.ouvrir_generateur_sujet:
-        # Garde ici la suite de ton code de création du sujet
+    if "correction_sujet" not in st.session_state:
+        st.session_state.correction_sujet = ""
 
-       
-       
-        
-        with st.form(key="form_sujet_evaluation_principal", clear_on_submit=False):
+    # Bouton toujours accessible
+    if st.button(
+        "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
+        use_container_width=True,
+        key="btn_ouvrir_generateur_sujet"
+    ):
+        st.session_state.ouvrir_generateur_sujet = (
+            not st.session_state.ouvrir_generateur_sujet
+        )
+        st.rerun()
 
-            st.markdown("### 📚 Création de votre sujet")
+    if not st.session_state.ouvrir_generateur_sujet:
+        return
 
-            niveau = st.selectbox(
-                "Choisissez votre niveau :",
-                ["6ème", "5ème", "4ème", "3ème",
-                 "Seconde", "Première", "Terminale",
-                 "Concours"]
-            )
+    st.markdown("---")
+    st.markdown("### 📚 Création de votre sujet")
 
-            type_sujet = st.selectbox(
-                "Type de sujet :",
-                ["Évaluation", "Concours", "Brevet", "Baccalauréat"]
-            )
+    with st.form(
+        key="form_sujet_evaluation_principal",
+        clear_on_submit=False
+    ):
 
-            chapitre = st.text_input(
-                "Chapitre ou thème souhaité :",
-                placeholder="Exemple : Théorème de Pythagore"
-            )
+        niveau = st.selectbox(
+            "Choisissez votre niveau :",
+            [
+                "6ème", "5ème", "4ème", "3ème",
+                "Seconde", "Première", "Terminale",
+                "Concours"
+            ]
+        )
 
-            difficulte = st.selectbox(
-                "Niveau de difficulté :",
-                ["Facile", "Moyen", "Difficile"]
-            )
+        type_sujet = st.selectbox(
+            "Type de sujet :",
+            ["Évaluation", "Concours", "Brevet", "Baccalauréat"]
+        )
 
-            duree = st.selectbox(
-                "Durée du sujet :",
-                ["30 minutes", "1 heure", "1 heure 30", "2 heures"]
-            )
+        chapitre = st.text_input(
+            "Chapitre ou thème souhaité :",
+            placeholder="Exemple : Théorème de Pythagore"
+        )
 
-            generer = st.form_submit_button(
-                "🚀 Générer mon sujet",
-                use_container_width=True
-            )
+        difficulte = st.selectbox(
+            "Niveau de difficulté :",
+            ["Facile", "Moyen", "Difficile"]
+        )
 
-        if generer:
+        duree = st.selectbox(
+            "Durée du sujet :",
+            ["30 minutes", "1 heure", "1 heure 30", "2 heures"]
+        )
 
-            if not chapitre.strip():
-                st.warning("Veuillez indiquer un chapitre ou un thème.")
-            else:
-                with st.spinner("⏳ Création de votre sujet..."):
+        generer = st.form_submit_button(
+            "🚀 Générer mon sujet",
+            use_container_width=True
+        )
 
-                    try:
-                        instructions = f"""
+    if generer:
+
+        if not chapitre.strip():
+            st.warning("Veuillez indiquer un chapitre ou un thème.")
+
+        else:
+            with st.spinner("⏳ Création de votre sujet..."):
+
+                try:
+                    instructions = f"""
 Tu es un professeur de mathématiques expérimenté.
 
 Crée un sujet de {type_sujet} en mathématiques.
@@ -1180,93 +1201,106 @@ Le sujet doit contenir :
 4. Un barème sur 20 points.
 5. Un niveau adapté aux élèves.
 
-Ne donne pas les corrections dans le sujet.
-Réponds en français avec une présentation soignée.
+Ne donne aucune correction dans le sujet.
+Réponds en français.
 """
 
-                        sujet = _appeler_gemini(
-                            instructions,
-                            contenu="Génère le sujet demandé."
-                        )
+                    sujet = _appeler_gemini(
+                        instructions,
+                        contenu="Génère le sujet demandé."
+                    )
 
+                    if sujet:
                         st.session_state.sujet_genere = sujet
+                        st.session_state.correction_sujet = ""
 
-                    except Exception as e:
-                        st.error(f"Erreur de génération : {e}")
+                except Exception as e:
+                    st.error(f"Erreur de génération : {e}")
 
-        
+    # Affichage et téléchargement du sujet
+    if st.session_state.sujet_genere:
 
-               
-        if st.session_state.get("sujet_genere"):
+        st.markdown("---")
+        st.markdown("### 📄 Sujet d'évaluation")
 
-            st.markdown("---")
-            st.markdown("### 📄 Votre sujet est prêt")
+        st.markdown(st.session_state.sujet_genere)
 
-            st.markdown(st.session_state.sujet_genere)
+        pdf_sujet = generer_pdf_sujet(
+            st.session_state.sujet_genere
+        )
 
-            pdf_sujet = generer_pdf_sujet(
-                st.session_state.sujet_genere
-            )
+        st.download_button(
+            "📥 Télécharger le sujet en PDF",
+            data=pdf_sujet.getvalue(),
+            file_name="sujet_evaluation.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            key="download_sujet_evaluation"
+        )
 
-            st.download_button(
-                "📥 Télécharger le sujet en PDF",
-                data=pdf_sujet.getvalue(),
-                file_name="sujet_evaluation.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-            st.markdown("---")
-            st.markdown("### ✅ Correction du sujet")
+        st.markdown("---")
+        st.markdown("### 🔐 Correction réservée à l'enseignant")
 
-            if "correction_sujet" not in st.session_state:
-                st.session_state.correction_sujet = ""
+        if st.button(
+            "✏️ Générer la correction détaillée",
+            use_container_width=True,
+            key="btn_correction_sujet"
+        ):
 
-            if st.button(
-                "✏️ Générer la correction détaillée",
-                use_container_width=True,
-                key="btn_correction_sujet"
-            ):
-                with st.spinner("Correction en cours..."):
+            with st.spinner("⏳ Préparation du corrigé enseignant..."):
 
+                try:
                     prompt = f"""
-                    Tu es un professeur expérimenté de mathématiques.
+Tu es un professeur expérimenté de mathématiques.
 
-                    Voici le sujet à corriger :
-                    {st.session_state.sujet_genere}
+Voici le sujet à corriger :
 
-                    Donne la correction complète de CE sujet.
-                    Respecte exactement les exercices et les questions.
-                    Détaille les calculs étape par étape.
-                    Explique les méthodes utilisées.
-                    Donne les réponses finales et un barème indicatif.
-                    """
+{st.session_state.sujet_genere}
+
+Produis un corrigé enseignant complet.
+
+Pour chaque exercice :
+1. Rappelle la question.
+2. Détaille chaque calcul.
+3. Explique les méthodes utilisées.
+4. Donne la réponse finale.
+5. Indique le barème de chaque question.
+
+Vérifie la cohérence des résultats.
+Réponds en français.
+"""
 
                     response = client.models.generate_content(
                         model="gemini-2.5-flash",
                         contents=prompt
                     )
 
-                    st.session_state.correction_sujet = response.text
+                    st.session_state.correction_sujet = response.text or ""
 
-            if st.session_state.correction_sujet:
+                    if not st.session_state.correction_sujet:
+                        st.error("La correction n'a pas pu être générée.")
 
-                st.markdown("#### 📘 Correction détaillée")
+                except Exception as e:
+                    st.error(f"Erreur de correction : {e}")
 
-                st.markdown(
-                    st.session_state.correction_sujet
-                )
+        # Le corrigé est affiché et téléchargeable séparément
+        if st.session_state.correction_sujet:
 
-                pdf_correction = generer_pdf_sujet(
-                    st.session_state.correction_sujet
-                )
+            st.success("✅ Le corrigé enseignant est prêt.")
 
-                st.download_button(
-                    "📥 Télécharger la correction en PDF",
-                    data=pdf_correction.getvalue(),
-                    file_name="correction_evaluation.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
+            pdf_correction = generer_pdf_sujet(
+                st.session_state.correction_sujet
+            )
+
+            st.download_button(
+                "📘 Télécharger le corrigé enseignant en PDF",
+                data=pdf_correction.getvalue(),
+                file_name="corrige_enseignant.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="download_correction_enseignant"
+            )
+
 # ============================================================
 # INTERFACE
 # ============================================================
