@@ -1115,7 +1115,7 @@ def afficher_generateur_sujet():
     if st.button(
         "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
         use_container_width=True,
-        key="btn_generateur_sujet"
+        key="btn_generateur_sujet_unique_2026"
     ):
         st.session_state.ouvrir_generateur_sujet = True
 
