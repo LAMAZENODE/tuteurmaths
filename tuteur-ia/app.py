@@ -1439,42 +1439,52 @@ elif not est_abonne:
         st.caption(t("feature3_desc"))
 
     st.write("---")
-    st.markdown(
-        f"""
-        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 10px; border-left: 5px solid #10B981; margin-bottom: 20px;">
-            <h4 style="margin: 0; color: #111827;">{t('offer_title')}</h4>
-            <p style="font-size: 1.8em; font-weight: bold; margin: 10px 0; color: #10B981;">{t('offer_price')} <span style="font-size: 0.5em; color: #6B7280; font-weight: normal;">{t('offer_price_sub')}</span></p>
-            <ul style="margin-bottom: 0; padding-left: 20px; color: #374151;">
-                <li>{t('offer_bullet1')}</li>
-                <li>{t('offer_bullet2')}</li>
-                <li>{t('offer_bullet3')}</li>
-                <li>{t('offer_bullet4')}</li>
-            </ul>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+           st.markdown(
+            f"""
+            <div style="background-color: #F3F4F6; padding: 20px; border-radius: 10px; border-left: 5px solid #10B981; margin-bottom: 20px;">
+                <h4 style="margin: 0; color: #111827;">{t('offer_title')}</h4>
+                <p style="font-size: 1.8em; font-weight: bold; margin: 10px 0; color: #10B981;">{t('offer_price')} <span style="font-size: 0.5em; color: #6B7280; font-weight: normal;">{t('offer_price_sub')}</span></p>
+                <ul style="margin-bottom: 0; padding-left: 20px; color: #374151;">
+                    <li>{t('offer_bullet1')}</li>
+                    <li>{t('offer_bullet2')}</li>
+                    <li>{t('offer_bullet3')}</li>
+                    <li>{t('offer_bullet4')}</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    if st.button(t("button_pay"), use_container_width=True, type="primary", key="btn_pay"):
-        try:
-            checkout_session = stripe.checkout.Session.create(
-                line_items=[{'price': ID_PRIX_UNIQUE, 'quantity': 1}],
-                mode='payment',
-                success_url=f"{URL_APP}?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=URL_APP,
-            )
-            st.markdown(f"### [{t('button_pay_link')}]({checkout_session.url})")
-            st.caption(t("stripe_secure"))
-            st.markdown(
-                f"<p style='font-size: 0.8em; color: #9CA3AF; text-align: center; margin-top: 10px;'>{t('legal_notice')}</p>",
-                unsafe_allow_html=True
-            )
-        except Exception as e:
-            st.error(t("stripe_error", error=str(e)))
+        if st.button(
+            t("button_pay"),
+            use_container_width=True,
+            type="primary",
+            key="btn_pay"
+        ):
+            try:
+                checkout_session = stripe.checkout.Session.create(
+                    line_items=[{'price': ID_PRIX_UNIQUE, 'quantity': 1}],
+                    mode='payment',
+                    success_url=f"{URL_APP}?session_id={{CHECKOUT_SESSION_ID}}",
+                    cancel_url=URL_APP,
+                )
 
-    st.write("---")
-    st.markdown(f"##### {t('testimonials_title')}")
-    st.info(t("testimonial_text"))
+                st.markdown(
+                    f"### [{t('button_pay_link')}]({checkout_session.url})"
+                )
+                st.caption(t("stripe_secure"))
+
+                st.markdown(
+                    f"<p style='font-size: 0.8em; color: #9CA3AF; text-align: center; margin-top: 10px;'>{t('legal_notice')}</p>",
+                    unsafe_allow_html=True
+                )
+
+            except Exception as e:
+                st.error(t("stripe_error", error=str(e)))
+
+        st.write("---")
+        st.markdown(f"##### {t('testimonials_title')}")
+        st.info(t("testimonial_text"))
 
 # Cas 3 : Payé
 else:
@@ -1482,20 +1492,32 @@ else:
         f"<h1 style='text-align: center; color: #10B981;'>{t('premium_activated')}</h1>",
         unsafe_allow_html=True
     )
+
     st.success(t("premium_msg", email=email_eleve))
-   
 
     if "etape_actuelle" not in st.session_state:
-        exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
-        if st.button(t("button_correct"), type="primary",
-                     use_container_width=True, key="btn_correct"):
+        exercice = st.text_area(
+            t("textarea_label"),
+            height=150,
+            key="premium_input"
+        )
+
+        if st.button(
+            t("button_correct"),
+            type="primary",
+            use_container_width=True,
+            key="btn_correct"
+        ):
             if not exercice.strip():
                 st.warning(t("warning_empty"))
             else:
                 initialiser_session_pedago(exercice)
                 st.rerun()
+
     else:
         if st.session_state.get("correction_terminee"):
             afficher_recapitulatif_final("correction_coach_math.pdf")
         else:
-            afficher_coach_interactif(st.session_state['dernier_enonce'])
+            afficher_coach_interactif(
+                st.session_state['dernier_enonce']
+            )
