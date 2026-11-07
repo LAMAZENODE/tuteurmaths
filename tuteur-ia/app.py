@@ -1502,7 +1502,7 @@ else:
         f"<h1 style='text-align: center; color: #10B981;'>{t('premium_activated')}</h1>",
         unsafe_allow_html=True
     )
-                )
+                
 
             except Exception as e:
                 st.error(t("stripe_error", error=str(e)))
