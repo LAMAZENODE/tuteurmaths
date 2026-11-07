@@ -1241,9 +1241,7 @@ Réponds en français.
         st.markdown("---")
         st.markdown("### 🔐 Correction réservée à l'enseignant")
 
-        if st.button(
-            "✏️ Générer la correction détaillée",
-            use_container_width=True,
+    
           
                     if st.button(
             "✏️ Générer la correction détaillée",
