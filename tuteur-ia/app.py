@@ -1423,66 +1423,82 @@ else:
         elif email_deja_utilise(email_clean):
             st.error(t("email_already_used"))
 
-        else:
-            st.session_state.email_verifie = email_clean
-            st.session_state.ouvrir_generateur_sujet = False
-            st.rerun()
+       else:
+    st.session_state.email_verifie = email_clean
+    st.session_state.ouvrir_generateur_sujet = False
+    st.rerun()
 
-    if st.session_state.get("email_verifie"):
-        st.success(t("email_verified"))
+if st.session_state.get("email_verifie"):
 
-        st.markdown(f"#### {t('question_step_title')}")
+    st.success(t("email_verified"))
 
-        if "etape_actuelle" not in st.session_state:
-            st.info(t("free_question_remaining"))
+    st.markdown(f"#### {t('question_step_title')}")
+
+    if "etape_actuelle" not in st.session_state:
+
+        st.info(t("free_question_remaining"))
+        st.write("---")
+
+        exercice_gratuit = st.text_area(
+            t("free_question_label"),
+            height=150,
+            key="free_question_input"
+        )
+
+        if st.button(
+            t("free_question_button"),
+            type="primary",
+            use_container_width=True,
+            key="btn_free"
+        ):
+
+            if not exercice_gratuit.strip():
+                st.warning(t("warning_empty"))
+
+            else:
+                sauvegarder_email(st.session_state.email_verifie)
+                st.session_state.free_question_used = True
+
+                if cookie_manager is not None:
+                    try:
+                        cookie_manager.set(
+                            "free_question_used",
+                            "1",
+                            expires_at=datetime.datetime.now()
+                            + datetime.timedelta(days=365)
+                        )
+                    except Exception:
+                        pass
+
+                initialiser_session_pedago(exercice_gratuit)
+                st.rerun()
+
+    else:
+        if st.session_state.get("correction_terminee"):
+            afficher_recapitulatif_final("correction_gratuite.pdf")
+            st.write("---")
+            st.success(t("free_question_used"))
+            st.markdown(t("free_question_used_msg"))
             st.write("---")
 
-            exercice_gratuit = st.text_area(
-                t("free_question_label"),
-                height=150,
-                key="free_question_input"
+        else:
+            afficher_coach_interactif(
+                st.session_state["dernier_enonce"]
             )
 
-            if st.button(
-                t("free_question_button"),
-                type="primary",
-                use_container_width=True,
-                key="btn_free"
-            ):
-                if not exercice_gratuit.strip():
-                    st.warning(t("warning_empty"))
+else:
+    if "etape_actuelle" in st.session_state:
 
+        if st.session_state.get("correction_terminee"):
+            afficher_recapitulatif_final("correction_gratuite.pdf")
 
-                       
-                    else:
-                        sauvegarder_email(st.session_state.email_verifie)
-                        st.session_state.free_question_used = True
-                        if cookie_manager is not None:
-                            try:
-                                cookie_manager.set(
-                                    "free_question_used", "1",
-                                    expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
-                                )
-                            except Exception:
-                                pass
-                        initialiser_session_pedago(exercice_gratuit)
-                        st.rerun()
-            else:
-                if st.session_state.get("correction_terminee"):
-                    afficher_recapitulatif_final("correction_gratuite.pdf")
-                    st.write("---")
-                    st.success(t("free_question_used"))
-                    st.markdown(t("free_question_used_msg"))
-                    st.write("---")
-                else:
-                    afficher_coach_interactif(st.session_state['dernier_enonce'])
-    else:
-        if "etape_actuelle" in st.session_state:
-            if st.session_state.get("correction_terminee"):
-                afficher_recapitulatif_final("correction_gratuite.pdf")
-            else:
-                afficher_coach_interactif(st.session_state['dernier_enonce'])
-            st.write("---")
+        else:
+            afficher_coach_interactif(
+                st.session_state["dernier_enonce"]
+            )
+
+        st.write("---")
+        
             st.success(t("free_question_used"))
             st.markdown(t("free_question_used_msg"))
             st.write("---")
