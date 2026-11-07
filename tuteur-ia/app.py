@@ -1243,7 +1243,7 @@ Réponds en français.
 
     
           
-              if st.button(    
+                if st.button(    
             "✏️ Générer la correction détaillée",
             use_container_width=True,
             key="btn_correction_sujet"
