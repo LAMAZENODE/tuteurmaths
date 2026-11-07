@@ -1448,22 +1448,24 @@ elif not est_abonne:
         st.markdown(f"**{t('feature3_title')}**")
         st.caption(t("feature3_desc"))
 
-    st.write("---")
+    
+        st.write("---")
+
     st.markdown(
-            f"""
-            <div style="background-color: #F3F4F6; padding: 20px; border-radius: 10px; border-left: 5px solid #10B981; margin-bottom: 20px;">
-                <h4 style="margin: 0; color: #111827;">{t('offer_title')}</h4>
-                <p style="font-size: 1.8em; font-weight: bold; margin: 10px 0; color: #10B981;">{t('offer_price')} <span style="font-size: 0.5em; color: #6B7280; font-weight: normal;">{t('offer_price_sub')}</span></p>
-                <ul style="margin-bottom: 0; padding-left: 20px; color: #374151;">
-                                       <li>{t('offer_bullet1')}</li>
-                    <li>{t('offer_bullet2')}</li>
-                    <li>{t('offer_bullet3')}</li>
-                    <li>{t('offer_bullet4')}</li>
-                </ul>
-                      </div>
-            """,
-            unsafe_allow_html=True
-        )
+        f"""
+        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 10px; border-left: 5px solid #10B981; margin-bottom: 20px;">
+            <h4 style="margin: 0; color: #111827;">{t('offer_title')}</h4>
+            <p style="font-size: 1.8em; font-weight: bold; margin: 10px 0; color: #10B981;">{t('offer_price')} <span style="font-size: 0.5em; color: #6B7280; font-weight: normal;">{t('offer_price_sub')}</span></p>
+            <ul style="margin-bottom: 0; padding-left: 20px; color: #374151;">
+                <li>{t('offer_bullet1')}</li>
+                <li>{t('offer_bullet2')}</li>
+                <li>{t('offer_bullet3')}</li>
+                <li>{t('offer_bullet4')}</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     if st.button(
         t("button_pay"),
@@ -1489,12 +1491,13 @@ elif not est_abonne:
                 unsafe_allow_html=True
             )
 
-       except Exception as e:
-         st.error(t("stripe_error", error=str(e)))
+        except Exception as e:
+            st.error(t("stripe_error", error=str(e)))
 
     st.write("---")
     st.markdown(f"##### {t('testimonials_title')}")
     st.info(t("testimonial_text"))
+
 
 # Cas 3 : Payé
 else:
