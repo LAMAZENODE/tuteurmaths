@@ -1371,7 +1371,7 @@ elif not est_abonne:
             elif email_deja_utilise(email_clean):
                 st.error(t("email_already_used")) 
                     
-           else:
+            else:
                     st.session_state.email_verifie = email_clean
                     st.rerun()
                     st.write("---")
