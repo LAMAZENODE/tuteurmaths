@@ -1351,27 +1351,7 @@ elif not est_abonne:
                 margin-bottom: 20px;
                 box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
             ">
-                <h2 style="color: white; margin: 0 0 8px 0; font-size: 1.6em;">
-                    {t('free_question_title')}
-                </h2>
-                <p style="color: #ECFDF5; margin: 0; font-size: 1.05em;">
-                    {t('free_question_subtitle')}
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        afficher_generateur_sujet()          
-
-    if not st.session_state.free_question_used:
-        if st.session_state.email_verifie is None:
-            st.markdown(f"#### {t('email_step_title')}")
-            email_saisi = st.text_input(
-                t("email_label"),
-                placeholder=t("email_placeholder"),
-                help=t("email_help"),
-                key="email_input"
-            )
+              afficher_generateur_sujet()
             if st.button(t("email_continue_btn"), type="primary",
                          use_container_width=True, key="btn_email"):
                 email_clean = email_saisi.strip().lower()
@@ -1395,7 +1375,7 @@ elif not est_abonne:
 
         else:
             st.success(t("email_verified"))
-            afficher_generateur_sujet()
+            
             st.markdown(f"#### {t('question_step_title')}")
 
             if "etape_actuelle" not in st.session_state:
