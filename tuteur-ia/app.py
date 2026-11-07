@@ -1451,7 +1451,7 @@ elif not est_abonne:
                     <li>{t('offer_bullet4')}</li>
                 </ul>
             </div>
-                     """,    
+                 """,    
             unsafe_allow_html=True
         )
 
