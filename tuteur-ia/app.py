@@ -1355,6 +1355,10 @@ elif not est_abonne:
             """,
             unsafe_allow_html=True
         )
+        email_saisi = st.text_input(
+            t("email_label"),
+            key="email_saisi"
+        ) 
 
         afficher_generateur_sujet()
 
