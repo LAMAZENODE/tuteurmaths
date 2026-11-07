@@ -1338,9 +1338,9 @@ elif not est_abonne:
     )
 
     st.write("---")
-
     if not st.session_state.free_question_used:
-    st.markdown(
+        st.markdown(
+   
             f"""
             <div style="
                 background: linear-gradient(135deg, #10B981 0%, #059669 100%);
