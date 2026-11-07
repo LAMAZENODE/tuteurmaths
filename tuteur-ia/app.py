@@ -1306,6 +1306,12 @@ Réponds en français.
 # INTERFACE
 # ============================================================
 
+
+        
+# ============================================================
+# INTERFACE
+# ============================================================
+
 # Cas 1 : Remboursé
 if est_rembourse:
     st.error(t("access_revoked"))
@@ -1315,69 +1321,188 @@ if est_rembourse:
 
 # Cas 2 : Non payé
 elif not est_abonne:
+
     if "free_question_used" not in st.session_state:
         st.session_state.free_question_used = False
 
     if "email_verifie" not in st.session_state:
         st.session_state.email_verifie = None
 
+    if "ouvrir_generateur_sujet" not in st.session_state:
+        st.session_state.ouvrir_generateur_sujet = False
+
+    # Vérification du cookie
     if not st.session_state.free_question_used and cookie_manager is not None:
         try:
             cookie_val = cookie_manager.get(cookie="free_question_used")
             if cookie_val == "1":
                 st.session_state.free_question_used = True
         except Exception:
-            pass 
+            pass
+
+    # Présentation
     st.markdown(
         f"<h1 style='text-align: center; color: #1E3A8A;'>{t('hero_title')}</h1>",
         unsafe_allow_html=True
     )
+
     st.markdown(
         f"<p style='text-align: center; font-size: 1.2em; color: #4B5563;'>{t('hero_subtitle')}</p>",
         unsafe_allow_html=True
     )
 
-   
-    st.write("---") 
+    st.write("---")
 
-    if not st.session_state.free_question_used:
+    # Fonction d'affichage de l'offre Premium
+    def afficher_offre_premium():
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown(f"**{t('feature1_title')}**")
+            st.caption(t("feature1_desc"))
+
+        with col2:
+            st.markdown(f"**{t('feature2_title')}**")
+            st.caption(t("feature2_desc"))
+
+        with col3:
+            st.markdown(f"**{t('feature3_title')}**")
+            st.caption(t("feature3_desc"))
+
+        st.write("---")
+
         st.markdown(
             f"""
-            <div style="
-                background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-                padding: 20px;
-                border-radius: 12px;
-                text-align: center;
-                margin-bottom: 20px;
-                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            ">
+            <div style="background-color: #F3F4F6;
+            padding: 20px; border-radius: 10px;
+            border-left: 5px solid #10B981;
+            margin-bottom: 20px;">
+                <h4 style="margin: 0; color: #111827;">
+                    {t('offer_title')}
+                </h4>
+                <p style="font-size: 1.8em; font-weight: bold;
+                margin: 10px 0; color: #10B981;">
+                    {t('offer_price')}
+                    <span style="font-size: 0.5em;
+                    color: #6B7280; font-weight: normal;">
+                        {t('offer_price_sub')}
+                    </span>
+                </p>
+                <ul style="margin-bottom: 0;
+                padding-left: 20px; color: #374151;">
+                    <li>{t('offer_bullet1')}</li>
+                    <li>{t('offer_bullet2')}</li>
+                    <li>{t('offer_bullet3')}</li>
+                    <li>{t('offer_bullet4')}</li>
+                </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
-       
-        # Vérifier si l'adresse e-mail a déjà été validée
-if st.session_state.get("email_verifie"):
 
-    st.success(t("email_verified"))
+        if st.button(
+            t("button_pay"),
+            use_container_width=True,
+            type="primary",
+            key="btn_pay"
+        ):
+            try:
+                checkout_session = stripe.checkout.Session.create(
+                    line_items=[
+                        {'price': ID_PRIX_UNIQUE, 'quantity': 1}
+                    ],
+                    mode='payment',
+                    success_url=f"{URL_APP}?session_id={{CHECKOUT_SESSION_ID}}",
+                    cancel_url=URL_APP,
+                )
 
-    # Bouton pour ouvrir le générateur de sujets
-    if st.button(
-        "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
-        use_container_width=True,
-        key="btn_sujet_gratuit"
-    ):
-        st.session_state.ouvrir_generateur_sujet = True
-        st.rerun()
+                st.markdown(
+                    f"### [{t('button_pay_link')}]({checkout_session.url})"
+                )
+                st.caption(t("stripe_secure"))
 
-    # Afficher le générateur uniquement sur demande
-    if st.session_state.get("ouvrir_generateur_sujet", False):
+                st.markdown(
+                    f"<p style='font-size: 0.8em; color: #9CA3AF; "
+                    f"text-align: center; margin-top: 10px;'>"
+                    f"{t('legal_notice')}</p>",
+                    unsafe_allow_html=True
+                )
+
+            except Exception as e:
+                st.error(t("stripe_error", error=str(e)))
+
+        st.write("---")
+        st.markdown(f"##### {t('testimonials_title')}")
+        st.info(t("testimonial_text"))
+
+    # Cas A : Une correction est déjà en cours
+    if "etape_actuelle" in st.session_state:
+
+        if st.session_state.get("correction_terminee"):
+            afficher_recapitulatif_final("correction_gratuite.pdf")
+
+            st.success(t("free_question_used"))
+            st.markdown(t("free_question_used_msg"))
+
+            afficher_offre_premium()
+
+        else:
+            afficher_coach_interactif(
+                st.session_state["dernier_enonce"]
+            )
+
+    # Cas B : Question gratuite déjà utilisée
+    elif st.session_state.free_question_used:
+
+        st.success(t("free_question_used"))
+        st.markdown(t("free_question_used_msg"))
+
+        afficher_offre_premium()
+
+    # Cas C : Première visite, demande d'email
+    elif not st.session_state.email_verifie:
+
+        st.info("Veuillez saisir votre adresse e-mail pour continuer.")
+
+        email_saisi = st.text_input(
+            t("email_label"),
+            key="email_saisi"
+        )
+
+        if st.button(
+            t("email_continue_btn"),
+            type="primary",
+            use_container_width=True,
+            key="btn_email"
+        ):
+
+            email_clean = email_saisi.strip().lower()
+
+            if not email_valide(email_clean):
+                st.error(t("email_invalid"))
+
+            elif email_deja_utilise(email_clean):
+                st.error(t("email_already_used"))
+
+            else:
+                st.session_state.email_verifie = email_clean
+                st.session_state.ouvrir_generateur_sujet = False
+                st.rerun()
+
+    # Cas D : Email vérifié, accès gratuit
+    else:
+
+        st.success(t("email_verified"))
+
+        # Générateur de sujets et de concours
         afficher_generateur_sujet()
 
-    else:
-        st.markdown(f"#### {t('question_step_title')}")
+        # Afficher la question gratuite si le générateur est fermé
+        if not st.session_state.get("ouvrir_generateur_sujet", False):
 
-        if "etape_actuelle" not in st.session_state:
+            st.markdown(f"#### {t('question_step_title')}")
+
             st.info(t("free_question_remaining"))
             st.write("---")
 
@@ -1393,104 +1518,68 @@ if st.session_state.get("email_verifie"):
                 use_container_width=True,
                 key="btn_free"
             ):
+
                 if not exercice_gratuit.strip():
                     st.warning(t("warning_empty"))
 
                 else:
-                    # Conserver ici ton code existant
-                    # de traitement de la question gratuite
-                    pass
+                    sauvegarder_email(
+                        st.session_state.email_verifie
+                    )
 
-     else:
-    st.info("Veuillez saisir votre adresse e-mail pour continuer.")
+                    st.session_state.free_question_used = True
 
-    email_saisi = st.text_input(
-        t("email_label"),
-        key="email_saisi"
+                    if cookie_manager is not None:
+                        try:
+                            cookie_manager.set(
+                                "free_question_used",
+                                "1",
+                                expires_at=datetime.datetime.now()
+                                + datetime.timedelta(days=365)
+                            )
+                        except Exception:
+                            pass
+
+                    initialiser_session_pedago(exercice_gratuit)
+                    st.rerun()
+
+# Cas 3 : Payé
+else:
+
+    st.markdown(
+        f"<h1 style='text-align: center; color: #10B981;'>"
+        f"{t('premium_activated')}</h1>",
+        unsafe_allow_html=True
     )
 
-    if st.button(
-        t("email_continue_btn"),
-        type="primary",
-        use_container_width=True,
-        key="btn_email"
-    ):
-        email_clean = email_saisi.strip().lower()
-
-        if not email_valide(email_clean):
-            st.error(t("email_invalid"))
-
-        elif email_deja_utilise(email_clean):
-            st.error(t("email_already_used"))
-
-       else:
-    st.session_state.email_verifie = email_clean
-    st.session_state.ouvrir_generateur_sujet = False
-    st.rerun()
-
-if st.session_state.get("email_verifie"):
-
-    st.success(t("email_verified"))
-
-    st.markdown(f"#### {t('question_step_title')}")
+    st.success(t("premium_msg", email=email_eleve))
 
     if "etape_actuelle" not in st.session_state:
 
-        st.info(t("free_question_remaining"))
-        st.write("---")
-
-        exercice_gratuit = st.text_area(
-            t("free_question_label"),
+        exercice = st.text_area(
+            t("textarea_label"),
             height=150,
-            key="free_question_input"
+            key="premium_input"
         )
 
         if st.button(
-            t("free_question_button"),
+            t("button_correct"),
             type="primary",
             use_container_width=True,
-            key="btn_free"
+            key="btn_correct"
         ):
 
-            if not exercice_gratuit.strip():
+            if not exercice.strip():
                 st.warning(t("warning_empty"))
 
             else:
-                sauvegarder_email(st.session_state.email_verifie)
-                st.session_state.free_question_used = True
-
-                if cookie_manager is not None:
-                    try:
-                        cookie_manager.set(
-                            "free_question_used",
-                            "1",
-                            expires_at=datetime.datetime.now()
-                            + datetime.timedelta(days=365)
-                        )
-                    except Exception:
-                        pass
-
-                initialiser_session_pedago(exercice_gratuit)
+                initialiser_session_pedago(exercice)
                 st.rerun()
 
     else:
-        if st.session_state.get("correction_terminee"):
-            afficher_recapitulatif_final("correction_gratuite.pdf")
-            st.write("---")
-            st.success(t("free_question_used"))
-            st.markdown(t("free_question_used_msg"))
-            st.write("---")
-
-        else:
-            afficher_coach_interactif(
-                st.session_state["dernier_enonce"]
-            )
-
-else:
-    if "etape_actuelle" in st.session_state:
 
         if st.session_state.get("correction_terminee"):
-            afficher_recapitulatif_final("correction_gratuite.pdf")
+            afficher_recapitulatif_final("correction_coach_math.pdf")
 
         else:
             afficher_coach_interactif(
