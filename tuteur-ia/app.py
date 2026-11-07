@@ -1395,6 +1395,7 @@ elif not est_abonne:
                 afficher_generateur_sujet()
         else:
             st.success(t("email_verified"))
+            afficher_generateur_sujet()
             st.markdown(f"#### {t('question_step_title')}")
 
             if "etape_actuelle" not in st.session_state:
