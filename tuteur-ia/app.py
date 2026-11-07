@@ -1392,7 +1392,7 @@ elif not est_abonne:
                 st.rerun()
 
             if st.session_state.get("ouvrir_generateur_sujet", False):
-                afficher_generateur_sujet()
+               
         else:
             st.success(t("email_verified"))
             afficher_generateur_sujet()
