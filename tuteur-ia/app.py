@@ -1270,10 +1270,11 @@ Vérifie la cohérence des résultats.
 Réponds en français.
 """
 
-                    response = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=prompt
-                    )
+                   
+  response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=prompt
+)
 
                     st.session_state.correction_sujet = response.text or ""
 
