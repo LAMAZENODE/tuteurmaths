@@ -1271,12 +1271,13 @@ Réponds en français.
 """
 
                    
-                    response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=prompt
-                   )
+                 
+                    response = _appeler_gemini(
+                          prompt,
+                         contenu="Génère la correction détaillée du sujet."
+                    )
 
-                    st.session_state.correction_sujet = response.text or ""
+                    st.session_state.correction_sujet = response or ""
 
                     if not st.session_state.correction_sujet:
                         st.error("La correction n'a pas pu être générée.")
