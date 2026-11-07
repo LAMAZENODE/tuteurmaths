@@ -1465,12 +1465,12 @@ elif not est_abonne:
             unsafe_allow_html=True
         )
 
-        if st.button(
-            t("button_pay"),
-            use_container_width=True,
-            type="primary",
-            key="btn_pay"
-        ):
+    if st.button(
+        t("button_pay"),
+        use_container_width=True,
+        type="primary",
+        key="btn_pay"
+    ):
             try:
                 checkout_session = stripe.checkout.Session.create(
                     line_items=[{'price': ID_PRIX_UNIQUE, 'quantity': 1}],
