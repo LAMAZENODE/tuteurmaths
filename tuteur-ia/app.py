@@ -1077,19 +1077,22 @@ def generer_pdf_sujet(texte_sujet):
     )
 
     # Zone d'identification unique
+   
     donnees = [
-        [
-            Paragraph("Nom : ........................", identification),
-            Paragraph("Prénom : ....................", identification),
-            Paragraph("Classe : ....................", identification),
-            Paragraph("Date : ......................", identification)
-        ]
+    [
+        Paragraph("Nom : ................................", identification),
+        Paragraph("Prénom : ...........................", identification)
+    ],
+    [
+        Paragraph("Classe : .............................", identification),
+        Paragraph("Date : ................................", identification)
     ]
+]
 
-    tableau = Table(
-        donnees,
-        colWidths=[125, 125, 105, 100]
-    )
+tableau = Table(
+    donnees,
+    colWidths=[227, 228]
+)
 
     tableau.setStyle(
         TableStyle([
