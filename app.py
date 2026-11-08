@@ -67,6 +67,7 @@ TRADUCTIONS_SECOURS = {
         "preambule_title": "📖 Rappel de cours",
         "exemple_concret_title": "💡 Exemple concret",
         "exemple_theorique_title": "🧮 Exemple théorique",
+        
         "retry_button": "🔄 Réessayer",
     },
     "en": {
@@ -980,130 +981,333 @@ def afficher_erreur_ia(api_error):
 # GÉNÉRATEUR DE SUJETS D'ÉVALUATION ET DE CONCOURS
 # ============================================================
 
+
+
+
+
+
+
+
 def generer_pdf_sujet(texte_sujet):
-    from reportlab.lib.pagesizes import A4
+    import io
+    import re
     from xml.sax.saxutils import escape
 
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import (
+        getSampleStyleSheet, ParagraphStyle
+    )
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        HRFlowable,
+        KeepTogether
+    )
+
+    # Création du PDF en mémoire
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=45,
-        leftMargin=45,
-        topMargin=45,
-        bottomMargin=45
+        rightMargin=1.7 * cm,
+        leftMargin=1.7 * cm,
+        topMargin=1.5 * cm,
+        bottomMargin=1.5 * cm
     )
 
     styles = getSampleStyleSheet()
 
+    bleu = colors.HexColor("#17365D")
+    gris = colors.HexColor("#D9E2F3")
+
     titre = ParagraphStyle(
         "TitreSujet",
         parent=styles["Title"],
-        fontSize=20,
-        textColor="#1E3A8A",
+        fontName="Helvetica-Bold",
+        fontSize=17,
+        leading=22,
         alignment=TA_CENTER,
-        spaceAfter=25
+        textColor=bleu,
+        spaceAfter=14
     )
 
-    corps = ParagraphStyle(
-        "CorpsSujet",
-        parent=styles["BodyText"],
-        fontSize=11,
-        leading=17,
-        spaceAfter=10
-    )
-
-    sous_titre = ParagraphStyle(
-        "SousTitreSujet",
+    exercice = ParagraphStyle(
+        "TitreExercice",
         parent=styles["Heading2"],
-        textColor="#1E3A8A",
+        fontName="Helvetica-Bold",
+        fontSize=12,
+        leading=16,
+        textColor=bleu,
         spaceBefore=12,
-        spaceAfter=8
+        spaceAfter=7,
+        keepWithNext=True
     )
 
-    def nettoyer_formules(texte):
-        # Enlever les délimiteurs LaTeX
-        texte = re.sub(r'\$\$(.*?)\$\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\$(.*?)\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
+    normal = ParagraphStyle(
+        "TexteNormal",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9.5,
+        leading=14,
+        spaceAfter=5
+    )
 
-        # Remplacer les commandes mathématiques courantes
-        remplacements = {
-            r'\in': '∈',
-            r'\notin': '∉',
-            r'\neq': '≠',
-            r'\leq': '≤',
-            r'\geq': '≥',
-            r'\times': '×',
-            r'\cdot': '·',
-            r'\pi': 'π',
-            r'\Delta': 'Δ',
-            r'\infty': '∞',
-            r'\pm': '±',
-            r'\approx': '≈',
-            r'\rightarrow': '→',
-            r'\Rightarrow': '⇒',
-            r'\sqrt': '√',
-        }
+    question = ParagraphStyle(
+        "Question",
+        parent=normal,
+        leftIndent=7,
+        spaceBefore=3,
+        spaceAfter=7
+    )
 
-        for ancien, nouveau in remplacements.items():
-            texte = texte.replace(ancien, nouveau)
+    informations = ParagraphStyle(
+        "Informations",
+        parent=normal,
+        fontSize=9,
+        leading=15,
+        spaceAfter=5
+    )
 
-        # Fractions simples
-        texte = re.sub(
-            r'\\frac\{([^{}]+)\}\{([^{}]+)\}',
-            r'(\1)/(\2)',
-            texte
+    consigne = ParagraphStyle(
+        "Consigne",
+        parent=normal,
+        leftIndent=5,
+        spaceAfter=5
+    )
+
+    story = []
+
+    # Normalisation du texte
+    texte = str(texte_sujet or "")
+    texte = texte.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Réunir les notations géométriques coupées
+    texte = re.sub(
+        r"\(\s*\n\s*([A-Za-z])\s*\)",
+        r"(\1)",
+        texte
+    )
+
+    # Séparer les questions collées
+    lignes = texte.split("\n")
+    lignes_propres = []
+
+    for ligne in lignes:
+
+        ligne = ligne.strip()
+
+        # Séparer les questions numérotées
+        ligne = re.sub(
+            r"(?<!\w)(?=\d+\.\s)",
+            "\n",
+            ligne
         )
 
-        # Exposants et indices simples
-        texte = re.sub(r'\^\{?2\}?', '²', texte)
-        texte = re.sub(r'\^\{?3\}?', '³', texte)
+        # Séparer les sous-questions a), b), c), d)
+        ligne = re.sub(
+            r"(?<!\w)(?=[a-d]\)\s)",
+            "\n",
+            ligne
+        )
 
-        # Supprimer les étoiles Markdown autour du texte
-        texte = re.sub(r'\*\*(.*?)\*\*', r'\1', texte)
-        texte = re.sub(r'\*(.*?)\*', r'\1', texte)
+        # Séparer Réponse et Justification
+        ligne = re.sub(
+            r"\s+(?=Justification\s*:)",
+            "\n",
+            ligne,
+            flags=re.IGNORECASE
+        )
 
-        return texte
+        # Séparer les consignes de notation collées
+        ligne = re.sub(
+            r"\s+-\s+(?=La droite|Le segment|La demi-droite)",
+            "\n",
+            ligne
+        )
 
-    contenu = [
-        Paragraph("SUJET D'ÉVALUATION / CONCOURS", titre)
-    ]
+        lignes_propres.extend(ligne.split("\n"))
 
-    for ligne in texte_sujet.splitlines():
+    lignes = lignes_propres
+
+    premier_titre = True
+
+    for ligne in lignes:
+
         ligne = ligne.strip()
 
         if not ligne:
-            contenu.append(Spacer(1, 8))
+            story.append(Spacer(1, 4))
             continue
 
-        ligne = nettoyer_formules(ligne)
+        # Nettoyage du Markdown
+        ligne = ligne.replace("**", "")
+        ligne = ligne.replace("__", "")
 
-        if ligne.startswith("#"):
-            texte = ligne.lstrip("#").strip()
-            contenu.append(
-                Paragraph(escape(texte), sous_titre)
+        # Nettoyage des délimiteurs LaTeX
+        ligne = re.sub(r"\\\(|\\\)", "", ligne)
+        ligne = re.sub(r"\\\[|\\\]", "", ligne)
+        ligne = ligne.replace("$", "")
+
+        # Conversion des notations mathématiques
+        remplacements = {
+            r"\in": "appartient à",
+            r"\notin": "n'appartient pas à",
+            r"\leq": "≤",
+            r"\geq": "≥",
+            r"\neq": "≠",
+            r"\times": "x",
+            r"\div": "/",
+            r"\approx": "environ",
+            r"\parallel": "parallèle à",
+            r"\perp": "perpendiculaire à",
+            r"\Delta": "Delta",
+            r"\delta": "delta",
+            r"\pi": "pi",
+            r"\sqrt": "racine"
+        }
+
+        for ancien, nouveau in remplacements.items():
+            ligne = ligne.replace(ancien, nouveau)
+
+        # Nettoyage des indices géométriques
+        ligne = re.sub(
+            r"_\{?([0-9]+)\}?",
+            r"\1",
+            ligne
+        )
+
+        # Titre principal
+        if premier_titre and (
+            "SUJET D'ÉVALUATION" in ligne.upper()
+            or "SUJET D'EVALUATION" in ligne.upper()
+            or "SUJET D'ÉVALUATION / CONCOURS" in ligne.upper()
+        ):
+            story.append(
+                Paragraph(escape(ligne), titre)
             )
-        else:
-            texte = escape(ligne)
 
-            # Gras Markdown
-            texte = re.sub(
-                r'\*\*(.*?)\*\*',
-                r'<b>\1</b>',
-                texte
+            story.append(
+                HRFlowable(
+                    width="100%",
+                    thickness=1.2,
+                    color=bleu,
+                    spaceAfter=12
+                )
             )
 
-            contenu.append(
-                Paragraph(texte, corps)
+            premier_titre = False
+            continue
+
+        # Titres des exercices
+        if re.match(
+            r"Exercice\s+\d+",
+            ligne,
+            re.IGNORECASE
+        ):
+            story.append(
+                KeepTogether([
+                    Spacer(1, 5),
+                    Paragraph(escape(ligne), exercice),
+                    HRFlowable(
+                        width="100%",
+                        thickness=0.6,
+                        color=gris,
+                        spaceAfter=7
+                    )
+                ])
+            )
+            continue
+
+        # Consignes générales
+        if ligne.lower().startswith("consignes générales"):
+            story.append(
+                Paragraph(
+                    "<b>Consignes générales</b>",
+                    normal
+                )
+            )
+            continue
+
+        # Informations de l'élève
+        if re.match(
+            r"^(Nom|Prénom|Classe|Date|Chapitre|Niveau|Durée|Barème)",
+            ligne,
+            re.IGNORECASE
+        ):
+            story.append(
+                Paragraph(escape(ligne), informations)
+            )
+            continue
+
+        # Réponses et justifications
+        if re.match(
+            r"^(Réponse|Justification)\s*:",
+            ligne,
+            re.IGNORECASE
+        ):
+            story.append(
+                Paragraph(escape(ligne), question)
+            )
+            continue
+
+        # Questions et sous-questions
+        if re.match(
+            r"^(\d+\.|[a-d]\))",
+            ligne
+        ):
+            story.append(
+                Paragraph(escape(ligne), question)
+            )
+            continue
+
+        # Pointillés de réponse
+        if len(ligne) > 10 and re.fullmatch(
+            r"[.\s_]+",
+            ligne
+        ):
+            story.append(Spacer(1, 12))
+            story.append(
+                HRFlowable(
+                    width="95%",
+                    thickness=0.4,
+                    color=colors.lightgrey,
+                    spaceAfter=10
+                )
+            )
+            continue
+
+        # Schémas textuels
+        if re.search(r"[.=_-]{5,}", ligne):
+            schema = ParagraphStyle(
+                "SchemaGeometrique",
+                fontName="Courier",
+                fontSize=9,
+                leading=14,
+                leftIndent=8
             )
 
-    doc.build(contenu)
+            story.append(
+                Paragraph(escape(ligne), schema)
+            )
+            continue
+
+        # Texte ordinaire
+        story.append(
+            Paragraph(escape(ligne), consigne)
+        )
+
+    # Construction du document
+    doc.build(story)
 
     buffer.seek(0)
+
     return buffer
+
 
 
 
@@ -1123,7 +1327,7 @@ def afficher_generateur_sujet():
     if st.button(
         "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
         use_container_width=True,
-        key="btn_ouvrir_generateur_sujet_v3"
+        key="btn_ouvrir_generateur_sujet"
     ):
         st.session_state.ouvrir_generateur_sujet = (
             not st.session_state.ouvrir_generateur_sujet
@@ -1184,26 +1388,97 @@ def afficher_generateur_sujet():
             with st.spinner("⏳ Création de votre sujet..."):
 
                 try:
+                
+                    
                     instructions = f"""
-Tu es un professeur de mathématiques expérimenté.
+Tu es un professeur de mathématiques expérimenté,
+spécialisé dans la création de sujets d'évaluation
+et de concours scolaires.
 
 Crée un sujet de {type_sujet} en mathématiques.
 
+INFORMATIONS :
 Niveau : {niveau}
 Chapitre : {chapitre}
 Difficulté : {difficulte}
 Durée : {duree}
 
-Le sujet doit contenir :
-1. Un titre clair.
-2. Plusieurs exercices progressifs.
-3. Des consignes précises.
-4. Un barème sur 20 points.
-5. Un niveau adapté aux élèves.
+PRÉSENTATION DU SUJET :
 
-Ne donne aucune correction dans le sujet.
-Réponds en français.
+1. Un seul titre principal.
+2. Une seule zone pour le nom, le prénom, la classe et la date.
+3. Indique clairement le chapitre, le niveau, la durée
+   et le barème total.
+4. Ajoute des consignes générales courtes et précises.
+5. Organise les exercices du plus simple au plus difficile.
+6. Attribue un barème à chaque exercice.
+7. Le total des points doit être exactement égal à 20.
+
+RÈGLES OBLIGATOIRES DE QUALITÉ :
+
+
+- Le titre principal doit apparaître une seule fois.
+- Les informations Nom, Prénom, Classe et Date
+  doivent apparaître une seule fois.
+- Ne crée pas une deuxième zone d'identification.
+- Si une question propose plusieurs mots à utiliser,
+  vérifie qu'il y a assez de phrases pour les employer.
+- Pour chaque exercice, vérifie que le nombre de points
+  correspond exactement à son contenu.
+- Ne crée pas de schéma ASCII si sa lecture risque
+  d'être ambiguë.
+- Pour les constructions géométriques, indique clairement
+  quand l'élève doit utiliser une feuille séparée.
+- Termine toujours toutes les consignes et tous les exercices.
+- Ne coupe jamais le sujet au milieu d'une phrase.
+
+- Chaque question doit être complète et compréhensible.
+- Aucune phrase ne doit être coupée ou inachevée.
+- Vérifie que toutes les questions ont une réponse possible.
+- Vérifie la cohérence mathématique de chaque exercice.
+- Ne pose jamais une question qui dépend d'une figure absente.
+- Si une figure est nécessaire, fournis-la directement
+  sous forme de schéma ASCII simple et lisible.
+- Ne demande jamais à l'élève d'observer une figure
+  qui n'est pas présente dans le sujet.
+- Les points, droites et segments doivent être correctement
+  nommés et utilisés.
+- Les longueurs représentées doivent être cohérentes
+  avec les questions posées.
+- Ne demande pas de citer un point extérieur à une droite
+  si tous les points proposés appartiennent à cette droite.
+- Prévois suffisamment de lignes pour les réponses.
+- Pour les constructions, précise clairement le matériel
+  et les consignes.
+- Ne répète pas les informations d'identification.
+- N'utilise pas de séparateurs inutiles comme -- ou ___.
+- N'ajoute aucun texte technique ou commentaire destiné
+  au développeur.
+
+VÉRIFICATION AVANT DE TERMINER :
+
+Relis tout le sujet.
+Vérifie les calculs, les figures, les notations,
+les consignes et le total des points.
+Corrige toute contradiction avant de répondre.
+
+FORMAT DE SORTIE :
+
+Utilise des titres clairs :
+SUJET D'ÉVALUATION
+Exercice 1
+Exercice 2
+Exercice 3, etc.
+
+Utilise une numérotation simple.
+Utilise une notation mathématique lisible.
+Laisse des espaces pour les réponses.
+
+IMPORTANT :
+Ne fournis aucune correction ni réponse.
+Réponds uniquement avec le sujet final en français.
 """
+
 
                     sujet = _appeler_gemini(
                         instructions,
@@ -1241,7 +1516,9 @@ Réponds en français.
         st.markdown("---")
         st.markdown("### 🔐 Correction réservée à l'enseignant")
 
-        if st.button(
+    
+          
+        if st.button(    
             "✏️ Générer la correction détaillée",
             use_container_width=True,
             key="btn_correction_sujet"
@@ -1270,12 +1547,12 @@ Vérifie la cohérence des résultats.
 Réponds en français.
 """
 
-                    response = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=prompt
+                    response = _appeler_gemini(
+                        prompt,
+                        contenu="Génère la correction détaillée du sujet."
                     )
 
-                    st.session_state.correction_sujet = response.text or ""
+                    st.session_state.correction_sujet = response or ""
 
                     if not st.session_state.correction_sujet:
                         st.error("La correction n'a pas pu être générée.")
@@ -1283,7 +1560,7 @@ Réponds en français.
                 except Exception as e:
                     st.error(f"Erreur de correction : {e}")
 
-        # Le corrigé est affiché et téléchargeable séparément
+        # Affichage et téléchargement du corrigé
         if st.session_state.correction_sujet:
 
             st.success("✅ Le corrigé enseignant est prêt.")
@@ -1300,7 +1577,12 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
+# ============================================================
+# INTERFACE
+# ============================================================
 
+
+        
 # ============================================================
 # INTERFACE
 # ============================================================
@@ -1314,23 +1596,31 @@ if est_rembourse:
 
 # Cas 2 : Non payé
 elif not est_abonne:
+
     if "free_question_used" not in st.session_state:
         st.session_state.free_question_used = False
 
     if "email_verifie" not in st.session_state:
         st.session_state.email_verifie = None
 
+    if "ouvrir_generateur_sujet" not in st.session_state:
+        st.session_state.ouvrir_generateur_sujet = False
+
+    # Vérification du cookie
     if not st.session_state.free_question_used and cookie_manager is not None:
         try:
             cookie_val = cookie_manager.get(cookie="free_question_used")
             if cookie_val == "1":
                 st.session_state.free_question_used = True
         except Exception:
-            pass 
+            pass
+
+    # Présentation
     st.markdown(
         f"<h1 style='text-align: center; color: #1E3A8A;'>{t('hero_title')}</h1>",
         unsafe_allow_html=True
     )
+
     st.markdown(
         f"<p style='text-align: center; font-size: 1.2em; color: #4B5563;'>{t('hero_subtitle')}</p>",
         unsafe_allow_html=True
@@ -1338,160 +1628,202 @@ elif not est_abonne:
 
     st.write("---")
 
-    if not st.session_state.free_question_used:
+    # Fonction d'affichage de l'offre Premium
+    def afficher_offre_premium():
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown(f"**{t('feature1_title')}**")
+            st.caption(t("feature1_desc"))
+
+        with col2:
+            st.markdown(f"**{t('feature2_title')}**")
+            st.caption(t("feature2_desc"))
+
+        with col3:
+            st.markdown(f"**{t('feature3_title')}**")
+            st.caption(t("feature3_desc"))
+
+        st.write("---")
+
         st.markdown(
             f"""
-            <div style="
-                background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-                padding: 20px;
-                border-radius: 12px;
-                text-align: center;
-                margin-bottom: 20px;
-                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            ">
-                <h2 style="color: white; margin: 0 0 8px 0; font-size: 1.6em;">
-                    {t('free_question_title')}
-                </h2>
-                <p style="color: #ECFDF5; margin: 0; font-size: 1.05em;">
-                    {t('free_question_subtitle')}
+            <div style="background-color: #F3F4F6;
+            padding: 20px; border-radius: 10px;
+            border-left: 5px solid #10B981;
+            margin-bottom: 20px;">
+                <h4 style="margin: 0; color: #111827;">
+                    {t('offer_title')}
+                </h4>
+                <p style="font-size: 1.8em; font-weight: bold;
+                margin: 10px 0; color: #10B981;">
+                    {t('offer_price')}
+                    <span style="font-size: 0.5em;
+                    color: #6B7280; font-weight: normal;">
+                        {t('offer_price_sub')}
+                    </span>
                 </p>
+                <ul style="margin-bottom: 0;
+                padding-left: 20px; color: #374151;">
+                    <li>{t('offer_bullet1')}</li>
+                    <li>{t('offer_bullet2')}</li>
+                    <li>{t('offer_bullet3')}</li>
+                    <li>{t('offer_bullet4')}</li>
+                </ul>
             </div>
             """,
             unsafe_allow_html=True
         )
-        afficher_generateur_sujet()          
 
-    if not st.session_state.free_question_used:
-        if st.session_state.email_verifie is None:
-            st.markdown(f"#### {t('email_step_title')}")
-            email_saisi = st.text_input(
-                t("email_label"),
-                placeholder=t("email_placeholder"),
-                help=t("email_help"),
-                key="email_input"
-            )
-            if st.button(t("email_continue_btn"), type="primary",
-                         use_container_width=True, key="btn_email"):
-                email_clean = email_saisi.strip().lower()
-                if not email_valide(email_clean):
-                    st.error(t("email_invalid"))
-                elif email_deja_utilise(email_clean):
-                    st.error(t("email_already_used"))
-                    st.info(t("free_question_used_msg"))
-                else:
-                    st.session_state.email_verifie = email_clean
-                    st.rerun()
-                    st.write("---")
-
-            if st.button(
-                "📝 Je peux vous proposer un sujet d'évaluation ou de concours",
-                use_container_width=True,
-                key="btn_sujet_gratuit"
-            ):
-                st.session_state.ouvrir_generateur_sujet = True
-                st.rerun()
-
-        else:
-            st.success(t("email_verified"))
-            afficher_generateur_sujet()
-            st.markdown(f"#### {t('question_step_title')}")
-
-            if "etape_actuelle" not in st.session_state:
-                st.info(t("free_question_remaining"))
-                st.write("---")
-                exercice_gratuit = st.text_area(
-                    t("free_question_label"),
-                    height=150,
-                    key="free_question_input"
+        if st.button(
+            t("button_pay"),
+            use_container_width=True,
+            type="primary",
+            key="btn_pay"
+        ):
+            try:
+                checkout_session = stripe.checkout.Session.create(
+                    line_items=[
+                        {'price': ID_PRIX_UNIQUE, 'quantity': 1}
+                    ],
+                    mode='payment',
+                    success_url=f"{URL_APP}?session_id={{CHECKOUT_SESSION_ID}}",
+                    cancel_url=URL_APP,
                 )
-                if st.button(t("free_question_button"), type="primary",
-                             use_container_width=True, key="btn_free"):
-                    if not exercice_gratuit.strip():
-                        st.warning(t("warning_empty"))
-                    else:
-                        sauvegarder_email(st.session_state.email_verifie)
-                        st.session_state.free_question_used = True
-                        if cookie_manager is not None:
-                            try:
-                                cookie_manager.set(
-                                    "free_question_used", "1",
-                                    expires_at=datetime.datetime.now() + datetime.timedelta(days=365)
-                                )
-                            except Exception:
-                                pass
-                        initialiser_session_pedago(exercice_gratuit)
-                        st.rerun()
-            else:
-                if st.session_state.get("correction_terminee"):
-                    afficher_recapitulatif_final("correction_gratuite.pdf")
-                    st.write("---")
-                    st.success(t("free_question_used"))
-                    st.markdown(t("free_question_used_msg"))
-                    st.write("---")
-                else:
-                    afficher_coach_interactif(st.session_state['dernier_enonce'])
-    else:
-        if "etape_actuelle" in st.session_state:
-            if st.session_state.get("correction_terminee"):
-                afficher_recapitulatif_final("correction_gratuite.pdf")
-            else:
-                afficher_coach_interactif(st.session_state['dernier_enonce'])
-            st.write("---")
+
+                st.markdown(
+                    f"### [{t('button_pay_link')}]({checkout_session.url})"
+                )
+                st.caption(t("stripe_secure"))
+
+                st.markdown(
+                    f"<p style='font-size: 0.8em; color: #9CA3AF; "
+                    f"text-align: center; margin-top: 10px;'>"
+                    f"{t('legal_notice')}</p>",
+                    unsafe_allow_html=True
+                )
+
+            except Exception as e:
+                st.error(t("stripe_error", error=str(e)))
+
+        st.write("---")
+        st.markdown(f"##### {t('testimonials_title')}")
+        st.info(t("testimonial_text"))
+            # Générateur toujours accessible après vérification de l'email
+    if st.session_state.get("email_verifie"):
+        afficher_generateur_sujet()
+
+    # Cas A : Une correction est déjà en cours
+    if "etape_actuelle" in st.session_state:
+
+        if st.session_state.get("correction_terminee"):
+            afficher_recapitulatif_final("correction_gratuite.pdf")
+
             st.success(t("free_question_used"))
             st.markdown(t("free_question_used_msg"))
-            st.write("---")
+
+            afficher_offre_premium()
+
         else:
-            st.info(t("free_question_used_msg"))
+            afficher_coach_interactif(
+                st.session_state["dernier_enonce"]
+            )
+
+    # Cas B : Question gratuite déjà utilisée
+    elif st.session_state.free_question_used:
+
+        st.success(t("free_question_used"))
+        st.markdown(t("free_question_used_msg"))
+
+        afficher_offre_premium()
+
+    # Cas C : Première visite, demande d'email
+    elif not st.session_state.email_verifie:
+
+        st.info("Veuillez saisir votre adresse e-mail pour continuer.")
+
+        email_saisi = st.text_input(
+            t("email_label"),
+            key="email_saisi"
+        )
+
+        if st.button(
+            t("email_continue_btn"),
+            type="primary",
+            use_container_width=True,
+            key="btn_email"
+        ):
+
+            email_clean = email_saisi.strip().lower()
+
+            if not email_valide(email_clean):
+                st.error(t("email_invalid"))
+
+            elif email_deja_utilise(email_clean):
+                st.error(t("email_already_used"))
+
+            else:
+                st.session_state.email_verifie = email_clean
+                st.session_state.ouvrir_generateur_sujet = False
+                st.rerun()
+
+    # Cas D : Email vérifié, accès gratuit
+    else:
+
+        st.success(t("email_verified"))
+
+
+        # Afficher la question gratuite si le générateur est fermé
+        if not st.session_state.get("ouvrir_generateur_sujet", False):
+
+            st.markdown(f"#### {t('question_step_title')}")
+
+            st.info(t("free_question_remaining"))
             st.write("---")
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"**{t('feature1_title')}**")
-        st.caption(t("feature1_desc"))
-    with col2:
-        st.markdown(f"**{t('feature2_title')}**")
-        st.caption(t("feature2_desc"))
-    with col3:
-        st.markdown(f"**{t('feature3_title')}**")
-        st.caption(t("feature3_desc"))
-
-    st.write("---")
-    st.markdown(
-        f"""
-        <div style="background-color: #F3F4F6; padding: 20px; border-radius: 10px; border-left: 5px solid #10B981; margin-bottom: 20px;">
-            <h4 style="margin: 0; color: #111827;">{t('offer_title')}</h4>
-            <p style="font-size: 1.8em; font-weight: bold; margin: 10px 0; color: #10B981;">{t('offer_price')} <span style="font-size: 0.5em; color: #6B7280; font-weight: normal;">{t('offer_price_sub')}</span></p>
-            <ul style="margin-bottom: 0; padding-left: 20px; color: #374151;">
-                <li>{t('offer_bullet1')}</li>
-                <li>{t('offer_bullet2')}</li>
-                <li>{t('offer_bullet3')}</li>
-                <li>{t('offer_bullet4')}</li>
-            </ul>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    if st.button(t("button_pay"), use_container_width=True, type="primary", key="btn_pay"):
-        try:
-            checkout_session = stripe.checkout.Session.create(
-                line_items=[{'price': ID_PRIX_UNIQUE, 'quantity': 1}],
-                mode='payment',
-                success_url=f"{URL_APP}?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=URL_APP,
+            exercice_gratuit = st.text_area(
+                t("free_question_label"),
+                height=150,
+                key="free_question_input"
             )
-            st.markdown(f"### [{t('button_pay_link')}]({checkout_session.url})")
-            st.caption(t("stripe_secure"))
-            st.markdown(
-                f"<p style='font-size: 0.8em; color: #9CA3AF; text-align: center; margin-top: 10px;'>{t('legal_notice')}</p>",
-                unsafe_allow_html=True
-            )
-        except Exception as e:
-            st.error(t("stripe_error", error=str(e)))
 
-    st.write("---")
-    st.markdown(f"##### {t('testimonials_title')}")
-    st.info(t("testimonial_text"))
+            if st.button(
+                t("free_question_button"),
+                type="primary",
+                use_container_width=True,
+                key="btn_free"
+            ):
+
+                if not exercice_gratuit.strip():
+                    st.warning(t("warning_empty"))
+
+                else:
+                    sauvegarder_email(
+                        st.session_state.email_verifie
+                    )
+
+                    st.session_state.free_question_used = True
+
+                    if cookie_manager is not None:
+                        try:
+                            cookie_manager.set(
+                                "free_question_used",
+                                "1",
+                                expires_at=datetime.datetime.now()
+                                + datetime.timedelta(days=365)
+                            )
+                        except Exception:
+                            pass
+
+                    initialiser_session_pedago(exercice_gratuit)
+                    st.rerun()
+
+
+
+
+      
+
 
 # Cas 3 : Payé
 else:
@@ -1499,23 +1831,32 @@ else:
         f"<h1 style='text-align: center; color: #10B981;'>{t('premium_activated')}</h1>",
         unsafe_allow_html=True
     )
+
     st.success(t("premium_msg", email=email_eleve))
-   
 
     if "etape_actuelle" not in st.session_state:
-        exercice = st.text_area(t("textarea_label"), height=150, key="premium_input")
-        if st.button(t("button_correct"), type="primary",
-                     use_container_width=True, key="btn_correct"):
+        exercice = st.text_area(
+            t("textarea_label"),
+            height=150,
+            key="premium_input"
+        )
+
+        if st.button(
+            t("button_correct"),
+            type="primary",
+            use_container_width=True,
+            key="btn_correct"
+        ):
             if not exercice.strip():
                 st.warning(t("warning_empty"))
             else:
                 initialiser_session_pedago(exercice)
                 st.rerun()
+
     else:
         if st.session_state.get("correction_terminee"):
             afficher_recapitulatif_final("correction_coach_math.pdf")
         else:
-            afficher_coach_interactif(st.session_state['dernier_enonce'])
-
-
-
+            afficher_coach_interactif(
+                st.session_state['dernier_enonce']
+            )
