@@ -1166,22 +1166,25 @@ def generer_pdf_sujet(texte_sujet):
         ligne = re.sub(r"\\\[|\\\]", "", ligne)
 
         # Conversion des symboles mathématiques
+      
         remplacements = {
-            r"\in": "∈",
-            r"\notin": "∉",
-            r"\leq": "≤",
-            r"\geq": "≥",
-            r"\neq": "≠",
-            r"\times": "×",
-            r"\div": "÷",
-            r"\approx": "≈",
-            r"\parallel": "parallèle à",
-            r"\perp": "perpendiculaire à",
-            r"\Delta": "Delta",
-            r"\delta": "delta",
-            r"\pi": "pi",
-            r"\sqrt": "racine"
-        }
+    r"\in": "∈",
+    r"\notin": "∉",
+    "˛": "∈",
+    "ˇ": "∉",
+    r"\leq": "≤",
+    r"\geq": "≥",
+    r"\neq": "≠",
+    r"\times": "×",
+    r"\div": "÷",
+    r"\approx": "≈",
+    r"\parallel": "∥",
+    r"\perp": "⊥",
+    r"\Delta": "Delta",
+    r"\delta": "delta",
+    r"\pi": "pi",
+    r"\sqrt": "√"
+}
 
         for ancien, nouveau in remplacements.items():
             ligne = ligne.replace(ancien, nouveau)
