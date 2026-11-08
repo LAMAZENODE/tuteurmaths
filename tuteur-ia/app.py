@@ -987,301 +987,226 @@ def afficher_erreur_ia(api_error):
 
 
 def generer_pdf_sujet(texte_sujet):
-    from reportlab.lib.pagesizes import A4
+    import io
+    import re
+    from xml.sax.saxutils import escape
+
     from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import (
         getSampleStyleSheet, ParagraphStyle
     )
-    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.units import cm
     from reportlab.platypus import (
-        SimpleDocTemplate, Paragraph, Spacer, Table
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        Table,
+        TableStyle,
+        HRFlowable,
+        Preformatted
     )
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-    from xml.sax.saxutils import escape
-    import os
-    import re
-    import io
 
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=40,
-        leftMargin=40,
-        topMargin=35,
-        bottomMargin=40,
-        title="Sujet d'évaluation de mathématiques"
+        rightMargin=1.7 * cm,
+        leftMargin=1.7 * cm,
+        topMargin=1.6 * cm,
+        bottomMargin=1.6 * cm
     )
 
     styles = getSampleStyleSheet()
 
-    # Police
-    police = "Helvetica"
-    chemin_police = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-
-    if os.path.exists(chemin_police):
-        try:
-            if "DejaVuPDF" not in pdfmetrics.getRegisteredFontNames():
-                pdfmetrics.registerFont(
-                    TTFont("DejaVuPDF", chemin_police)
-                )
-            police = "DejaVuPDF"
-        except Exception:
-            police = "Helvetica"
-
     titre = ParagraphStyle(
-        "TitrePDF",
+        "TitreSujet",
         parent=styles["Title"],
-        fontName=police,
-        fontSize=18,
-        leading=23,
-        textColor=colors.HexColor("#1E3A8A"),
+        fontName="Helvetica-Bold",
+        fontSize=17,
+        leading=22,
         alignment=TA_CENTER,
-        spaceAfter=18
+        textColor=colors.HexColor("#17365D"),
+        spaceAfter=14
     )
 
-    sous_titre = ParagraphStyle(
-        "SousTitrePDF",
+    exercice = ParagraphStyle(
+        "Exercice",
         parent=styles["Heading2"],
-        fontName=police,
+        fontName="Helvetica-Bold",
         fontSize=12,
         leading=16,
-        textColor=colors.HexColor("#1E3A8A"),
+        textColor=colors.HexColor("#17365D"),
         spaceBefore=12,
         spaceAfter=7,
         keepWithNext=True
     )
 
-    corps = ParagraphStyle(
-        "CorpsPDF",
-        parent=styles["BodyText"],
-        fontName=police,
-        fontSize=10,
-        leading=15,
-        textColor=colors.HexColor("#273449"),
-        spaceAfter=5,
-        splitLongWords=True
+    normal = ParagraphStyle(
+        "TexteNormal",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9.5,
+        leading=14,
+        alignment=TA_LEFT,
+        spaceAfter=5
     )
 
-    identification = ParagraphStyle(
-        "IdentificationPDF",
-        parent=corps,
+    question = ParagraphStyle(
+        "Question",
+        parent=normal,
+        leftIndent=5,
+        spaceBefore=3,
+        spaceAfter=6
+    )
+
+    petit = ParagraphStyle(
+        "Petit",
+        parent=normal,
         fontSize=9,
-        leading=13
+        leading=12
     )
 
-    contenu = []
+    story = []
 
-    # Titre unique
-    contenu.append(
-        Paragraph("SUJET D'ÉVALUATION", titre)
-    )
+    lignes = texte_sujet.splitlines()
 
-    # Zone d'identification unique
-    donnees = [
-        [
-            Paragraph("Nom : ................................", identification),
-            Paragraph("Prénom : ...........................", identification)
-        ],
-        [
-            Paragraph("Classe : .............................", identification),
-            Paragraph("Date : ................................", identification)
-        ]
-    ]
-
-    tableau = Table(
-        donnees,
-        colWidths=[227, 228]
-    )
-
-    tableau.setStyle([
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-    ])
-
-    contenu.append(tableau)
-    contenu.append(Spacer(1, 12))
-
-    # Nettoyage des formules
-    def nettoyer_formules(texte):
-        texte = str(texte)
-
-        texte = re.sub(
-            r'\$\$(.*?)\$\$',
-            r'\1',
-            texte,
-            flags=re.DOTALL
-        )
-
-        texte = re.sub(
-            r'\$(.*?)\$',
-            r'\1',
-            texte,
-            flags=re.DOTALL
-        )
-
-        texte = re.sub(
-            r'\\\((.*?)\\\)',
-            r'\1',
-            texte,
-            flags=re.DOTALL
-        )
-
-        texte = re.sub(
-            r'\\\[(.*?)\\\]',
-            r'\1',
-            texte,
-            flags=re.DOTALL
-        )
-
-        remplacements = {
-            r'\notin': '∉',
-            r'\in': '∈',
-            r'\neq': '≠',
-            r'\leq': '≤',
-            r'\geq': '≥',
-            r'\times': '×',
-            r'\cdot': '·',
-            r'\pi': 'π',
-            r'\Delta': 'Δ',
-            r'\infty': '∞',
-            r'\pm': '±',
-            r'\approx': '≈',
-            r'\rightarrow': '→',
-            r'\Rightarrow': '⇒',
-            r'\sqrt': '√'
-        }
-
-        for ancien, nouveau in remplacements.items():
-            texte = texte.replace(ancien, nouveau)
-
-        texte = re.sub(
-            r'\\frac\{([^{}]+)\}\{([^{}]+)\}',
-            r'(\1)/(\2)',
-            texte
-        )
-
-        texte = re.sub(r'_\{?1\}?', '₁', texte)
-        texte = re.sub(r'_\{?2\}?', '₂', texte)
-        texte = re.sub(r'_\{?3\}?', '₃', texte)
-        texte = re.sub(r'\^\{?2\}?', '²', texte)
-        texte = re.sub(r'\^\{?3\}?', '³', texte)
-
-        texte = texte.replace('˛', '∈')
-        texte = texte.replace('ˇ', '∉')
-
-        return texte
-
-    # Lecture du sujet
-    lignes = str(texte_sujet).replace(
-        "\r\n", "\n"
-    ).replace("\r", "\n").split("\n")
+    premier_titre = True
+    dans_consigne = False
 
     for ligne in lignes:
 
         ligne = ligne.strip()
 
         if not ligne:
-            contenu.append(Spacer(1, 4))
+            story.append(Spacer(1, 4))
             continue
 
-        # Suppression des séparateurs inutiles
-        if re.fullmatch(r'[-_]{2,}', ligne):
-            continue
+        # Nettoyage des marqueurs Markdown
+        ligne = ligne.replace("**", "")
+        ligne = ligne.replace("__", "")
 
-        # Suppression des titres en double
-        if re.match(
-            r'^#+\s*SUJET\s+D[\'’]ÉVALUATION',
-            ligne,
-            re.IGNORECASE
+        # Nettoyage des délimiteurs LaTeX
+        ligne = re.sub(r"\\\(|\\\)|\\\[|\\\]", "", ligne)
+        ligne = ligne.replace("$", "")
+
+        # Conversion de quelques symboles mathématiques
+        remplacements = {
+            r"\in": "∈",
+            r"\notin": "∉",
+            r"\leq": "≤",
+            r"\geq": "≥",
+            r"\neq": "≠",
+            r"\times": "×",
+            r"\div": "÷",
+            r"\approx": "≈",
+            r"\pi": "π",
+            r"\sqrt": "√"
+        }
+
+        for ancien, nouveau in remplacements.items():
+            ligne = ligne.replace(ancien, nouveau)
+
+        # Titre principal
+        if premier_titre and (
+            "SUJET D'ÉVALUATION" in ligne.upper()
+            or "SUJET D'EVALUATION" in ligne.upper()
         ):
-            continue
-
-        if re.match(
-            r'^SUJET\s+D[\'’]ÉVALUATION(?:\s*/\s*CONCOURS)?$',
-            ligne,
-            re.IGNORECASE
-        ):
-            continue
-
-        # Suppression des zones d'identification répétées
-        if re.match(
-            r'^(Nom et prénom|Nom|Prénom|Classe|Date)\s*:',
-            ligne,
-            re.IGNORECASE
-        ):
-            continue
-
-        ligne = nettoyer_formules(ligne)
-
-        # Titres Markdown
-        if ligne.startswith("#"):
-            texte = ligne.lstrip("#").strip()
-
-            contenu.append(
-                Paragraph(
-                    escape(texte),
-                    sous_titre
+            story.append(Paragraph(escape(ligne), titre))
+            story.append(
+                HRFlowable(
+                    width="100%",
+                    thickness=1,
+                    color=colors.HexColor("#17365D"),
+                    spaceAfter=12
                 )
             )
+            premier_titre = False
             continue
 
         # Titres des exercices
-        if re.match(
-            r'^(Exercice|Exercise)\s+\d+',
-            ligne,
-            re.IGNORECASE
-        ):
-            contenu.append(
+        if re.match(r"Exercice\s+\d+", ligne, re.IGNORECASE):
+            story.append(Spacer(1, 5))
+            story.append(
+                Paragraph(escape(ligne), exercice)
+            )
+            story.append(
+                HRFlowable(
+                    width="100%",
+                    thickness=0.5,
+                    color=colors.lightgrey,
+                    spaceAfter=7
+                )
+            )
+            dans_consigne = False
+            continue
+
+        # Consignes générales
+        if ligne.lower().startswith("consignes générales"):
+            story.append(
                 Paragraph(
-                    f"<b>{escape(ligne)}</b>",
-                    sous_titre
+                    "<b>Consignes générales</b>",
+                    normal
+                )
+            )
+            dans_consigne = True
+            continue
+
+        # Présentation des informations de l'élève
+        if (
+            ligne.startswith("Nom")
+            or ligne.startswith("Prénom")
+            or ligne.startswith("Classe")
+            or ligne.startswith("Date")
+        ):
+            story.append(Paragraph(escape(ligne), petit))
+            continue
+
+        # Détection des schémas avec caractères de dessin
+        if (
+            re.search(r"[.=_-]{5,}", ligne)
+            and not ligne.startswith("...")
+        ):
+            story.append(
+                Preformatted(
+                    ligne,
+                    ParagraphStyle(
+                        "Schema",
+                        fontName="Courier",
+                        fontSize=9,
+                        leading=14,
+                        leftIndent=8
+                    )
                 )
             )
             continue
 
-        # Informations générales
-        if re.match(
-            r'^(Niveau|Durée|Barème|Chapitre|Type)\s*:',
-            ligne,
-            re.IGNORECASE
-        ):
-            contenu.append(
-                Paragraph(
-                    f"<b>{escape(ligne)}</b>",
-                    corps
-                )
+        # Questions numérotées et sous-questions
+        if re.match(r"^(\d+\.|[a-d]\))", ligne):
+            story.append(
+                Paragraph(escape(ligne), question)
             )
             continue
 
-        # Mise en forme du texte
-        texte = escape(ligne)
+        # Lignes de réponse
+        if len(ligne) > 15 and set(ligne) <= {".", " "}:
+            story.append(Spacer(1, 15))
+            continue
 
-        texte = re.sub(
-            r'\*\*(.*?)\*\*',
-            r'<b>\1</b>',
-            texte
+        # Texte ordinaire
+        story.append(
+            Paragraph(escape(ligne), normal)
         )
 
-        texte = re.sub(
-            r'(?<!\*)\*([^*]+)\*(?!\*)',
-            r'<i>\1</i>',
-            texte
-        )
-
-        contenu.append(
-            Paragraph(texte, corps)
-        )
-
-    # Création du PDF
-    doc.build(contenu)
+    doc.build(story)
 
     buffer.seek(0)
 
     return buffer
+
+
 
 
 
