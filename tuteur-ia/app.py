@@ -1093,8 +1093,7 @@ tableau = Table(
     donnees,
     colWidths=[227, 228]
 )
-
-    tableau.setStyle(
+tableau.setStyle(
         TableStyle([
             ("BOX", (0, 0), (-1, -1), 0.8,
              colors.HexColor("#CBD5E1")),
