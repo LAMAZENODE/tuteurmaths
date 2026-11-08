@@ -1370,26 +1370,81 @@ def afficher_generateur_sujet():
             with st.spinner("⏳ Création de votre sujet..."):
 
                 try:
+                
+                    
                     instructions = f"""
-Tu es un professeur de mathématiques expérimenté.
+Tu es un professeur de mathématiques expérimenté,
+spécialisé dans la création de sujets d'évaluation
+et de concours scolaires.
 
 Crée un sujet de {type_sujet} en mathématiques.
 
+INFORMATIONS :
 Niveau : {niveau}
 Chapitre : {chapitre}
 Difficulté : {difficulte}
 Durée : {duree}
 
-Le sujet doit contenir :
-1. Un titre clair.
-2. Plusieurs exercices progressifs.
-3. Des consignes précises.
-4. Un barème sur 20 points.
-5. Un niveau adapté aux élèves.
+PRÉSENTATION DU SUJET :
 
-Ne donne aucune correction dans le sujet.
-Réponds en français.
+1. Un seul titre principal.
+2. Une seule zone pour le nom, le prénom, la classe et la date.
+3. Indique clairement le chapitre, le niveau, la durée
+   et le barème total.
+4. Ajoute des consignes générales courtes et précises.
+5. Organise les exercices du plus simple au plus difficile.
+6. Attribue un barème à chaque exercice.
+7. Le total des points doit être exactement égal à 20.
+
+RÈGLES OBLIGATOIRES DE QUALITÉ :
+
+- Chaque question doit être complète et compréhensible.
+- Aucune phrase ne doit être coupée ou inachevée.
+- Vérifie que toutes les questions ont une réponse possible.
+- Vérifie la cohérence mathématique de chaque exercice.
+- Ne pose jamais une question qui dépend d'une figure absente.
+- Si une figure est nécessaire, fournis-la directement
+  sous forme de schéma ASCII simple et lisible.
+- Ne demande jamais à l'élève d'observer une figure
+  qui n'est pas présente dans le sujet.
+- Les points, droites et segments doivent être correctement
+  nommés et utilisés.
+- Les longueurs représentées doivent être cohérentes
+  avec les questions posées.
+- Ne demande pas de citer un point extérieur à une droite
+  si tous les points proposés appartiennent à cette droite.
+- Prévois suffisamment de lignes pour les réponses.
+- Pour les constructions, précise clairement le matériel
+  et les consignes.
+- Ne répète pas les informations d'identification.
+- N'utilise pas de séparateurs inutiles comme -- ou ___.
+- N'ajoute aucun texte technique ou commentaire destiné
+  au développeur.
+
+VÉRIFICATION AVANT DE TERMINER :
+
+Relis tout le sujet.
+Vérifie les calculs, les figures, les notations,
+les consignes et le total des points.
+Corrige toute contradiction avant de répondre.
+
+FORMAT DE SORTIE :
+
+Utilise des titres clairs :
+SUJET D'ÉVALUATION
+Exercice 1
+Exercice 2
+Exercice 3, etc.
+
+Utilise une numérotation simple.
+Utilise une notation mathématique lisible.
+Laisse des espaces pour les réponses.
+
+IMPORTANT :
+Ne fournis aucune correction ni réponse.
+Réponds uniquement avec le sujet final en français.
 """
+
 
                     sujet = _appeler_gemini(
                         instructions,
