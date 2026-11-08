@@ -1103,7 +1103,7 @@ tableau.setStyle(
 )
 
 contenu.append(tableau)
-    contenu.append(Spacer(1, 12))
+contenu.append(Spacer(1, 12))
 
     # Nettoyage des formules
     def nettoyer_formules(texte):
