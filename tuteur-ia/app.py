@@ -988,8 +988,6 @@ def afficher_erreur_ia(api_error):
 
 
 
-
-
 def generer_pdf_sujet(texte_sujet):
     import io
     import re
@@ -1007,10 +1005,10 @@ def generer_pdf_sujet(texte_sujet):
         Paragraph,
         Spacer,
         HRFlowable,
-        Preformatted,
         KeepTogether
     )
 
+    # Création du PDF en mémoire
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(
@@ -1025,6 +1023,7 @@ def generer_pdf_sujet(texte_sujet):
     styles = getSampleStyleSheet()
 
     bleu = colors.HexColor("#17365D")
+    gris = colors.HexColor("#D9E2F3")
 
     titre = ParagraphStyle(
         "TitreSujet",
@@ -1038,7 +1037,7 @@ def generer_pdf_sujet(texte_sujet):
     )
 
     exercice = ParagraphStyle(
-        "Exercice",
+        "TitreExercice",
         parent=styles["Heading2"],
         fontName="Helvetica-Bold",
         fontSize=12,
@@ -1050,7 +1049,7 @@ def generer_pdf_sujet(texte_sujet):
     )
 
     normal = ParagraphStyle(
-        "NormalSujet",
+        "TexteNormal",
         parent=styles["Normal"],
         fontName="Helvetica",
         fontSize=9.5,
@@ -1059,67 +1058,59 @@ def generer_pdf_sujet(texte_sujet):
     )
 
     question = ParagraphStyle(
-        "QuestionSujet",
+        "Question",
         parent=normal,
         leftIndent=7,
         spaceBefore=3,
         spaceAfter=7
     )
 
-    information = ParagraphStyle(
-        "InformationSujet",
+    informations = ParagraphStyle(
+        "Informations",
         parent=normal,
         fontSize=9,
-        leading=15
+        leading=15,
+        spaceAfter=5
     )
 
-    puce = ParagraphStyle(
-        "PuceSujet",
+    consigne = ParagraphStyle(
+        "Consigne",
         parent=normal,
-        leftIndent=15,
-        firstLineIndent=-9,
-        spaceAfter=4
+        leftIndent=5,
+        spaceAfter=5
     )
 
     story = []
 
-    # Préparation du texte sans détruire les notations
+    # Normalisation du texte
     texte = str(texte_sujet or "")
     texte = texte.replace("\r\n", "\n").replace("\r", "\n")
 
-    # Correction des expressions LaTeX simples
-    texte = re.sub(
-        r"\\text\{\s*([^{}]+)\s*\}",
-        r"\1",
-        texte
-    )
-
-    texte = texte.replace(r"\,", " ")
-    texte = texte.replace(r"\;", " ")
-
-    # Réparer les notations géométriques coupées
+    # Réunir les notations géométriques coupées
     texte = re.sub(
         r"\(\s*\n\s*([A-Za-z])\s*\)",
         r"(\1)",
         texte
     )
 
-    # Séparer les éléments collés sur une même ligne
+    # Séparer les questions collées
     lignes = texte.split("\n")
-    lignes_finales = []
+    lignes_propres = []
 
     for ligne in lignes:
 
-        # Séparer les sous-questions a), b), c), d)
+        ligne = ligne.strip()
+
+        # Séparer les questions numérotées
         ligne = re.sub(
-            r"(?<!\w)(?=[a-d]\)\s)",
+            r"(?<!\w)(?=\d+\.\s)",
             "\n",
             ligne
         )
 
-        # Séparer les numéros de questions après un point
+        # Séparer les sous-questions a), b), c), d)
         ligne = re.sub(
-            r"(?<=[.)])\s+(?=\d+\.\s)",
+            r"(?<!\w)(?=[a-d]\)\s)",
             "\n",
             ligne
         )
@@ -1132,89 +1123,69 @@ def generer_pdf_sujet(texte_sujet):
             flags=re.IGNORECASE
         )
 
-        # Séparer les consignes générales collées
+        # Séparer les consignes de notation collées
         ligne = re.sub(
-            r"(?<!\w)\s*-\s+(?=(?:Lis|Soigne|Utilise|L'utilisation|Respecte|Réponds|Trace|Place)\b)",
+            r"\s+-\s+(?=La droite|Le segment|La demi-droite)",
             "\n",
             ligne
         )
 
-        lignes_finales.extend(ligne.split("\n"))
+        lignes_propres.extend(ligne.split("\n"))
+
+    lignes = lignes_propres
 
     premier_titre = True
-    liste_ouverte = False
 
-    def fermer_liste():
-        nonlocal liste_ouverte
-        liste_ouverte = False
-
-    for ligne in lignes_finales:
+    for ligne in lignes:
 
         ligne = ligne.strip()
 
         if not ligne:
-            fermer_liste()
             story.append(Spacer(1, 4))
             continue
 
-        # Nettoyage Markdown
+        # Nettoyage du Markdown
         ligne = ligne.replace("**", "")
         ligne = ligne.replace("__", "")
 
         # Nettoyage des délimiteurs LaTeX
         ligne = re.sub(r"\\\(|\\\)", "", ligne)
         ligne = re.sub(r"\\\[|\\\]", "", ligne)
+        ligne = ligne.replace("$", "")
 
-        # Conversion des symboles mathématiques
-      
+        # Conversion des notations mathématiques
         remplacements = {
-    r"\in": "∈",
-    r"\notin": "∉",
-    "˛": "∈",
-    "ˇ": "∉",
-    r"\leq": "≤",
-    r"\geq": "≥",
-    r"\neq": "≠",
-    r"\times": "×",
-    r"\div": "÷",
-    r"\approx": "≈",
-    r"\parallel": "∥",
-    r"\perp": "⊥",
-    r"\Delta": "Delta",
-    r"\delta": "delta",
-    r"\pi": "pi",
-    r"\sqrt": "√"
-}
+            r"\in": "appartient à",
+            r"\notin": "n'appartient pas à",
+            r"\leq": "≤",
+            r"\geq": "≥",
+            r"\neq": "≠",
+            r"\times": "x",
+            r"\div": "/",
+            r"\approx": "environ",
+            r"\parallel": "parallèle à",
+            r"\perp": "perpendiculaire à",
+            r"\Delta": "Delta",
+            r"\delta": "delta",
+            r"\pi": "pi",
+            r"\sqrt": "racine"
+        }
 
         for ancien, nouveau in remplacements.items():
             ligne = ligne.replace(ancien, nouveau)
 
-        # Nettoyage des indices
+        # Nettoyage des indices géométriques
         ligne = re.sub(
             r"_\{?([0-9]+)\}?",
             r"\1",
             ligne
         )
 
-        # Correction de la notation des unités
-        ligne = re.sub(
-            r"\\text\s*\{\s*cm\s*\}",
-            "cm",
-            ligne
-        )
-
-        # Correction de "(1. point)"
-        ligne = re.sub(
-            r"\(\s*(\d+)\s*\.\s*point[s]?\s*\)",
-            r"(\1 point)",
-            ligne,
-            flags=re.IGNORECASE
-        )
-
         # Titre principal
         if premier_titre and (
             "SUJET D'ÉVALUATION" in ligne.upper()
             or "SUJET D'EVALUATION" in ligne.upper()
+            or "SUJET D'ÉVALUATION / CONCOURS" in ligne.upper()
         ):
             story.append(
                 Paragraph(escape(ligne), titre)
@@ -1234,7 +1205,7 @@ def generer_pdf_sujet(texte_sujet):
 
         # Titres des exercices
         if re.match(
-            r"^Exercice\s+\d+",
+            r"Exercice\s+\d+",
             ligne,
             re.IGNORECASE
         ):
@@ -1245,64 +1216,75 @@ def generer_pdf_sujet(texte_sujet):
                     HRFlowable(
                         width="100%",
                         thickness=0.6,
-                        color=colors.lightgrey,
+                        color=gris,
                         spaceAfter=7
                     )
                 ])
             )
-            fermer_liste()
             continue
 
         # Consignes générales
         if ligne.lower().startswith("consignes générales"):
-            fermer_liste()
-            story.append(
-                Paragraph("<b>Consignes générales</b>", normal)
-            )
-            continue
-
-        # Puces des consignes
-        if ligne.startswith("- ") or ligne.startswith("• "):
-            contenu = ligne[2:].strip()
             story.append(
                 Paragraph(
-                    "• " + escape(contenu),
-                    puce
+                    "<b>Consignes générales</b>",
+                    normal
                 )
             )
             continue
 
-        fermer_liste()
-
-        # Informations de l'élève et du sujet
+        # Informations de l'élève
         if re.match(
             r"^(Nom|Prénom|Classe|Date|Chapitre|Niveau|Durée|Barème)",
             ligne,
             re.IGNORECASE
         ):
             story.append(
-                Paragraph(escape(ligne), information)
+                Paragraph(escape(ligne), informations)
             )
             continue
 
-        # Questions numérotées et sous-questions
-        if re.match(r"^(\d+\.|[a-d]\))", ligne):
+        # Réponses et justifications
+        if re.match(
+            r"^(Réponse|Justification)\s*:",
+            ligne,
+            re.IGNORECASE
+        ):
             story.append(
                 Paragraph(escape(ligne), question)
             )
             continue
 
-        # Conserver les pointillés de réponse
-        if re.fullmatch(r"[.\s_]{8,}", ligne):
+        # Questions et sous-questions
+        if re.match(
+            r"^(\d+\.|[a-d]\))",
+            ligne
+        ):
             story.append(
-                Paragraph(escape(ligne), normal)
+                Paragraph(escape(ligne), question)
             )
             continue
 
-        # Schémas géométriques textuels
+        # Pointillés de réponse
+        if len(ligne) > 10 and re.fullmatch(
+            r"[.\s_]+",
+            ligne
+        ):
+            story.append(Spacer(1, 12))
+            story.append(
+                HRFlowable(
+                    width="95%",
+                    thickness=0.4,
+                    color=colors.lightgrey,
+                    spaceAfter=10
+                )
+            )
+            continue
+
+        # Schémas textuels
         if re.search(r"[.=_-]{5,}", ligne):
             schema = ParagraphStyle(
-                "SchemaSujet",
+                "SchemaGeometrique",
                 fontName="Courier",
                 fontSize=9,
                 leading=14,
@@ -1310,20 +1292,23 @@ def generer_pdf_sujet(texte_sujet):
             )
 
             story.append(
-                Preformatted(ligne, schema)
+                Paragraph(escape(ligne), schema)
             )
             continue
 
         # Texte ordinaire
         story.append(
-            Paragraph(escape(ligne), normal)
+            Paragraph(escape(ligne), consigne)
         )
 
+    # Construction du document
     doc.build(story)
 
     buffer.seek(0)
 
     return buffer
+
+
 
 
 
@@ -1875,3 +1860,4 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
+
