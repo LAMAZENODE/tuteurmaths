@@ -1078,7 +1078,7 @@ def generer_pdf_sujet(texte_sujet):
 
     # Zone d'identification unique
    
-    donnees = [
+donnees = [
     [
         Paragraph("Nom : ................................", identification),
         Paragraph("Prénom : ...........................", identification)
@@ -1089,25 +1089,20 @@ def generer_pdf_sujet(texte_sujet):
     ]
 ]
 
-tableau = Table( 
+tableau = Table(
     donnees,
     colWidths=[227, 228]
 )
-tableau.setStyle(
-        TableStyle([
-            ("BOX", (0, 0), (-1, -1), 0.8,
-             colors.HexColor("#CBD5E1")),
-            ("BACKGROUND", (0, 0), (-1, -1),
-             colors.HexColor("#F8FAFC")),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 10),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5)
-        ])
-    )
 
-    contenu.append(tableau)
+tableau.setStyle(
+    [
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+    ]
+)
+
+contenu.append(tableau)
     contenu.append(Spacer(1, 12))
 
     # Nettoyage des formules
