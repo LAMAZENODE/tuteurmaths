@@ -1398,6 +1398,22 @@ PRÉSENTATION DU SUJET :
 
 RÈGLES OBLIGATOIRES DE QUALITÉ :
 
+
+- Le titre principal doit apparaître une seule fois.
+- Les informations Nom, Prénom, Classe et Date
+  doivent apparaître une seule fois.
+- Ne crée pas une deuxième zone d'identification.
+- Si une question propose plusieurs mots à utiliser,
+  vérifie qu'il y a assez de phrases pour les employer.
+- Pour chaque exercice, vérifie que le nombre de points
+  correspond exactement à son contenu.
+- Ne crée pas de schéma ASCII si sa lecture risque
+  d'être ambiguë.
+- Pour les constructions géométriques, indique clairement
+  quand l'élève doit utiliser une feuille séparée.
+- Termine toujours toutes les consignes et tous les exercices.
+- Ne coupe jamais le sujet au milieu d'une phrase.
+
 - Chaque question doit être complète et compréhensible.
 - Aucune phrase ne doit être coupée ou inachevée.
 - Vérifie que toutes les questions ont une réponse possible.
