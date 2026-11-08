@@ -1071,25 +1071,24 @@ def generer_pdf_sujet(texte_sujet):
 
     story = []
 
- lignes = texte_sujet.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    lignes = texte_sujet.replace("\r\n", "\n").replace("\r", "\n").split("\n")
 
-# Séparer les questions qui ont été collées sur une même ligne
-lignes_propres = []
+    lignes_propres = []
 
-for ligne in lignes:
-    ligne = re.sub(
-        r"(?<!\d)(?=\b\d+\.\s)",
-        "\n",
-        ligne
-    )
-    ligne = re.sub(
-        r"(?<!\w)(?=[a-d]\)\s)",
-        "\n",
-        ligne
-    )
-    lignes_propres.extend(ligne.split("\n"))
+    for ligne in lignes:
+        ligne = re.sub(
+            r"(?<!\d)(?=\b\d+\.\s)",
+            "\n",
+            ligne
+        )
+        ligne = re.sub(
+            r"(?<!\w)(?=[a-d]\)\s)",
+            "\n",
+            ligne
+        )
+        lignes_propres.extend(ligne.split("\n"))
 
-lignes = lignes_propres
+    lignes = lignes_propres
 
     premier_titre = True
     dans_consigne = False
