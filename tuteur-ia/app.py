@@ -1586,14 +1586,6 @@ else:
                 st.session_state["dernier_enonce"]
             )
 
-        st.write("---")
-        
-            st.success(t("free_question_used"))
-            st.markdown(t("free_question_used_msg"))
-            st.write("---")
-        else:
-            st.info(t("free_question_used_msg"))
-            st.write("---")
 
     col1, col2, col3 = st.columns(3)
     with col1:
