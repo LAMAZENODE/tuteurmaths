@@ -980,9 +980,24 @@ def afficher_erreur_ia(api_error):
 # GÉNÉRATEUR DE SUJETS D'ÉVALUATION ET DE CONCOURS
 # ============================================================
 
+
 def generer_pdf_sujet(texte_sujet):
     from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.styles import (
+        getSampleStyleSheet, ParagraphStyle
+    )
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer,
+        Preformatted, Table, TableStyle
+    )
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     from xml.sax.saxutils import escape
+    import os
+    import re
+    import io
 
     buffer = io.BytesIO()
 
@@ -992,47 +1007,105 @@ def generer_pdf_sujet(texte_sujet):
         rightMargin=45,
         leftMargin=45,
         topMargin=45,
-        bottomMargin=45
+        bottomMargin=45,
+        title="Sujet d'évaluation de mathématiques"
     )
 
     styles = getSampleStyleSheet()
 
+    # Police compatible avec les symboles mathématiques
+    police = "Helvetica"
+    chemin_police = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+    if os.path.exists(chemin_police):
+        try:
+            if "DejaVuPDF" not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(
+                    TTFont("DejaVuPDF", chemin_police)
+                )
+            police = "DejaVuPDF"
+        except Exception:
+            police = "Helvetica"
+
     titre = ParagraphStyle(
         "TitreSujet",
         parent=styles["Title"],
-        fontSize=20,
-        textColor="#1E3A8A",
+        fontName=police,
+        fontSize=19,
+        leading=25,
+        textColor=colors.HexColor("#1E3A8A"),
         alignment=TA_CENTER,
-        spaceAfter=25
-    )
-
-    corps = ParagraphStyle(
-        "CorpsSujet",
-        parent=styles["BodyText"],
-        fontSize=11,
-        leading=17,
-        spaceAfter=10
+        spaceAfter=22
     )
 
     sous_titre = ParagraphStyle(
         "SousTitreSujet",
         parent=styles["Heading2"],
-        textColor="#1E3A8A",
-        spaceBefore=12,
-        spaceAfter=8
+        fontName=police,
+        fontSize=13,
+        leading=18,
+        textColor=colors.HexColor("#1E3A8A"),
+        spaceBefore=14,
+        spaceAfter=9,
+        keepWithNext=True
     )
 
-    def nettoyer_formules(texte):
-        # Enlever les délimiteurs LaTeX
-        texte = re.sub(r'\$\$(.*?)\$\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\$(.*?)\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
+    corps = ParagraphStyle(
+        "CorpsSujet",
+        parent=styles["BodyText"],
+        fontName=police,
+        fontSize=10.5,
+        leading=16,
+        textColor=colors.HexColor("#273449"),
+        spaceAfter=6
+    )
 
-        # Remplacer les commandes mathématiques courantes
+    figure_style = ParagraphStyle(
+        "FigureSujet",
+        parent=styles["Code"],
+        fontName=police,
+        fontSize=10,
+        leading=14,
+        leftIndent=15,
+        spaceBefore=5,
+        spaceAfter=10
+    )
+
+    # Nettoyage des formules et caractères parasites
+    def nettoyer_formules(texte):
+        texte = str(texte)
+
+        texte = re.sub(
+            r'\$\$(.*?)\$\$',
+            r'\1',
+            texte,
+            flags=re.DOTALL
+        )
+
+        texte = re.sub(
+            r'\$(.*?)\$',
+            r'\1',
+            texte,
+            flags=re.DOTALL
+        )
+
+        texte = re.sub(
+            r'\\\((.*?)\\\)',
+            r'\1',
+            texte,
+            flags=re.DOTALL
+        )
+
+        texte = re.sub(
+            r'\\\[(.*?)\\\]',
+            r'\1',
+            texte,
+            flags=re.DOTALL
+        )
+
         remplacements = {
-            r'\in': '∈',
             r'\notin': '∉',
+            r'\in': '∈',
             r'\neq': '≠',
             r'\leq': '≤',
             r'\geq': '≥',
@@ -1051,41 +1124,144 @@ def generer_pdf_sujet(texte_sujet):
         for ancien, nouveau in remplacements.items():
             texte = texte.replace(ancien, nouveau)
 
-        # Fractions simples
+        # Fractions
         texte = re.sub(
             r'\\frac\{([^{}]+)\}\{([^{}]+)\}',
             r'(\1)/(\2)',
             texte
         )
 
-        # Exposants et indices simples
+        # Indices et exposants
+        texte = re.sub(r'_\{?1\}?', '₁', texte)
+        texte = re.sub(r'_\{?2\}?', '₂', texte)
+        texte = re.sub(r'_\{?3\}?', '₃', texte)
         texte = re.sub(r'\^\{?2\}?', '²', texte)
         texte = re.sub(r'\^\{?3\}?', '³', texte)
 
-        # Supprimer les étoiles Markdown autour du texte
-        texte = re.sub(r'\*\*(.*?)\*\*', r'\1', texte)
-        texte = re.sub(r'\*(.*?)\*', r'\1', texte)
+        # Caractères parfois produits incorrectement par l'IA
+        texte = texte.replace('˛', '∈')
+        texte = texte.replace('ˇ', '∉')
 
         return texte
 
-    contenu = [
-        Paragraph("SUJET D'ÉVALUATION / CONCOURS", titre)
-    ]
+    contenu = []
 
-    for ligne in texte_sujet.splitlines():
-        ligne = ligne.strip()
+    # Grand titre
+    contenu.append(
+        Paragraph(
+            "SUJET D'ÉVALUATION / CONCOURS",
+            titre
+        )
+    )
+
+    contenu.append(
+        Table(
+            [["Nom et prénom : ........................................",
+              "Classe : ........................"]],
+            colWidths=[270, 190],
+            style=TableStyle([
+                ("BOX", (0, 0), (-1, -1), 0.8,
+                 colors.HexColor("#CBD5E1")),
+                ("BACKGROUND", (0, 0), (-1, -1),
+                 colors.HexColor("#F8FAFC")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ])
+        )
+    )
+
+    contenu.append(Spacer(1, 15))
+
+    lignes = texte_sujet.replace("\r\n", "\n").replace(
+        "\r", "\n"
+    ).split("\n")
+
+    i = 0
+
+    while i < len(lignes):
+        ligne = lignes[i].strip()
 
         if not ligne:
-            contenu.append(Spacer(1, 8))
+            contenu.append(Spacer(1, 5))
+            i += 1
+            continue
+
+        # Suppression des séparateurs artificiels
+        if re.fullmatch(r'[-_]{2,}', ligne):
+            i += 1
             continue
 
         ligne = nettoyer_formules(ligne)
 
+        # Détection des figures géométriques ASCII
+        if (
+            re.search(r'[-_─│]{3,}', ligne)
+            or ligne in ("|", "│")
+        ):
+            figure = [ligne]
+            i += 1
+
+            while i < len(lignes):
+                suivante = lignes[i].rstrip()
+
+                if (
+                    re.search(r'[-_─│]{3,}', suivante)
+                    or suivante.strip() in ("|", "│")
+                ):
+                    figure.append(suivante)
+                    i += 1
+                elif not suivante.strip():
+                    break
+                else:
+                    break
+
+            contenu.append(
+                Preformatted(
+                    "\n".join(figure),
+                    figure_style
+                )
+            )
+            continue
+
+        # Titres principaux
         if ligne.startswith("#"):
             texte = ligne.lstrip("#").strip()
+
             contenu.append(
-                Paragraph(escape(texte), sous_titre)
+                Paragraph(
+                    escape(texte),
+                    sous_titre
+                )
             )
+
+        # Titres des exercices
+        elif re.match(
+            r'^(Exercice|Exercise)\s+\d+',
+            ligne,
+            re.IGNORECASE
+        ):
+            contenu.append(
+                Paragraph(
+                    f"<b>{escape(ligne)}</b>",
+                    sous_titre
+                )
+            )
+
+        # Informations générales
+        elif re.match(
+            r'^(Niveau|Durée|Barème|Chapitre|Type)\s*:',
+            ligne,
+            re.IGNORECASE
+        ):
+            contenu.append(
+                Paragraph(
+                    f"<b>{escape(ligne)}</b>",
+                    corps
+                )
+            )
+
         else:
             texte = escape(ligne)
 
@@ -1096,14 +1272,24 @@ def generer_pdf_sujet(texte_sujet):
                 texte
             )
 
+            # Italique Markdown
+            texte = re.sub(
+                r'(?<!\*)\*([^*]+)\*(?!\*)',
+                r'<i>\1</i>',
+                texte
+            )
+
             contenu.append(
                 Paragraph(texte, corps)
             )
+
+        i += 1
 
     doc.build(contenu)
 
     buffer.seek(0)
     return buffer
+
 
 
 
