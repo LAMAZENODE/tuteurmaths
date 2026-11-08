@@ -983,6 +983,9 @@ def afficher_erreur_ia(api_error):
 
 
 
+
+
+
 def generer_pdf_sujet(texte_sujet):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
@@ -991,7 +994,7 @@ def generer_pdf_sujet(texte_sujet):
     )
     from reportlab.lib.enums import TA_CENTER
     from reportlab.platypus import (
-        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        SimpleDocTemplate, Paragraph, Spacer, Table
     )
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
@@ -1077,33 +1080,30 @@ def generer_pdf_sujet(texte_sujet):
     )
 
     # Zone d'identification unique
-   
-donnees = [
-    [
-        Paragraph("Nom : ................................", identification),
-        Paragraph("Prénom : ...........................", identification)
-    ],
-    [
-        Paragraph("Classe : .............................", identification),
-        Paragraph("Date : ................................", identification)
+    donnees = [
+        [
+            Paragraph("Nom : ................................", identification),
+            Paragraph("Prénom : ...........................", identification)
+        ],
+        [
+            Paragraph("Classe : .............................", identification),
+            Paragraph("Date : ................................", identification)
+        ]
     ]
-]
 
-tableau = Table(
-    donnees,
-    colWidths=[227, 228]
-)
+    tableau = Table(
+        donnees,
+        colWidths=[227, 228]
+    )
 
-tableau.setStyle(
-    [
+    tableau.setStyle([
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("LEFTPADDING", (0, 0), (-1, -1), 6),
         ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-    ]
-)
+    ])
 
-contenu.append(tableau)
-contenu.append(Spacer(1, 12))
+    contenu.append(tableau)
+    contenu.append(Spacer(1, 12))
 
     # Nettoyage des formules
     def nettoyer_formules(texte):
@@ -1282,8 +1282,6 @@ contenu.append(Spacer(1, 12))
     buffer.seek(0)
 
     return buffer
-
-
 
 
 
