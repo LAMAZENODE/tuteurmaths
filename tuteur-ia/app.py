@@ -1271,9 +1271,9 @@ ligne = re.sub(
     lambda m: "_" * len(m.group()),
     ligne
 )
-        
-           # Schémas textuels
-           if re.search(r"[.=_-]{5,}", ligne):
+
+        # Schémas textuels
+        if re.search(r"[.=_-]{5,}", ligne):
             schema = ParagraphStyle(
                 "SchemaGeometrique",
                 fontName="Courier",
