@@ -1272,20 +1272,7 @@ ligne = re.sub(
     ligne
 )
 
-    # Schémas textuels
-        if re.search(r"[.=_-]{5,}", ligne):
-            schema = ParagraphStyle(
-                "SchemaGeometrique",
-                fontName="Courier",
-                fontSize=9,
-                leading=14,
-                leftIndent=8
-            )
-
-            story.append(
-                Paragraph(escape(ligne), schema)
-            )
-            continue
+  
 
         # Texte ordinaire
         story.append(
