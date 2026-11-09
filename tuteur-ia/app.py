@@ -1265,22 +1265,13 @@ def generer_pdf_sujet(texte_sujet):
             )
             continue
 
-        # Pointillés de réponse
-        if len(ligne) > 10 and re.fullmatch(
-            r"[.\s_]+",
-            ligne
-        ):
-            story.append(Spacer(1, 12))
-            story.append(
-                HRFlowable(
-                    width="95%",
-                    thickness=0.4,
-                    color=colors.lightgrey,
-                    spaceAfter=10
-                )
-            )
-            continue
-
+# Remplacer les pointillés par des traits continus
+ligne = re.sub(
+    r"\.{5,}",
+    lambda m: "_" * len(m.group()),
+    ligne
+)
+        
         # Schémas textuels
         if re.search(r"[.=_-]{5,}", ligne):
             schema = ParagraphStyle(
