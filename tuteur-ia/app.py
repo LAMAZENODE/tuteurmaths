@@ -1273,7 +1273,7 @@ ligne = re.sub(
 )
 
     # Schémas textuels
-    if re.search(r"[.=_-]{5,}", ligne):
+        if re.search(r"[.=_-]{5,}", ligne):
             schema = ParagraphStyle(
                 "SchemaGeometrique",
                 fontName="Courier",
