@@ -1265,14 +1265,12 @@ def generer_pdf_sujet(texte_sujet):
             )
             continue
 
-# Remplacer les pointillés par des traits continus
-ligne = re.sub(
-    r"\.{5,}",
-    lambda m: "_" * len(m.group()),
-    ligne
-)
-
-  
+        # Remplacer les pointillés par des traits continus
+        ligne = re.sub(
+            r"\.{5,}",
+            lambda m: "_" * len(m.group()),
+            ligne
+        )
 
         # Texte ordinaire
         story.append(
@@ -1283,6 +1281,7 @@ ligne = re.sub(
     doc.build(story)
 
     buffer.seek(0)
+
 
     return buffer
 
