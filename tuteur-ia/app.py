@@ -1167,7 +1167,7 @@ def generer_pdf_sujet(texte_sujet):
     texte = re.sub(r"\\[()\[\]]", "", texte)
     texte = texte.replace("$", "")
     # Remplacer les pointillés par des lignes continues
-texte = re.sub(r"\.{3,}", "________________________", texte)
+    texte = re.sub(r"\.{3,}", "________________________", texte)
    
     # Exposants courants
     texte = texte.replace("^2", "²")
