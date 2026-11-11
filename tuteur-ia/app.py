@@ -989,13 +989,6 @@ def afficher_erreur_ia(api_error):
 
 
 
-
-def generer_pdf_sujet(texte_sujet):
-    import io
-    import os
-    import re
-    from xml.sax.saxutils import escape
-
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER
     from reportlab.lib.pagesizes import A4
@@ -1004,8 +997,7 @@ def generer_pdf_sujet(texte_sujet):
         getSampleStyleSheet,
         ParagraphStyle
     )
-   
-        from reportlab.platypus import (
+    from reportlab.platypus import (
         SimpleDocTemplate,
         Paragraph,
         Spacer,
@@ -1013,6 +1005,10 @@ def generer_pdf_sujet(texte_sujet):
         KeepTogether,
         Flowable
     )
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+
     # ------------------------------------------------
     # DESSIN DES FIGURES GÉOMÉTRIQUES
     # ------------------------------------------------
