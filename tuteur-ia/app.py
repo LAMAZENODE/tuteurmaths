@@ -5,6 +5,7 @@ from google.genai import types
 import json
 import re
 import stripe
+
 import io
 import os
 import time
@@ -673,29 +674,43 @@ def generer_pdf(texte_correction, enonce_exercice):
 # ============================================================
 # MODÈLES DISPONIBLES (fallback)
 # ============================================================
+
 MODELES_DISPONIBLES = [
-    'gemini-3.5-flash-lite',
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
 ]
+
 def _appeler_gemini(instructions, contenu="Génère l'étape demandée."):
     derniere_erreur = None
+
     for modele in MODELES_DISPONIBLES:
-        try:
-            reponse = client_ia.models.generate_content(
-                model=modele,
-                contents=contenu,
-                config=types.GenerateContentConfig(system_instruction=instructions)
-            )
-            return reponse.text
-        except Exception as e:
-            derniere_erreur = e
-            msg = str(e)
-            if "404" in msg or "NOT_FOUND" in msg:
-                continue
-            if "503" in msg or "UNAVAILABLE" in msg:
-                time.sleep(2 + random.uniform(0, 1))
-                continue
-            raise
+        for tentative in range(3):
+            try:
+                reponse = client_ia.models.generate_content(
+                    model=modele,
+                    contents=contenu,
+                    config=types.GenerateContentConfig(
+                        system_instruction=instructions
+                    )
+                )
+                return reponse.text
+
+            except Exception as e:
+                derniere_erreur = e
+                msg = str(e)
+
+                if "404" in msg or "NOT_FOUND" in msg:
+                    break
+
+                if "503" in msg or "UNAVAILABLE" in msg or "429" in msg:
+                    attente = 3 * (tentative + 1)
+                    time.sleep(attente + random.uniform(0, 2))
+                    continue
+
+                raise
+
     raise derniere_erreur
+
 
 # ============================================================
 # GÉNÉRATION D'UNE ÉTAPE (MULTILINGUE)
