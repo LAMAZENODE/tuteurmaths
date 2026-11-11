@@ -1160,6 +1160,57 @@ def generer_pdf_sujet(texte_sujet):
                         rayon_pdf
                     )
 
+            # Droites et points alignés
+            elif type_figure in (
+                "droite",
+                "points_alignes",
+                "segment",
+                "demi_droite",
+                "perpendiculaires"
+            ):
+
+                import math
+
+                noms_points = list(points.keys())
+
+                if type_figure == "perpendiculaires":
+                    O = position("O")
+
+                    c.line(O[0] - 130, O[1], O[0] + 130, O[1])
+                    c.line(O[0], O[1] - 65, O[0], O[1] + 65)
+
+                    c.rect(O[0], O[1], 9, 9, stroke=1, fill=0)
+
+                elif len(noms_points) >= 2:
+                    P1 = position(noms_points[0])
+                    P2 = position(noms_points[1])
+
+                    dx = P2[0] - P1[0]
+                    dy = P2[1] - P1[1]
+                    longueur = math.hypot(dx, dy)
+
+                    if longueur > 0:
+                        ux = dx / longueur
+                        uy = dy / longueur
+
+                        if type_figure == "segment":
+                            c.line(*P1, *P2)
+
+                        elif type_figure == "demi_droite":
+                            c.line(
+                                P1[0], P1[1],
+                                P1[0] + ux * 220,
+                                P1[1] + uy * 220
+                            )
+
+                        else:
+                            c.line(
+                                P1[0] - ux * 120,
+                                P1[1] - uy * 120,
+                                P2[0] + ux * 120,
+                                P2[1] + uy * 120
+                            )
+
             # Nom des points
             c.setFont("Helvetica", 10)
             c.setFillColorRGB(0, 0, 0)
@@ -1762,6 +1813,24 @@ RÈGLES OBLIGATOIRES DE QUALITÉ :
 
 FIGURE_JSON: {{"type":"triangle_rectangle","points":{{"A":[0,0],"B":[4,0],"C":[0,3]}},"angle_droit":"A"}}
 
+FIGURE_JSON: {{"type":"points_alignes","points":{{"A":[0,0],"B":[3,0],"C":[6,0]}}}}
+
+FIGURE_JSON: {{"type":"perpendiculaires","points":{{"O":[0,0],"M":[-3,0],"N":[0,3]}}}}
+
+FIGURE_JSON: {{"type":"points_alignes","points":{{"R":[0,0],"S":[3,0],"T":[6,0]}}}}
+
+RÈGLES POUR LES FIGURES :
+
+- Pour trois points alignés sur une droite, utilise le type "points_alignes".
+- Pour deux droites perpendiculaires, utilise le type "perpendiculaires".
+- Pour un segment, utilise le type "segment".
+- Pour une demi-droite, utilise le type "demi_droite".
+- Pour une droite, utilise le type "droite".
+- Ajoute les marqueurs FIGURE_JSON directement dans le sujet, à l'endroit où la figure doit apparaître.
+- Utilise exactement les noms des points de l'énoncé.
+- Chaque figure doit être placée avant les questions qui s'y rapportent.
+
+
 - Les coordonnées doivent être cohérentes.
 - Les noms des points doivent correspondre aux questions.
 - N'invente jamais une figure qui contredit l'énoncé.
@@ -1902,9 +1971,6 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
-# ============================================================
-# INTERFACE
-# ============================================================
 
 
         
