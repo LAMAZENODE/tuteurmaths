@@ -983,7 +983,8 @@ def afficher_erreur_ia(api_error):
 
 
 
-
+def generer_pdf_sujet(texte_sujet):
+    from xml.sax.saxutils import escape
 
 
     from reportlab.lib import colors
