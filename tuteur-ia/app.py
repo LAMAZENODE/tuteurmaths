@@ -1747,7 +1747,7 @@ RÈGLES OBLIGATOIRES DE QUALITÉ :
   ou perpendiculaires.
 - Utilise exactement ce format sur une seule ligne :
 
-FIGURE_JSON: {"type":"triangle_rectangle","points":{"A":[0,0],"B":[4,0],"C":[0,3]},"angle_droit":"A"}
+FIGURE_JSON: {{"type":"triangle_rectangle","points":{{"A":[0,0],"B":[4,0],"C":[0,3]}},"angle_droit":"A"}}
 
 - Les coordonnées doivent être cohérentes.
 - Les noms des points doivent correspondre aux questions.
