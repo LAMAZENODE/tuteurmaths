@@ -1167,11 +1167,11 @@ def generer_pdf_sujet(texte_sujet):
     texte = re.sub(r"\\[()\[\]]", "", texte)
     texte = texte.replace("$", "")
     # Ajouter automatiquement des espaces pour les informations de l'élève
-texte = re.sub(
+    texte = re.sub(
     r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
     r"\1 : ____________________ ",
     texte
-)
+     )
 
 # Remplacer les pointillés par des traits continus
 texte = re.sub(r"\.{3,}", "________________________", texte)
