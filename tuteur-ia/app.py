@@ -1004,13 +1004,168 @@ def generer_pdf_sujet(texte_sujet):
         getSampleStyleSheet,
         ParagraphStyle
     )
-    from reportlab.platypus import (
+   
+        from reportlab.platypus import (
         SimpleDocTemplate,
         Paragraph,
         Spacer,
         HRFlowable,
-        KeepTogether
+        KeepTogether,
+        Flowable
     )
+    # ------------------------------------------------
+    # DESSIN DES FIGURES GÉOMÉTRIQUES
+    # ------------------------------------------------
+
+    class FigureGeometrique(Flowable):
+
+        def __init__(self, donnees):
+            super().__init__()
+            self.donnees = donnees
+            self.width = 420
+            self.height = 190
+
+        def draw(self):
+
+            c = self.canv
+            donnees = self.donnees
+
+            points = donnees.get("points", {})
+
+            if not points:
+                return
+
+            # Mise à l'échelle des coordonnées
+            xs = [p[0] for p in points.values()]
+            ys = [p[1] for p in points.values()]
+
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+
+            largeur = max(max_x - min_x, 1)
+            hauteur = max(max_y - min_y, 1)
+
+            echelle = min(
+                300 / largeur,
+                130 / hauteur
+            )
+
+            def position(nom):
+                x, y = points[nom]
+
+                return (
+                    45 + (x - min_x) * echelle,
+                    25 + (y - min_y) * echelle
+                )
+
+            c.setStrokeColorRGB(0.08, 0.20, 0.38)
+            c.setLineWidth(1.5)
+
+            type_figure = donnees.get("type", "")
+
+            noms = list(points.keys())
+
+            # Triangle ou triangle rectangle
+            if type_figure in (
+                "triangle",
+                "triangle_rectangle"
+            ) and len(noms) == 3:
+
+                A, B, C = [position(n) for n in noms]
+
+                c.line(*A, *B)
+                c.line(*B, *C)
+                c.line(*C, *A)
+
+                angle = donnees.get("angle_droit")
+
+                if angle in points:
+
+                    x, y = position(angle)
+
+                    autres = [
+                        n for n in noms if n != angle
+                    ]
+
+                    p1 = position(autres[0])
+                    p2 = position(autres[1])
+
+                    import math
+
+                    def vecteur(p):
+                        dx = p[0] - x
+                        dy = p[1] - y
+                        longueur = math.hypot(dx, dy)
+
+                        return (
+                            dx / longueur * 10,
+                            dy / longueur * 10
+                        )
+
+                    u = vecteur(p1)
+                    v = vecteur(p2)
+
+                    q1 = (x + u[0], y + u[1])
+                    q2 = (
+                        q1[0] + v[0],
+                        q1[1] + v[1]
+                    )
+                    q3 = (x + v[0], y + v[1])
+
+                    c.line(*q1, *q2)
+                    c.line(*q2, *q3)
+
+            # Carré, rectangle ou quadrilatère
+            elif type_figure in (
+                "rectangle",
+                "carre",
+                "quadrilatere"
+            ) and len(noms) == 4:
+
+                coords = [position(n) for n in noms]
+
+                for i in range(4):
+                    p1 = coords[i]
+                    p2 = coords[(i + 1) % 4]
+                    c.line(*p1, *p2)
+
+            # Cercle
+            elif type_figure == "cercle":
+
+                centre = donnees.get("centre")
+
+                rayon = donnees.get("rayon", 2)
+
+                if centre in points:
+
+                    x, y = position(centre)
+
+                    rayon_pdf = max(
+                        10,
+                        min(70, rayon * echelle)
+                    )
+
+                    c.circle(
+                        x,
+                        y,
+                        rayon_pdf
+                    )
+
+            # Nom des points
+            c.setFont("Helvetica", 10)
+            c.setFillColorRGB(0, 0, 0)
+
+            for nom in noms:
+
+                x, y = position(nom)
+
+                c.circle(x, y, 2, fill=1)
+
+                c.drawString(
+                    x + 5,
+                    y + 5,
+                    nom
+                )
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
 
@@ -1240,6 +1395,26 @@ def generer_pdf_sujet(texte_sujet):
     for ligne in lignes:
 
         ligne = ligne.strip()
+               # Détection et création des figures géométriques
+        if ligne.startswith("FIGURE_JSON:"):
+            try:
+                donnees_figure = json.loads(
+                    ligne.split("FIGURE_JSON:", 1)[1].strip()
+                )
+
+                story.append(Spacer(1, 8))
+                story.append(FigureGeometrique(donnees_figure))
+                story.append(Spacer(1, 12))
+
+            except (json.JSONDecodeError, TypeError, ValueError):
+                story.append(
+                    Paragraph(
+                        "Figure non disponible : format incorrect.",
+                        style_normal
+                    )
+                )
+
+            continue 
 
         if not ligne:
             story.append(Spacer(1, 5))
@@ -1560,11 +1735,28 @@ RÈGLES OBLIGATOIRES DE QUALITÉ :
 - Aucune phrase ne doit être coupée ou inachevée.
 - Vérifie que toutes les questions ont une réponse possible.
 - Vérifie la cohérence mathématique de chaque exercice.
-- Ne pose jamais une question qui dépend d'une figure absente.
-- Si une figure est nécessaire, fournis-la directement
-  sous forme de schéma ASCII simple et lisible.
-- Ne demande jamais à l'élève d'observer une figure
-  qui n'est pas présente dans le sujet.
+
+- Ne crée jamais de figure en ASCII.
+- Lorsqu'un exercice nécessite une figure géométrique,
+  indique-la avec un marqueur FIGURE_JSON.
+- La figure doit être adaptée au chapitre demandé.
+- Pour Pythagore, privilégie un triangle rectangle.
+- Pour les triangles, indique les coordonnées des points
+  et les éventuels angles droits.
+- Pour les cercles, indique le centre, le rayon
+  et les points nécessaires.
+- Pour les quadrilatères, indique les sommets
+  et leur position.
+- Pour les droites, indique si elles sont parallèles
+  ou perpendiculaires.
+- Utilise exactement ce format sur une seule ligne :
+
+FIGURE_JSON: {"type":"triangle_rectangle","points":{"A":[0,0],"B":[4,0],"C":[0,3]},"angle_droit":"A"}
+
+- Les coordonnées doivent être cohérentes.
+- Les noms des points doivent correspondre aux questions.
+- N'invente jamais une figure qui contredit l'énoncé.
+- Si aucune figure n'est nécessaire, n'ajoute aucun marqueur.
 - Les points, droites et segments doivent être correctement
   nommés et utilisés.
 - Les longueurs représentées doivent être cohérentes
