@@ -675,10 +675,7 @@ def generer_pdf(texte_correction, enonce_exercice):
 # ============================================================
 MODELES_DISPONIBLES = [
     'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-2.5-flash-lite',
 ]
-
 def _appeler_gemini(instructions, contenu="Génère l'étape demandée."):
     derniere_erreur = None
     for modele in MODELES_DISPONIBLES:
