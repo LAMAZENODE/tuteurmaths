@@ -1166,16 +1166,26 @@ def generer_pdf_sujet(texte_sujet):
     # Suppression des délimiteurs LaTeX
     texte = re.sub(r"\\[()\[\]]", "", texte)
     texte = texte.replace("$", "")
+    # Ajouter automatiquement des espaces pour les informations de l'élève
+texte = re.sub(
+    r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
+    r"\1 : ____________________ ",
+    texte
+)
+
+# Remplacer les pointillés par des traits continus
+texte = re.sub(r"\.{3,}", "________________________", texte)
     # Remplacer les pointillés par des lignes continues
     texte = re.sub(r"\.{3,}", "________________________", texte)
    
     # Exposants courants
+    
     texte = texte.replace("^2", "²")
     texte = texte.replace("^3", "³")
 
     # Markdown
     texte = texte.replace("```", "")
-    texte = texte.replace("__", "")
+  
     texte = re.sub(r"(?m)^#{1,3}\s*", "", texte)
 
     # ------------------------------------------------
