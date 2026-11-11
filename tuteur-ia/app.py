@@ -1160,7 +1160,9 @@ def generer_pdf_sujet(texte_sujet):
                         rayon_pdf
                     )
 
-            # Droites et points alignés
+           
+           
+            # Droites, segments, demi-droites et perpendiculaires
             elif type_figure in (
                 "droite",
                 "points_alignes",
@@ -1171,47 +1173,66 @@ def generer_pdf_sujet(texte_sujet):
 
                 import math
 
+                def tracer_droite(p1, p2, longueur=120):
+                    dx = p2[0] - p1[0]
+                    dy = p2[1] - p1[1]
+                    norme = math.hypot(dx, dy)
+
+                    if norme == 0:
+                        return
+
+                    ux = dx / norme
+                    uy = dy / norme
+
+                    c.line(
+                        p1[0] - ux * longueur,
+                        p1[1] - uy * longueur,
+                        p2[0] + ux * longueur,
+                        p2[1] + uy * longueur
+                    )
+
                 noms_points = list(points.keys())
 
                 if type_figure == "perpendiculaires":
-                    O = position("O")
 
-                    c.line(O[0] - 130, O[1], O[0] + 130, O[1])
-                    c.line(O[0], O[1] - 65, O[0], O[1] + 65)
+                    if all(n in points for n in ("O", "M", "N")):
 
-                    c.rect(O[0], O[1], 9, 9, stroke=1, fill=0)
+                        O = position("O")
+                        M = position("M")
+                        N = position("N")
+
+                        tracer_droite(M, O, 100)
+                        tracer_droite(O, N, 100)
+
+                        c.rect(O[0], O[1], 9, 9, stroke=1, fill=0)
 
                 elif len(noms_points) >= 2:
+
                     P1 = position(noms_points[0])
                     P2 = position(noms_points[1])
 
-                    dx = P2[0] - P1[0]
-                    dy = P2[1] - P1[1]
-                    longueur = math.hypot(dx, dy)
+                    if type_figure == "segment":
+                        c.line(*P1, *P2)
 
-                    if longueur > 0:
-                        ux = dx / longueur
-                        uy = dy / longueur
+                    elif type_figure == "demi_droite":
 
-                        if type_figure == "segment":
-                            c.line(*P1, *P2)
+                        dx = P2[0] - P1[0]
+                        dy = P2[1] - P1[1]
+                        norme = math.hypot(dx, dy)
 
-                        elif type_figure == "demi_droite":
+                        if norme > 0:
+                            ux = dx / norme
+                            uy = dy / norme
+
                             c.line(
                                 P1[0], P1[1],
                                 P1[0] + ux * 220,
                                 P1[1] + uy * 220
                             )
 
-                        else:
-                            c.line(
-                                P1[0] - ux * 120,
-                                P1[1] - uy * 120,
-                                P2[0] + ux * 120,
-                                P2[1] + uy * 120
-                            )
-
-            # Nom des points
+                    else:
+                        tracer_droite(P1, P2, 120)
+ 
             c.setFont("Helvetica", 10)
             c.setFillColorRGB(0, 0, 0)
 
@@ -1817,7 +1838,10 @@ FIGURE_JSON: {{"type":"points_alignes","points":{{"A":[0,0],"B":[3,0],"C":[6,0]}
 
 FIGURE_JSON: {{"type":"perpendiculaires","points":{{"O":[0,0],"M":[-3,0],"N":[0,3]}}}}
 
-FIGURE_JSON: {{"type":"points_alignes","points":{{"R":[0,0],"S":[3,0],"T":[6,0]}}}}
+
+FIGURE_JSON: {{"type":"segment","points":{{"R":[0,0],"T":[4,0],"S":[7,0]}}}}
+
+
 
 RÈGLES POUR LES FIGURES :
 
