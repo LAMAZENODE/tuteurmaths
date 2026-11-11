@@ -1173,8 +1173,8 @@ def generer_pdf_sujet(texte_sujet):
     texte
      )
 
-# Remplacer les pointillés par des traits continus
-texte = re.sub(r"\.{3,}", "________________________", texte)
+    # Remplacer les pointillés par des traits continus
+    texte = re.sub(r"\.{3,}", "________________________", texte)
     # Remplacer les pointillés par des lignes continues
     texte = re.sub(r"\.{3,}", "________________________", texte)
    
