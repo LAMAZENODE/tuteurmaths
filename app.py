@@ -988,18 +988,22 @@ def afficher_erreur_ia(api_error):
 
 
 
+
+
 def generer_pdf_sujet(texte_sujet):
     import io
+    import os
     import re
     from xml.sax.saxutils import escape
 
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import (
-        getSampleStyleSheet, ParagraphStyle
-    )
     from reportlab.lib.units import cm
+    from reportlab.lib.styles import (
+        getSampleStyleSheet,
+        ParagraphStyle
+    )
     from reportlab.platypus import (
         SimpleDocTemplate,
         Paragraph,
@@ -1007,302 +1011,422 @@ def generer_pdf_sujet(texte_sujet):
         HRFlowable,
         KeepTogether
     )
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
 
-    # Création du PDF en mémoire
+    # ------------------------------------------------
+    # DOCUMENT
+    # ------------------------------------------------
+
     buffer = io.BytesIO()
+
+    bleu = colors.HexColor("#17365D")
+    bleu_clair = colors.HexColor("#EAF0F8")
+    gris = colors.HexColor("#667085")
 
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=1.7 * cm,
-        leftMargin=1.7 * cm,
-        topMargin=1.5 * cm,
-        bottomMargin=1.5 * cm
+        rightMargin=1.8 * cm,
+        leftMargin=1.8 * cm,
+        topMargin=1.8 * cm,
+        bottomMargin=2 * cm,
+        title="Sujet d'évaluation",
+        author="Tuteur-IA"
     )
+
+    # ------------------------------------------------
+    # POLICES
+    # ------------------------------------------------
+
+    police = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    police_gras = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+
+    if os.path.exists(police) and os.path.exists(police_gras):
+        if "PDFNormal" not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(TTFont("PDFNormal", police))
+            pdfmetrics.registerFont(TTFont("PDFGras", police_gras))
+
+        font_normal = "PDFNormal"
+        font_gras = "PDFGras"
+    else:
+        font_normal = "Helvetica"
+        font_gras = "Helvetica-Bold"
 
     styles = getSampleStyleSheet()
 
-    bleu = colors.HexColor("#17365D")
-    gris = colors.HexColor("#D9E2F3")
+    # ------------------------------------------------
+    # STYLES PROFESSIONNELS
+    # ------------------------------------------------
 
-    titre = ParagraphStyle(
-        "TitreSujet",
-        parent=styles["Title"],
-        fontName="Helvetica-Bold",
-        fontSize=17,
-        leading=22,
+    style_titre = ParagraphStyle(
+        "Titre",
+        fontName=font_gras,
+        fontSize=19,
+        leading=25,
         alignment=TA_CENTER,
         textColor=bleu,
-        spaceAfter=14
+        spaceAfter=12
     )
 
-    exercice = ParagraphStyle(
-        "TitreExercice",
-        parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
+    style_exercice = ParagraphStyle(
+        "Exercice",
+        fontName=font_gras,
         fontSize=12,
-        leading=16,
+        leading=17,
         textColor=bleu,
-        spaceBefore=12,
-        spaceAfter=7,
+        backColor=bleu_clair,
+        borderPadding=7,
+        spaceBefore=13,
+        spaceAfter=8,
         keepWithNext=True
     )
 
-    normal = ParagraphStyle(
-        "TexteNormal",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=9.5,
-        leading=14,
-        spaceAfter=5
-    )
-
-    question = ParagraphStyle(
+    style_question = ParagraphStyle(
         "Question",
-        parent=normal,
-        leftIndent=7,
-        spaceBefore=3,
-        spaceAfter=7
+        fontName=font_normal,
+        fontSize=10,
+        leading=16,
+        leftIndent=8,
+        spaceBefore=4,
+        spaceAfter=8
     )
 
-    informations = ParagraphStyle(
-        "Informations",
-        parent=normal,
-        fontSize=9,
+    style_normal = ParagraphStyle(
+        "Normal",
+        fontName=font_normal,
+        fontSize=9.5,
         leading=15,
         spaceAfter=5
     )
 
-    consigne = ParagraphStyle(
-        "Consigne",
-        parent=normal,
-        leftIndent=5,
-        spaceAfter=5
+    style_info = ParagraphStyle(
+        "Information",
+        fontName=font_normal,
+        fontSize=9,
+        leading=15,
+        textColor=colors.HexColor("#344054"),
+        spaceAfter=4
     )
 
-    story = []
+    style_consigne = ParagraphStyle(
+        "Consigne",
+        fontName=font_normal,
+        fontSize=9,
+        leading=15,
+        spaceAfter=6
+    )
 
-    # Normalisation du texte
+    # ------------------------------------------------
+    # NETTOYAGE DU TEXTE
+    # ------------------------------------------------
+
     texte = str(texte_sujet or "")
-    texte = texte.replace("\r\n", "\n").replace("\r", "\n")
 
-    # Réunir les notations géométriques coupées
+    texte = texte.replace("\r\n", "\n")
+    texte = texte.replace("\r", "\n")
+    texte = texte.replace("\\n", "\n")
+
+    # LaTeX courant
+    remplacements = {
+        r"\in": "∈",
+        r"\notin": "∉",
+        r"\leq": "≤",
+        r"\geq": "≥",
+        r"\neq": "≠",
+        r"\times": "×",
+        r"\div": "÷",
+        r"\cdot": "·",
+        r"\approx": "≈",
+        r"\parallel": "∥",
+        r"\perp": "⊥",
+        r"\pi": "π",
+        r"\infty": "∞",
+        r"\alpha": "α",
+        r"\beta": "β",
+        r"\sqrt": "√"
+    }
+
     texte = re.sub(
-        r"\(\s*\n\s*([A-Za-z])\s*\)",
-        r"(\1)",
+        r"\\(?:text|mathrm)\{([^{}]*)\}",
+        r"\1",
         texte
     )
 
-    # Séparer les questions collées
+    for ancien, nouveau in remplacements.items():
+        texte = texte.replace(ancien, nouveau)
+
+    # Fractions simples
+    texte = re.sub(
+        r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
+        r"(\1)/(\2)",
+        texte
+    )
+
+    # Suppression des délimiteurs LaTeX
+    texte = re.sub(r"\\[()\[\]]", "", texte)
+    texte = texte.replace("$", "")
+    # Ajouter automatiquement des espaces pour les informations de l'élève
+    texte = re.sub(
+    r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
+    r"\1 : ____________________ ",
+    texte
+     )
+
+    # Remplacer les pointillés par des traits continus
+    texte = re.sub(r"\.{3,}", "________________________", texte)
+    # Remplacer les pointillés par des lignes continues
+    texte = re.sub(r"\.{3,}", "________________________", texte)
+   
+    # Exposants courants
+    
+    texte = texte.replace("^2", "²")
+    texte = texte.replace("^3", "³")
+
+    # Markdown
+    texte = texte.replace("```", "")
+  
+    texte = re.sub(r"(?m)^#{1,3}\s*", "", texte)
+
+    # ------------------------------------------------
+    # PIED DE PAGE ET NUMÉROTATION
+    # ------------------------------------------------
+
+    def pied_de_page(canvas, document):
+        canvas.saveState()
+
+        largeur, hauteur = A4
+
+        canvas.setStrokeColor(
+            colors.HexColor("#D0D5DD")
+        )
+
+        canvas.setLineWidth(0.5)
+
+        canvas.line(
+            1.8 * cm,
+            1.35 * cm,
+            largeur - 1.8 * cm,
+            1.35 * cm
+        )
+
+        canvas.setFont(font_normal, 8)
+        canvas.setFillColor(gris)
+
+        canvas.drawString(
+            1.8 * cm,
+            0.9 * cm,
+            "Tuteur-IA - Sujet d'évaluation"
+        )
+
+        canvas.drawRightString(
+            largeur - 1.8 * cm,
+            0.9 * cm,
+            f"Page {document.page}"
+        )
+
+        canvas.restoreState()
+
+    # ------------------------------------------------
+    # CONSTRUCTION DU PDF
+    # ------------------------------------------------
+
+    story = []
+
     lignes = texte.split("\n")
-    lignes_propres = []
 
-    for ligne in lignes:
-
-        ligne = ligne.strip()
-
-        # Séparer les questions numérotées
-        ligne = re.sub(
-            r"(?<!\w)(?=\d+\.\s)",
-            "\n",
-            ligne
-        )
-
-        # Séparer les sous-questions a), b), c), d)
-        ligne = re.sub(
-            r"(?<!\w)(?=[a-d]\)\s)",
-            "\n",
-            ligne
-        )
-
-        # Séparer Réponse et Justification
-        ligne = re.sub(
-            r"\s+(?=Justification\s*:)",
-            "\n",
-            ligne,
-            flags=re.IGNORECASE
-        )
-
-        # Séparer les consignes de notation collées
-        ligne = re.sub(
-            r"\s+-\s+(?=La droite|Le segment|La demi-droite)",
-            "\n",
-            ligne
-        )
-
-        lignes_propres.extend(ligne.split("\n"))
-
-    lignes = lignes_propres
-
-    premier_titre = True
+    premiere_ligne = True
 
     for ligne in lignes:
 
         ligne = ligne.strip()
 
         if not ligne:
-            story.append(Spacer(1, 4))
+            story.append(Spacer(1, 5))
             continue
 
-        # Nettoyage du Markdown
-        ligne = ligne.replace("**", "")
-        ligne = ligne.replace("__", "")
+        # --------------------------------------------
+        # TITRE PRINCIPAL
+        # --------------------------------------------
 
-        # Nettoyage des délimiteurs LaTeX
-        ligne = re.sub(r"\\\(|\\\)", "", ligne)
-        ligne = re.sub(r"\\\[|\\\]", "", ligne)
-        ligne = ligne.replace("$", "")
+        if premiere_ligne:
+            premiere_ligne = False
 
-        # Conversion des notations mathématiques
-        remplacements = {
-            r"\in": "appartient à",
-            r"\notin": "n'appartient pas à",
-            r"\leq": "≤",
-            r"\geq": "≥",
-            r"\neq": "≠",
-            r"\times": "x",
-            r"\div": "/",
-            r"\approx": "environ",
-            r"\parallel": "parallèle à",
-            r"\perp": "perpendiculaire à",
-            r"\Delta": "Delta",
-            r"\delta": "delta",
-            r"\pi": "pi",
-            r"\sqrt": "racine"
-        }
+            if re.search(
+                r"SUJET|ÉVALUATION|CONCOURS",
+                ligne,
+                re.IGNORECASE
+            ):
+                story.append(
+                    Paragraph(
+                        escape(ligne),
+                        style_titre
+                    )
+                )
+            else:
+                story.append(
+                    Paragraph(
+                        "SUJET D'ÉVALUATION",
+                        style_titre
+                    )
+                )
 
-        for ancien, nouveau in remplacements.items():
-            ligne = ligne.replace(ancien, nouveau)
-
-        # Nettoyage des indices géométriques
-        ligne = re.sub(
-            r"_\{?([0-9]+)\}?",
-            r"\1",
-            ligne
-        )
-
-        # Titre principal
-        if premier_titre and (
-            "SUJET D'ÉVALUATION" in ligne.upper()
-            or "SUJET D'EVALUATION" in ligne.upper()
-            or "SUJET D'ÉVALUATION / CONCOURS" in ligne.upper()
-        ):
-            story.append(
-                Paragraph(escape(ligne), titre)
-            )
+                story.append(
+                    Paragraph(
+                        escape(ligne),
+                        style_normal
+                    )
+                )
 
             story.append(
                 HRFlowable(
                     width="100%",
-                    thickness=1.2,
+                    thickness=1.5,
                     color=bleu,
                     spaceAfter=12
                 )
             )
 
-            premier_titre = False
             continue
 
-        # Titres des exercices
+        # --------------------------------------------
+        # ÉVITER LES TITRES DUPLIQUÉS
+        # --------------------------------------------
+
         if re.match(
-            r"Exercice\s+\d+",
+            r"^SUJET D['’]ÉVALUATION\b",
             ligne,
             re.IGNORECASE
         ):
-            story.append(
-                KeepTogether([
-                    Spacer(1, 5),
-                    Paragraph(escape(ligne), exercice),
-                    HRFlowable(
-                        width="100%",
-                        thickness=0.6,
-                        color=gris,
-                        spaceAfter=7
-                    )
-                ])
-            )
             continue
 
-        # Consignes générales
-        if ligne.lower().startswith("consignes générales"):
+        # --------------------------------------------
+        # TITRES DES EXERCICES
+        # --------------------------------------------
+
+        if re.match(
+            r"^Exercice\s+\d+",
+            ligne,
+            re.IGNORECASE
+        ):
             story.append(
                 Paragraph(
-                    "<b>Consignes générales</b>",
-                    normal
+                    escape(ligne),
+                    style_exercice
                 )
             )
             continue
 
-        # Informations de l'élève
+        # --------------------------------------------
+        # CONSIGNES GÉNÉRALES
+        # --------------------------------------------
+
+        if ligne.lower().startswith("consignes générales"):
+
+            story.append(
+                Paragraph(
+                    "<b>CONSIGNES GÉNÉRALES</b>",
+                    style_exercice
+                )
+            )
+            continue
+
+        # --------------------------------------------
+        # INFORMATIONS DE L'ÉVALUATION
+        # --------------------------------------------
+
         if re.match(
-            r"^(Nom|Prénom|Classe|Date|Chapitre|Niveau|Durée|Barème)",
+            r"^(Nom|Prénom|Nom et prénom|Classe|Date|Chapitre|Niveau|Durée|Barème)",
             ligne,
             re.IGNORECASE
         ):
             story.append(
-                Paragraph(escape(ligne), informations)
+                Paragraph(
+                    escape(ligne),
+                    style_info
+                )
             )
             continue
 
-        # Réponses et justifications
-        if re.match(
-            r"^(Réponse|Justification)\s*:",
-            ligne,
-            re.IGNORECASE
-        ):
-            story.append(
-                Paragraph(escape(ligne), question)
-            )
-            continue
+        # --------------------------------------------
+        # LIGNES POUR LES RÉPONSES
+        # --------------------------------------------
 
-        # Questions et sous-questions
-        if re.match(
-            r"^(\d+\.|[a-d]\))",
-            ligne
-        ):
-            story.append(
-                Paragraph(escape(ligne), question)
-            )
-            continue
+        
+        if re.fullmatch(r"[_\-\s]{12,}", ligne):
 
-        # Pointillés de réponse
-        if len(ligne) > 10 and re.fullmatch(
-            r"[.\s_]+",
-            ligne
-        ):
-            story.append(Spacer(1, 12))
             story.append(
                 HRFlowable(
-                    width="95%",
-                    thickness=0.4,
-                    color=colors.lightgrey,
-                    spaceAfter=10
+                    width="96%",
+                    thickness=0.6,
+                    color=gris,
+                    spaceBefore=7,
+                    spaceAfter=12
                 )
             )
             continue
 
-        # Schémas textuels
-        if re.search(r"[.=_-]{5,}", ligne):
-            schema = ParagraphStyle(
-                "SchemaGeometrique",
-                fontName="Courier",
-                fontSize=9,
-                leading=14,
-                leftIndent=8
+        # --------------------------------------------
+        # QUESTIONS NUMÉROTÉES
+        # --------------------------------------------
+
+        if re.match(
+            r"^(\d+[.)]|[a-d][.)])\s*",
+            ligne,
+            re.IGNORECASE
+        ):
+            contenu = escape(ligne)
+
+            # Conserver le gras Markdown
+            contenu = re.sub(
+                r"\*\*(.+?)\*\*",
+                r"<b>\1</b>",
+                contenu
             )
 
             story.append(
-                Paragraph(escape(ligne), schema)
+                Paragraph(
+                    contenu,
+                    style_question
+                )
             )
             continue
 
-        # Texte ordinaire
-        story.append(
-            Paragraph(escape(ligne), consigne)
+        # --------------------------------------------
+        # LISTES
+        # --------------------------------------------
+
+        if ligne.startswith(("- ", "* ", "• ")):
+            ligne = "• " + ligne[2:]
+
+        # --------------------------------------------
+        # TEXTE ORDINAIRE
+        # --------------------------------------------
+
+        contenu = escape(ligne)
+
+        contenu = re.sub(
+            r"\*\*(.+?)\*\*",
+            r"<b>\1</b>",
+            contenu
         )
 
-    # Construction du document
-    doc.build(story)
+        story.append(
+            Paragraph(
+                contenu,
+                style_normal
+            )
+        )
+
+    # ------------------------------------------------
+    # GÉNÉRATION FINALE
+    # ------------------------------------------------
+
+    doc.build(
+        story,
+        onFirstPage=pied_de_page,
+        onLaterPages=pied_de_page
+    )
 
     buffer.seek(0)
 
