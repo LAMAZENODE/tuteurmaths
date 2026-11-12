@@ -1905,6 +1905,21 @@ FIGURE_JSON: {{"type":"perpendiculaires","points":{{"O":[0,0],"M":[-3,0],"N":[0,
 
 
 FIGURE_JSON: {{"type":"segment","points":{{"R":[0,0],"T":[4,0],"S":[7,0]}}}}
+- RÈGLES OBLIGATOIRES POUR LES FIGURES :
+
+- Si l'exercice demande à l'élève de tracer, construire,
+  placer ou dessiner lui-même une figure, ne génère
+  aucune figure pour cet exercice.
+
+- Ne jamais afficher des points qui ne sont pas mentionnés
+  dans la consigne.
+
+- Ne jamais réutiliser les points d'un autre exercice.
+
+- Chaque figure doit correspondre uniquement à son exercice.
+
+- Si aucune figure n'est demandée pour être affichée,
+  ne génère aucun FIGURE_JSON.
 
 
 
