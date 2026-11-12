@@ -1160,9 +1160,8 @@ def generer_pdf_sujet(texte_sujet):
                         rayon_pdf
                     )
 
-           
-           
-            # Droites, segments, demi-droites et perpendiculaires
+
+                        # Droites, segments, demi-droites et perpendiculaires
             elif type_figure in (
                 "droite",
                 "points_alignes",
@@ -1193,7 +1192,18 @@ def generer_pdf_sujet(texte_sujet):
 
                 noms_points = list(points.keys())
 
-                if type_figure == "perpendiculaires":
+                # 1. POINTS ALIGNÉS SUR UNE MÊME DROITE
+                if type_figure == "points_alignes":
+
+                    if len(noms_points) >= 2:
+
+                        P1 = position(noms_points[0])
+                        P2 = position(noms_points[-1])
+
+                        tracer_droite(P1, P2, 120)
+
+                # 2. DROITES PERPENDICULAIRES
+                elif type_figure == "perpendiculaires":
 
                     if all(n in points for n in ("O", "M", "N")):
 
@@ -1201,18 +1211,62 @@ def generer_pdf_sujet(texte_sujet):
                         M = position("M")
                         N = position("N")
 
+                        # Tracer les deux droites
                         tracer_droite(M, O, 100)
                         tracer_droite(O, N, 100)
 
-                        c.rect(O[0], O[1], 9, 9, stroke=1, fill=0)
+                        # Calculer les directions des deux droites
+                        dx1 = M[0] - O[0]
+                        dy1 = M[1] - O[1]
 
+                        dx2 = N[0] - O[0]
+                        dy2 = N[1] - O[1]
+
+                        norme1 = math.hypot(dx1, dy1)
+                        norme2 = math.hypot(dx2, dy2)
+
+                        if norme1 > 0 and norme2 > 0:
+
+                            ux = dx1 / norme1
+                            uy = dy1 / norme1
+
+                            vx = dx2 / norme2
+                            vy = dy2 / norme2
+
+                            taille = 9
+
+                            # Petit carré indiquant l'angle droit
+                            A = (
+                                O[0] + ux * taille,
+                                O[1] + uy * taille
+                            )
+
+                            B = (
+                                A[0] + vx * taille,
+                                A[1] + vy * taille
+                            )
+
+                            C = (
+                                O[0] + vx * taille,
+                                O[1] + vy * taille
+                            )
+
+                            c.line(O[0], O[1], A[0], A[1])
+                            c.line(A[0], A[1], B[0], B[1])
+                            c.line(B[0], B[1], C[0], C[1])
+
+                # 3. SEGMENT, DEMI-DROITE ET DROITE
                 elif len(noms_points) >= 2:
 
                     P1 = position(noms_points[0])
                     P2 = position(noms_points[1])
 
                     if type_figure == "segment":
-                        c.line(*P1, *P2)
+
+                        c.line(
+                            P1[0], P1[1],
+                            P2[0], P2[1]
+                        )
 
                     elif type_figure == "demi_droite":
 
@@ -1221,6 +1275,7 @@ def generer_pdf_sujet(texte_sujet):
                         norme = math.hypot(dx, dy)
 
                         if norme > 0:
+
                             ux = dx / norme
                             uy = dy / norme
 
@@ -1231,6 +1286,7 @@ def generer_pdf_sujet(texte_sujet):
                             )
 
                     else:
+
                         tracer_droite(P1, P2, 120)
  
             c.setFont("Helvetica", 10)
