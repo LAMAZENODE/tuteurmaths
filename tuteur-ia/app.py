@@ -1413,20 +1413,58 @@ def generer_pdf_sujet(texte_sujet):
     # NETTOYAGE DU TEXTE
     # ------------------------------------------------
 
-   
-        # NETTOYAGE DU TEXTE
+    # --------------------------------------------
+    # NETTOYAGE ET CONVERSION DU TEXTE MATHEMATIQUE
+    # --------------------------------------------
+
     texte = str(texte_sujet or "")
     texte = texte.replace("\r\n", "\n").replace("\r", "\n")
     texte = texte.replace("\\n", "\n")
 
-    # Vecteurs
+    # --------------------------------------------
+    # VECTEURS
+    # --------------------------------------------
+
     texte = re.sub(
         r"\\(?:vec|overrightarrow)\{([^{}]+)\}",
         r"→\1",
         texte
     )
 
-    # Matrices et coordonnées
+    # --------------------------------------------
+    # NORMES : \|u\| et \lVert u \rVert
+    # --------------------------------------------
+
+    texte = texte.replace(r"\lVert", "||")
+    texte = texte.replace(r"\rVert", "||")
+    texte = texte.replace(r"\|", "||")
+
+    texte = re.sub(
+        r"\|\|\s*(.*?)\s*\|\|",
+        r"||\1||",
+        texte
+    )
+
+    # --------------------------------------------
+    # ANGLES
+    # --------------------------------------------
+
+    texte = re.sub(
+        r"\\widehat\{([^{}]+)\}",
+        r"∠\1",
+        texte
+    )
+
+    texte = re.sub(
+        r"\\angle\s*([A-Za-z]+)",
+        r"∠\1",
+        texte
+    )
+
+    # --------------------------------------------
+    # MATRICES
+    # --------------------------------------------
+
     def convertir_matrice(match):
         contenu = match.group(1)
         contenu = re.sub(r"\\\\", " ; ", contenu)
@@ -1441,26 +1479,43 @@ def generer_pdf_sujet(texte_sujet):
         flags=re.DOTALL
     )
 
-    # Fractions simples
+    # --------------------------------------------
+    # FRACTIONS
+    # --------------------------------------------
+
     texte = re.sub(
         r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
         r"(\1)/(\2)",
         texte
     )
 
-    # Racines carrées
+    texte = re.sub(
+        r"\\dfrac\{([^{}]+)\}\{([^{}]+)\}",
+        r"(\1)/(\2)",
+        texte
+    )
+
+    # --------------------------------------------
+    # RACINES CARREES
+    # --------------------------------------------
+
     texte = re.sub(
         r"\\sqrt\{([^{}]+)\}",
         r"√(\1)",
         texte
     )
 
-    # Symboles mathématiques
+    # --------------------------------------------
+    # SYMBOLes MATHEMATIQUES
+    # --------------------------------------------
+
     remplacements = {
         r"\in": "∈",
         r"\notin": "∉",
         r"\leq": "≤",
+        r"\le": "≤",
         r"\geq": "≥",
+        r"\ge": "≥",
         r"\neq": "≠",
         r"\times": "×",
         r"\div": "÷",
@@ -1478,34 +1533,81 @@ def generer_pdf_sujet(texte_sujet):
         r"\rightarrow": "→",
         r"\sin": "sin",
         r"\cos": "cos",
-        r"\tan": "tan"
+        r"\tan": "tan",
+        r"\neq": "≠",
+        r"\pm": "±"
     }
 
     for ancien, nouveau in remplacements.items():
         texte = texte.replace(ancien, nouveau)
 
-    # Commandes de présentation LaTeX
+    # --------------------------------------------
+    # COMMANDES LATEX DE PRESENTATION
+    # --------------------------------------------
+
     texte = re.sub(
-        r"\\(?:text|mathrm|mathbf)\{([^{}]*)\}",
+        r"\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}",
         r"\1",
         texte
     )
 
     texte = re.sub(r"\\(?:left|right)", "", texte)
+
     texte = re.sub(r"\\[()\[\]]", "", texte)
+
     texte = texte.replace("$", "")
 
-    # Identification de l'élève
+    # --------------------------------------------
+    # PUISSANCES
+    # --------------------------------------------
+
+    exposants = {
+        "^0": "⁰",
+        "^1": "¹",
+        "^2": "²",
+        "^3": "³",
+        "^4": "⁴",
+        "^5": "⁵",
+        "^6": "⁶",
+        "^7": "⁷",
+        "^8": "⁸",
+        "^9": "⁹"
+    }
+
+    for ancien, nouveau in exposants.items():
+        texte = texte.replace(ancien, nouveau)
+
+    # --------------------------------------------
+    # IDENTIFICATION DE L'ELEVE
+    # --------------------------------------------
+
     texte = re.sub(
         r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
         r"\1 : ____________________ ",
         texte
     )
 
-    texte = re.sub(r"\.{3,}", "________________________", texte)
-    texte = texte.replace("^2", "²").replace("^3", "³")
+    texte = re.sub(
+        r"\.{3,}",
+        "________________________",
+        texte
+    )
+
+    # --------------------------------------------
+    # NETTOYAGE MARKDOWN
+    # --------------------------------------------
+
     texte = texte.replace("```", "")
-    texte = re.sub(r"(?m)^#{1,3}\s*", "", texte)
+
+    texte = re.sub(
+        r"(?m)^#{1,3}\s*",
+        "",
+        texte
+    )
+
+   
+       
+    
     # ------------------------------------------------
     # PIED DE PAGE ET NUMÉROTATION
     # ------------------------------------------------
