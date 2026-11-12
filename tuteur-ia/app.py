@@ -1886,6 +1886,14 @@ RÈGLES OBLIGATOIRES DE QUALITÉ :
   et leur position.
 - Pour les droites, indique si elles sont parallèles
   ou perpendiculaires.
+  RÈGLES OBLIGATOIRES POUR LES FIGURES :
+
+- Pour "points_alignes", TOUS les points doivent être placés sur une seule et même droite.
+- Ils doivent tous avoir exactement la même coordonnée Y.
+- Exemple obligatoire :
+  FIGURE_JSON: {"type":"points_alignes","points":{"R":[0,0],"T":[3,0],"S":[6,0]}}
+- Ne jamais placer un point en dehors de cette droite.
+- Ne jamais créer de points non alignés lorsque le type est "points_alignes".
 - Utilise exactement ce format sur une seule ligne :
 
 FIGURE_JSON: {{"type":"triangle_rectangle","points":{{"A":[0,0],"B":[4,0],"C":[0,3]}},"angle_droit":"A"}}
