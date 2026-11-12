@@ -1413,13 +1413,49 @@ def generer_pdf_sujet(texte_sujet):
     # NETTOYAGE DU TEXTE
     # ------------------------------------------------
 
+   
+        # NETTOYAGE DU TEXTE
     texte = str(texte_sujet or "")
-
-    texte = texte.replace("\r\n", "\n")
-    texte = texte.replace("\r", "\n")
+    texte = texte.replace("\r\n", "\n").replace("\r", "\n")
     texte = texte.replace("\\n", "\n")
 
-    # LaTeX courant
+    # Vecteurs
+    texte = re.sub(
+        r"\\(?:vec|overrightarrow)\{([^{}]+)\}",
+        r"→\1",
+        texte
+    )
+
+    # Matrices et coordonnées
+    def convertir_matrice(match):
+        contenu = match.group(1)
+        contenu = re.sub(r"\\\\", " ; ", contenu)
+        contenu = contenu.replace("&", " ; ")
+        contenu = re.sub(r"\s+", " ", contenu)
+        return "(" + contenu.strip() + ")"
+
+    texte = re.sub(
+        r"\\begin\{[pbv]?matrix\}(.*?)\\end\{[pbv]?matrix\}",
+        convertir_matrice,
+        texte,
+        flags=re.DOTALL
+    )
+
+    # Fractions simples
+    texte = re.sub(
+        r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
+        r"(\1)/(\2)",
+        texte
+    )
+
+    # Racines carrées
+    texte = re.sub(
+        r"\\sqrt\{([^{}]+)\}",
+        r"√(\1)",
+        texte
+    )
+
+    # Symboles mathématiques
     remplacements = {
         r"\in": "∈",
         r"\notin": "∉",
@@ -1436,50 +1472,40 @@ def generer_pdf_sujet(texte_sujet):
         r"\infty": "∞",
         r"\alpha": "α",
         r"\beta": "β",
-        r"\sqrt": "√"
+        r"\theta": "θ",
+        r"\Delta": "Δ",
+        r"\Rightarrow": "⇒",
+        r"\rightarrow": "→",
+        r"\sin": "sin",
+        r"\cos": "cos",
+        r"\tan": "tan"
     }
-
-    texte = re.sub(
-        r"\\(?:text|mathrm)\{([^{}]*)\}",
-        r"\1",
-        texte
-    )
 
     for ancien, nouveau in remplacements.items():
         texte = texte.replace(ancien, nouveau)
 
-    # Fractions simples
+    # Commandes de présentation LaTeX
     texte = re.sub(
-        r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
-        r"(\1)/(\2)",
+        r"\\(?:text|mathrm|mathbf)\{([^{}]*)\}",
+        r"\1",
         texte
     )
 
-    # Suppression des délimiteurs LaTeX
+    texte = re.sub(r"\\(?:left|right)", "", texte)
     texte = re.sub(r"\\[()\[\]]", "", texte)
     texte = texte.replace("$", "")
-    # Ajouter automatiquement des espaces pour les informations de l'élève
+
+    # Identification de l'élève
     texte = re.sub(
-    r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
-    r"\1 : ____________________ ",
-    texte
-     )
+        r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
+        r"\1 : ____________________ ",
+        texte
+    )
 
-    # Remplacer les pointillés par des traits continus
     texte = re.sub(r"\.{3,}", "________________________", texte)
-    # Remplacer les pointillés par des lignes continues
-    texte = re.sub(r"\.{3,}", "________________________", texte)
-   
-    # Exposants courants
-    
-    texte = texte.replace("^2", "²")
-    texte = texte.replace("^3", "³")
-
-    # Markdown
+    texte = texte.replace("^2", "²").replace("^3", "³")
     texte = texte.replace("```", "")
-  
     texte = re.sub(r"(?m)^#{1,3}\s*", "", texte)
-
     # ------------------------------------------------
     # PIED DE PAGE ET NUMÉROTATION
     # ------------------------------------------------
