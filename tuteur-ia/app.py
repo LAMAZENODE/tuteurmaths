@@ -1952,6 +1952,18 @@ RÈGLES POUR LES FIGURES :
 - N'utilise pas de séparateurs inutiles comme -- ou ___.
 - N'ajoute aucun texte technique ou commentaire destiné
   au développeur.
+  - RÈGLES PAR QUESTION :
+
+- Générer une figure uniquement pour la question qui
+  demande explicitement d'observer une figure.
+
+- Ne jamais placer une figure au début d'un exercice
+  si seule une question ultérieure en a besoin.
+
+- Pour l'exercice 3, question 1 : aucune figure.
+
+- Pour l'exercice 3, question 2 : afficher uniquement
+  la figure correspondant à cette question.
 
 VÉRIFICATION AVANT DE TERMINER :
 
