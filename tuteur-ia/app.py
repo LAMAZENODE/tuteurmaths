@@ -1891,7 +1891,8 @@ RÈGLES OBLIGATOIRES DE QUALITÉ :
 - Pour "points_alignes", TOUS les points doivent être placés sur une seule et même droite.
 - Ils doivent tous avoir exactement la même coordonnée Y.
 - Exemple obligatoire :
-  FIGURE_JSON: {"type":"points_alignes","points":{"R":[0,0],"T":[3,0],"S":[6,0]}}
+FIGURE_JSON: {{"type":"points_alignes","points":{{"R":[0,0],"T":[3,0],"S":[6,0]}}}}
+  
 - Ne jamais placer un point en dehors de cette droite.
 - Ne jamais créer de points non alignés lorsque le type est "points_alignes".
 - Utilise exactement ce format sur une seule ligne :
