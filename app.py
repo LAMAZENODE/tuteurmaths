@@ -520,120 +520,147 @@ def generer_pdf(texte_correction, enonce_exercice):
 
         # ============================================================
         # ÉTAPE 0 : SUPPRESSION DU LATEX / KATEX
+      
+       
         # ============================================================
-        texte = re.sub(r'\$\$(.+?)\$\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\$(.+?)\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\[(.+?)\\\]', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\((.+?)\\\)', r'\1', texte, flags=re.DOTALL)
+        # ÉTAPE 0 : NORMALISATION DU TEXTE
+        # ============================================================
+        texte = texte.replace('\r\n', '\n').replace('\r', '\n')
+        texte = texte.replace('\\n', '\n')
 
-        texte = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1)/(\2)', texte)
+        # Supprimer les délimiteurs LaTeX sans supprimer les formules
+        texte = re.sub(r'\$\$(.*?)\$\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\$(.*?)\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
 
-        texte = texte.replace(r'\times', '×')
-        texte = texte.replace(r'\cdot', '·')
-        texte = texte.replace(r'\leq', '≤')
-        texte = texte.replace(r'\geq', '≥')
-        texte = texte.replace(r'\neq', '≠')
-        texte = texte.replace(r'\infty', '∞')
-        texte = texte.replace(r'\pi', 'π')
-        texte = texte.replace(r'\alpha', 'α')
-        texte = texte.replace(r'\beta', 'β')
-        texte = texte.replace(r'\Delta', 'Δ')
-        texte = texte.replace(r'\mathbb{R}', 'ℝ')
+        # ============================================================
+        # ÉTAPE 1 : CONVERSION DES SYMBOLES MATHÉMATIQUES
+        # ============================================================
+        remplacements = {
+            r'\mathbb{R}': 'ℝ',
+            r'\mathbb{N}': 'ℕ',
+            r'\mathbb{Z}': 'ℤ',
+            r'\mathbb{Q}': 'ℚ',
+            r'\infty': '∞',
+            r'\times': '×',
+            r'\cdot': '·',
+            r'\leq': '≤',
+            r'\geq': '≥',
+            r'\neq': '≠',
+            r'\pi': 'π',
+            r'\alpha': 'α',
+            r'\beta': 'β',
+            r'\Delta': 'Δ',
+            r'\pm': '±',
+            r'\sqrt': '√',
+            r'\forall': '∀',
+            r'\in': '∈',
+            r'\notin': '∉',
+        }
 
-        texte = re.sub(r'_1', '₁', texte)
-        texte = re.sub(r'_2', '₂', texte)
-        texte = re.sub(r'_3', '₃', texte)
+        for ancien, nouveau in remplacements.items():
+            texte = texte.replace(ancien, nouveau)
 
-        texte = re.sub(r'\^2', '²', texte)
-        texte = re.sub(r'\^3', '³', texte)
+        # Fractions simples
+        texte = re.sub(
+            r'\\frac\{([^{}]+)\}\{([^{}]+)\}',
+            r'(\1)/(\2)',
+            texte
+        )
 
+        # Indices
+        texte = texte.replace('_1', '₁')
+        texte = texte.replace('_2', '₂')
+        texte = texte.replace('_3', '₃')
+
+        # Puissances
+        texte = texte.replace('^2', '²')
+        texte = texte.replace('^3', '³')
+
+        # ============================================================
+        # ÉTAPE 2 : SUPPRESSION DES COMMANDES LATEX RÉSIDUELLES
+        # ============================================================
         texte = re.sub(r'\\[a-zA-Z]+', '', texte)
         texte = texte.replace('{', '').replace('}', '')
 
         # ============================================================
-        # ÉTAPE 0bis : SUPPRESSION DES 'n' PARASITES
+        # ÉTAPE 3 : CORRECTION DES CARACTÈRES PARASITES
         # ============================================================
-        texte = re.sub(r'^-n\s+', '', texte)
+        texte = re.sub(r'^-n\s+', '', texte, flags=re.MULTILINE)
         texte = re.sub(r'(^|\n)\s*n\s+', r'\1', texte)
         texte = re.sub(r'(\w)-n\s+', r'\1 ', texte)
-        texte = re.sub(r'(\w)n\s+([A-ZÉÈÀÊÎÔÛ])', r'\1 \2', texte)
         texte = re.sub(r'(\d)n\b', r'\1', texte)
         texte = re.sub(r'(\w)n([A-ZÉÈÀÊÎÔÛ])', r'\1 \2', texte)
 
         # ============================================================
-        # ÉTAPE 1 : NORMALISATION
+        # ÉTAPE 4 : NETTOYAGE DES FORMULES RÉPÉTÉES
         # ============================================================
-        texte = texte.replace('\r\n', '\n').replace('\r', '\n')
-        texte = texte.replace('\\n', '\n')
-        texte = re.sub(r'(\S)\n(\S)', r'\1\2', texte)
+        texte = re.sub(
+            r'(f\(x\)\s*=\s*x²\s*\+\s*1)\s+\1',
+            r'\1',
+            texte
+        )
 
         # ============================================================
-        # ÉTAPE 2 : ÉCHAPPEMENT XML POUR REPORTLAB
+        # ÉTAPE 5 : ÉCHAPPEMENT XML POUR REPORTLAB
         # ============================================================
         texte = texte.replace('&', '&amp;')
         texte = texte.replace('<', '&lt;').replace('>', '&gt;')
-        texte = texte.replace('&lt;br/&gt;', '<br/>')
 
         # ============================================================
-        # ÉTAPE 3 : MARKDOWN → HTML REPORTLAB
+        # ÉTAPE 6 : MARKDOWN → HTML REPORTLAB
         # ============================================================
-        texte = re.sub(r'^###\s+(.*)$', r'<b>\1</b>', texte, flags=re.MULTILINE)
-        texte = re.sub(r'^##\s+(.*)$',  r'<b><font size="13">\1</font></b>', texte, flags=re.MULTILINE)
-        texte = re.sub(r'^#\s+(.*)$',   r'<b><font size="15">\1</font></b>', texte, flags=re.MULTILINE)
+        texte = re.sub(
+            r'^###\s+(.*)$',
+            r'<b>\1</b>',
+            texte,
+            flags=re.MULTILINE
+        )
 
-        # Saut de ligne après les titres Markdown
-        texte = re.sub(r'(<b><font size="1[35]">.*?</font></b>)([A-ZÉÈÀÊÎÔÛ])', r'\1<br/>\2', texte)
-        texte = re.sub(r'(<b>.*?</b>)([A-ZÉÈÀÊÎÔÛ])', r'\1<br/>\2', texte)
+        texte = re.sub(
+            r'^##\s+(.*)$',
+            r'<b><font size="13">\1</font></b>',
+            texte,
+            flags=re.MULTILINE
+        )
 
-        # ============================================================
-        # TITRES DANS TOUTES LES LANGUES
-        # ============================================================
-        titres_connus = [
-            # Français
-            "Rappel de cours", "Rappel théorique", "Exemple concret",
-            "Exemple théorique", "Application à l'exercice",
-            "Rappel :", "Concret :", "Théorique :", "Application :",
-            "Conclusion :", "Définition :", "Situation :", "Tarif :",
-            "Fonction :", "Énoncé :",
-            # Anglais
-            "Course reminder", "Theoretical reminder", "Concrete example",
-            "Theoretical example", "Application to the exercise",
-            "Reminder:", "Real-life example:", "Theory:",
-            # Allemand
-            "Kurserinnerung", "Theoretische Erinnerung", "Konkretes Beispiel",
-            "Theoretisches Beispiel", "Anwendung auf die Übung",
-            # Espagnol
-            "Recordatorio del curso", "Recordatorio teórico", "Ejemplo concreto",
-            "Ejemplo teórico", "Aplicación al ejercicio",
-            # Italien
-            "Promemoria del corso", "Promemoria teorico", "Esempio concreto",
-            "Esempio teorico", "Applicazione all'esercizio",
-            # Arabe
-            "تذكير بالدرس", "تذكير نظري", "مثال ملموس", "مثال نظري",
-            "تطبيق على التمرين",
-        ]
-        for titre in titres_connus:
-            for lettre in "ABCDEFGHIJKLMNOPQRSTUVWXYZÉÈÀÊÎÔÛ":
-                texte = texte.replace(titre + lettre, titre + "<br/>" + lettre)
-            texte = texte.replace(titre + " ", titre + "<br/>")
+        texte = re.sub(
+            r'^#\s+(.*)$',
+            r'<b><font size="15">\1</font></b>',
+            texte,
+            flags=re.MULTILINE
+        )
 
         # Listes Markdown
-        texte = re.sub(r'^\s*[-*]\s+(.*)$', r'• \1', texte, flags=re.MULTILINE)
+        texte = re.sub(
+            r'^\s*[-*]\s+(.*)$',
+            r'• \1',
+            texte,
+            flags=re.MULTILINE
+        )
 
-        # Gras / italique
+        # Gras et italique
         texte = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', texte)
-        texte = re.sub(r'\*(.+?)\*',     r'<i>\1</i>', texte)
+        texte = re.sub(r'\*(.+?)\*', r'<i>\1</i>', texte)
 
         # Séparateurs
-        texte = re.sub(r'^\s*---\s*$', '<br/>', texte, flags=re.MULTILINE)
+        texte = re.sub(
+            r'^\s*---\s*$',
+            '<br/>',
+            texte,
+            flags=re.MULTILINE
+        )
 
         # ============================================================
-        # ÉTAPE 4 : SAUTS DE LIGNE FINAUX
+        # ÉTAPE 7 : SAUTS DE LIGNE FINAUX
         # ============================================================
+        texte = re.sub(r'\n{2,}', '<br/><br/>', texte)
         texte = texte.replace('\n', '<br/>')
         texte = re.sub(r'(<br/>){3,}', '<br/><br/>', texte)
 
         return texte
+ 
 
     # --------------------------------------------------------
     # CONSTRUCTION DU PDF
@@ -958,109 +985,45 @@ def afficher_recapitulatif_final(nom_fichier="correction_coach_math.pdf"):
         st.session_state.langue, "français"
     )
 
-   
-   
-instructions = f"""
-Tu es un professeur expérimenté de mathématiques,
-spécialisé dans l'enseignement et la rédaction de corrections scolaires.
+    instructions = f"""
+Tu es un professeur expérimenté de mathématiques.
 
-Tu dois rédiger une correction mathématique complète,
-rigoureuse, pédagogique et parfaitement structurée.
+Tu dois rédiger une correction complète et rigoureuse
+de l'exercice donné par l'élève.
 
 Réponds uniquement en {nom_langue}.
 
-===============================
-RÈGLES MATHÉMATIQUES OBLIGATOIRES
-===============================
-
-- Tous les calculs doivent être mathématiquement exacts.
-- Ne saute aucune étape importante.
-- Vérifie les résultats avant de les présenter.
-- N'invente jamais une donnée absente de l'énoncé.
-- Signale toute ambiguïté ou erreur dans l'énoncé.
-- Adapte le vocabulaire et les méthodes au niveau de l'élève.
-
-===============================
-PRÉSENTATION DES FORMULES
-===============================
-
-- Écris correctement les symboles mathématiques.
-- Utilise ℝ pour l'ensemble des nombres réels.
-- Utilise ℕ pour les nombres naturels.
-- Utilise ℤ pour les nombres entiers relatifs.
-- Utilise ℚ pour les nombres rationnels.
-- Utilise ∞ pour l'infini.
-- Utilise ≤, ≥, ≠, × et √ correctement.
-- N'utilise jamais les caractères n ou ¥ pour remplacer
-  respectivement ℝ ou ∞.
-- Écris correctement les fractions, puissances,
-  racines, dérivées et intervalles.
-- Utilise une notation mathématique cohérente.
-- N'écris jamais une formule incomplète.
-
-Pour les formules complexes, utilise une écriture
-mathématique lisible et sans ambiguïté.
-
-===============================
-STRUCTURE OBLIGATOIRE
-===============================
+La correction doit obligatoirement contenir ces 4 parties :
 
 1. RAPPEL DE COURS
-
 Présente les définitions, propriétés et formules
-nécessaires à la résolution de l'exercice.
-
-Ne donne que les notions utiles.
+nécessaires pour résoudre cet exercice.
 
 2. RÉSOLUTION DÉTAILLÉE
-
 Résous toutes les questions dans l'ordre.
-
-Pour chaque question :
-- Explique la méthode.
-- Présente les calculs étape par étape.
-- Justifie les propriétés utilisées.
-- Donne une conclusion claire.
-
-Utilise des sous-titres numérotés complets.
-Ne coupe jamais un titre ou une phrase.
+Détaille chaque étape du raisonnement.
+Montre les calculs et explique les méthodes utilisées.
+Ne saute aucune étape importante.
 
 3. RÉPONSE FINALE
-
-Présente les résultats de manière synthétique.
-
-Mets en évidence les réponses importantes.
-Respecte les unités et les notations mathématiques.
+Présente clairement le résultat final de chaque question.
+Ajoute les unités lorsqu'elles sont nécessaires.
+Mets les réponses finales bien en évidence.
 
 4. VÉRIFICATION DU RÉSULTAT
+Vérifie réellement les résultats obtenus.
+Refais les calculs ou remplace les valeurs dans
+les formules pour contrôler les réponses.
+Explique pourquoi les résultats sont corrects.
+Si une vérification est impossible, indique-le clairement.
 
-Effectue de véritables vérifications :
-- Recommence les calculs si nécessaire.
-- Remplace les valeurs dans les formules.
-- Vérifie la cohérence des résultats.
-- Signale honnêtement les limites de vérification.
-
-===============================
-QUALITÉ DE RÉDACTION
-===============================
-
-- Utilise des paragraphes courts et aérés.
-- Sépare les différentes étapes.
-- Utilise des listes lorsque cela facilite la lecture.
-- Évite les répétitions inutiles.
-- Ne colle jamais les titres aux paragraphes.
-- Ne produis aucun texte parasite.
-- Ne répète pas inutilement l'énoncé.
-- N'ajoute pas de phrase indiquant que le document
-  est uniquement fourni à titre informatif.
-
-La correction doit ressembler au travail d'un
-excellent professeur de mathématiques.
-
-La priorité absolue est la justesse mathématique,
-la clarté pédagogique et la qualité de présentation.
+IMPORTANT :
+- Vérifie la cohérence mathématique de toute la correction.
+- Ne donne pas de résultat inventé.
+- Corrige toute erreur éventuelle dans les étapes précédentes.
+- Utilise une présentation claire avec des titres.
+- Ne confonds pas une méthode de résolution avec la réponse finale.
 """
- 
 
     contenu = f"""
 ÉNONCÉ DE L'EXERCICE :
@@ -2641,3 +2604,4 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
+
