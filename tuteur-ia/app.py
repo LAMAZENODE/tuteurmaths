@@ -1194,6 +1194,7 @@ def generer_pdf_sujet(texte_sujet):
                 noms_points = list(points.keys())
 
                 
+            
                 # 1. POINTS ALIGNÉS SUR UNE MÊME DROITE
                 if type_figure == "points_alignes":
 
@@ -1202,43 +1203,9 @@ def generer_pdf_sujet(texte_sujet):
                         P1 = position(noms_points[0])
                         P2 = position(noms_points[-1])
 
-                        dx = P2[0] - P1[0]
-                        dy = P2[1] - P1[1]
+                        tracer_droite(P1, P2, 120)
 
-                        norme = math.hypot(dx, dy)
-
-                        if norme > 0:
-
-                            ux = dx / norme
-                            uy = dy / norme
-
-                            # Tracer la droite
-                            c.line(
-                                P1[0] - ux * 120,
-                                P1[1] - uy * 120,
-                                P2[0] + ux * 120,
-                                P2[1] + uy * 120
-                            )
-
-                            # Replacer chaque point sur cette droite
-                            for nom in noms_points:
-
-                                P = position(nom)
-
-                                projection = (
-                                    (P[0] - P1[0]) * ux
-                                    + (P[1] - P1[1]) * uy
-                                )
-
-                                points[nom] = [
-                                    points[nom][0],
-                                    points[nom][1]
-                                ]
-
-                                positions_corrigees[nom] = (
-                                    P1[0] + projection * ux,
-                                    P1[1] + projection * uy
-                                )
+                
 
 
                 # 2. DROITES PERPENDICULAIRES
