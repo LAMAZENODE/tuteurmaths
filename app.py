@@ -5,6 +5,7 @@ from google.genai import types
 import json
 import re
 import stripe
+
 import io
 import os
 import time
@@ -673,32 +674,43 @@ def generer_pdf(texte_correction, enonce_exercice):
 # ============================================================
 # MODÈLES DISPONIBLES (fallback)
 # ============================================================
+
 MODELES_DISPONIBLES = [
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-2.5-flash-lite',
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
 ]
 
 def _appeler_gemini(instructions, contenu="Génère l'étape demandée."):
     derniere_erreur = None
+
     for modele in MODELES_DISPONIBLES:
-        try:
-            reponse = client_ia.models.generate_content(
-                model=modele,
-                contents=contenu,
-                config=types.GenerateContentConfig(system_instruction=instructions)
-            )
-            return reponse.text
-        except Exception as e:
-            derniere_erreur = e
-            msg = str(e)
-            if "404" in msg or "NOT_FOUND" in msg:
-                continue
-            if "503" in msg or "UNAVAILABLE" in msg:
-                time.sleep(2 + random.uniform(0, 1))
-                continue
-            raise
+        for tentative in range(3):
+            try:
+                reponse = client_ia.models.generate_content(
+                    model=modele,
+                    contents=contenu,
+                    config=types.GenerateContentConfig(
+                        system_instruction=instructions
+                    )
+                )
+                return reponse.text
+
+            except Exception as e:
+                derniere_erreur = e
+                msg = str(e)
+
+                if "404" in msg or "NOT_FOUND" in msg:
+                    break
+
+                if "503" in msg or "UNAVAILABLE" in msg or "429" in msg:
+                    attente = 3 * (tentative + 1)
+                    time.sleep(attente + random.uniform(0, 2))
+                    continue
+
+                raise
+
     raise derniere_erreur
+
 
 # ============================================================
 # GÉNÉRATION D'UNE ÉTAPE (MULTILINGUE)
@@ -927,23 +939,90 @@ def afficher_recapitulatif_final(nom_fichier="correction_coach_math.pdf"):
 
     exercice = st.session_state.get('dernier_enonce', '')
 
-    if st.session_state.get("preambule_theorique") is None:
-        with st.spinner("📖 Génération du rappel de cours..."):
-            preambule = generer_preambule_theorique(exercice)
-            st.session_state.preambule_theorique = preambule
-
-    preambule = st.session_state.preambule_theorique
-
-    resolution = "\n\n".join(
-        f"### {t('coach_step')} {i+1}\n{exp}"
-        for i, exp in enumerate(st.session_state.get("historique_explications", []))
+  
+    
+    historique = "\n\n".join(
+        st.session_state.get("historique_explications", [])
     )
 
-    recapitulatif_complet = (
-        f"# 📖 {t('preambule_title')}\n\n{preambule}\n\n"
-        f"---\n\n# 📝 {t('pdf_resolution')}\n\n{resolution}"
+    noms_langues = {
+        "fr": "français",
+        "en": "anglais",
+        "de": "allemand",
+        "es": "espagnol",
+        "it": "italien",
+        "ar": "arabe"
+    }
+
+    nom_langue = noms_langues.get(
+        st.session_state.langue, "français"
     )
-    st.session_state['derniere_correction'] = recapitulatif_complet
+
+    instructions = f"""
+Tu es un professeur expérimenté de mathématiques.
+
+Tu dois rédiger une correction complète et rigoureuse
+de l'exercice donné par l'élève.
+
+Réponds uniquement en {nom_langue}.
+
+La correction doit obligatoirement contenir ces 4 parties :
+
+1. RAPPEL DE COURS
+Présente les définitions, propriétés et formules
+nécessaires pour résoudre cet exercice.
+
+2. RÉSOLUTION DÉTAILLÉE
+Résous toutes les questions dans l'ordre.
+Détaille chaque étape du raisonnement.
+Montre les calculs et explique les méthodes utilisées.
+Ne saute aucune étape importante.
+
+3. RÉPONSE FINALE
+Présente clairement le résultat final de chaque question.
+Ajoute les unités lorsqu'elles sont nécessaires.
+Mets les réponses finales bien en évidence.
+
+4. VÉRIFICATION DU RÉSULTAT
+Vérifie réellement les résultats obtenus.
+Refais les calculs ou remplace les valeurs dans
+les formules pour contrôler les réponses.
+Explique pourquoi les résultats sont corrects.
+Si une vérification est impossible, indique-le clairement.
+
+IMPORTANT :
+- Vérifie la cohérence mathématique de toute la correction.
+- Ne donne pas de résultat inventé.
+- Corrige toute erreur éventuelle dans les étapes précédentes.
+- Utilise une présentation claire avec des titres.
+- Ne confonds pas une méthode de résolution avec la réponse finale.
+"""
+
+    contenu = f"""
+ÉNONCÉ DE L'EXERCICE :
+
+{exercice}
+
+EXPLICATIONS DES ÉTAPES DÉJÀ EFFECTUÉES :
+
+{historique}
+
+Rédige maintenant la correction complète demandée.
+"""
+
+    with st.spinner("📝 Préparation de la correction complète..."):
+        try:
+            recapitulatif_complet = _appeler_gemini(
+                instructions,
+                contenu=contenu
+            )
+
+            st.session_state["derniere_correction"] = recapitulatif_complet
+
+        except Exception as e:
+            afficher_erreur_ia(e)
+            return
+
 
     st.write("---")
     st.markdown(f"#### {t('coach_summary')}")
@@ -986,15 +1065,9 @@ def afficher_erreur_ia(api_error):
 
 
 
-
-
-
-
 def generer_pdf_sujet(texte_sujet):
-    import io
-    import os
-    import re
     from xml.sax.saxutils import escape
+
 
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER
@@ -1009,8 +1082,301 @@ def generer_pdf_sujet(texte_sujet):
         Paragraph,
         Spacer,
         HRFlowable,
-        KeepTogether
+        KeepTogether,
+        Flowable
     )
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+
+    # ------------------------------------------------
+    # DESSIN DES FIGURES GÉOMÉTRIQUES
+    # ------------------------------------------------
+
+    class FigureGeometrique(Flowable):
+
+        def __init__(self, donnees):
+            super().__init__()
+            self.donnees = donnees
+            self.width = 420
+            self.height = 190
+
+        def draw(self):
+
+            c = self.canv
+            donnees = self.donnees
+
+            points = donnees.get("points", {})
+
+            if not points:
+                return
+
+            # Mise à l'échelle des coordonnées
+            xs = [p[0] for p in points.values()]
+            ys = [p[1] for p in points.values()]
+
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+
+            largeur = max(max_x - min_x, 1)
+            hauteur = max(max_y - min_y, 1)
+
+          
+            echelle = min(
+                350 / largeur,
+                145 / hauteur
+            )
+            def position(nom):
+                x, y = points[nom]
+
+                if donnees.get("type") == "points_alignes":
+                    y = min_y
+
+                return (
+                    45 + (x - min_x) * echelle,
+                    25 + (y - min_y) * echelle
+                )
+
+            c.setStrokeColorRGB(0.08, 0.20, 0.38)
+            c.setLineWidth(1.5)
+            type_figure = donnees.get("type", "")
+
+            noms = list(points.keys())
+
+            # Triangle ou triangle rectangle
+            if type_figure in (
+                "triangle",
+                "triangle_rectangle"
+            ) and len(noms) == 3:
+
+                A, B, C = [position(n) for n in noms]
+
+                c.line(*A, *B)
+                c.line(*B, *C)
+                c.line(*C, *A)
+
+                angle = donnees.get("angle_droit")
+
+                if angle in points:
+
+                    x, y = position(angle)
+
+                    autres = [
+                        n for n in noms if n != angle
+                    ]
+
+                    p1 = position(autres[0])
+                    p2 = position(autres[1])
+
+                    import math
+
+                    def vecteur(p):
+                        dx = p[0] - x
+                        dy = p[1] - y
+                        longueur = math.hypot(dx, dy)
+
+                        return (
+                            dx / longueur * 10,
+                            dy / longueur * 10
+                        )
+
+                    u = vecteur(p1)
+                    v = vecteur(p2)
+
+                    q1 = (x + u[0], y + u[1])
+                    q2 = (
+                        q1[0] + v[0],
+                        q1[1] + v[1]
+                    )
+                    q3 = (x + v[0], y + v[1])
+
+                    c.line(*q1, *q2)
+                    c.line(*q2, *q3)
+
+            # Carré, rectangle ou quadrilatère
+            elif type_figure in (
+                "rectangle",
+                "carre",
+                "quadrilatere"
+            ) and len(noms) == 4:
+
+                coords = [position(n) for n in noms]
+
+                for i in range(4):
+                    p1 = coords[i]
+                    p2 = coords[(i + 1) % 4]
+                    c.line(*p1, *p2)
+
+            # Cercle
+            elif type_figure == "cercle":
+
+                centre = donnees.get("centre")
+
+                rayon = donnees.get("rayon", 2)
+
+                if centre in points:
+
+                    x, y = position(centre)
+
+                    rayon_pdf = max(
+                        10,
+                        min(70, rayon * echelle)
+                    )
+
+                    c.circle(
+                        x,
+                        y,
+                        rayon_pdf
+                    )
+
+
+                        # Droites, segments, demi-droites et perpendiculaires
+            elif type_figure in (
+                "droite",
+                "points_alignes",
+                "segment",
+                "demi_droite",
+                "perpendiculaires"
+            ):
+
+                import math
+
+                def tracer_droite(p1, p2, longueur=120):
+                    dx = p2[0] - p1[0]
+                    dy = p2[1] - p1[1]
+                    norme = math.hypot(dx, dy)
+
+                    if norme == 0:
+                        return
+
+                    ux = dx / norme
+                    uy = dy / norme
+
+                    c.line(
+                        p1[0] - ux * longueur,
+                        p1[1] - uy * longueur,
+                        p2[0] + ux * longueur,
+                        p2[1] + uy * longueur
+                    )
+
+                noms_points = list(points.keys())
+
+                
+            
+                # 1. POINTS ALIGNÉS SUR UNE MÊME DROITE
+                if type_figure == "points_alignes":
+
+                    if len(noms_points) >= 2:
+
+                        P1 = position(noms_points[0])
+                        P2 = position(noms_points[-1])
+
+                        tracer_droite(P1, P2, 120)
+
+                
+
+
+                # 2. DROITES PERPENDICULAIRES
+                elif type_figure == "perpendiculaires":
+
+                    if all(n in points for n in ("O", "M", "N")):
+
+                        O = position("O")
+                        M = position("M")
+                        N = position("N")
+
+                        # Tracer les deux droites
+                        tracer_droite(M, O, 100)
+                        tracer_droite(O, N, 100)
+
+                        # Calculer les directions des deux droites
+                        dx1 = M[0] - O[0]
+                        dy1 = M[1] - O[1]
+
+                        dx2 = N[0] - O[0]
+                        dy2 = N[1] - O[1]
+
+                        norme1 = math.hypot(dx1, dy1)
+                        norme2 = math.hypot(dx2, dy2)
+
+                        if norme1 > 0 and norme2 > 0:
+
+                            ux = dx1 / norme1
+                            uy = dy1 / norme1
+
+                            vx = dx2 / norme2
+                            vy = dy2 / norme2
+
+                            taille = 9
+
+                            # Petit carré indiquant l'angle droit
+                            A = (
+                                O[0] + ux * taille,
+                                O[1] + uy * taille
+                            )
+
+                            B = (
+                                A[0] + vx * taille,
+                                A[1] + vy * taille
+                            )
+
+                            C = (
+                                O[0] + vx * taille,
+                                O[1] + vy * taille
+                            )
+
+                            c.line(O[0], O[1], A[0], A[1])
+                            c.line(A[0], A[1], B[0], B[1])
+                            c.line(B[0], B[1], C[0], C[1])
+
+                # 3. SEGMENT, DEMI-DROITE ET DROITE
+                elif len(noms_points) >= 2:
+
+                    P1 = position(noms_points[0])
+                    P2 = position(noms_points[1])
+
+                    if type_figure == "segment":
+
+                        c.line(
+                            P1[0], P1[1],
+                            P2[0], P2[1]
+                        )
+
+                    elif type_figure == "demi_droite":
+
+                        dx = P2[0] - P1[0]
+                        dy = P2[1] - P1[1]
+                        norme = math.hypot(dx, dy)
+
+                        if norme > 0:
+
+                            ux = dx / norme
+                            uy = dy / norme
+
+                            c.line(
+                                P1[0], P1[1],
+                                P1[0] + ux * 220,
+                                P1[1] + uy * 220
+                            )
+
+                    else:
+
+                        tracer_droite(P1, P2, 120)
+ 
+            c.setFont("Helvetica", 10)
+            c.setFillColorRGB(0, 0, 0)
+
+            for nom in noms:
+
+                x, y = position(nom)
+
+                c.circle(x, y, 2, fill=1)
+
+                c.drawString(
+                    x + 5,
+                    y + 5,
+                    nom
+                )
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
 
@@ -1055,18 +1421,21 @@ def generer_pdf_sujet(texte_sujet):
 
     styles = getSampleStyleSheet()
 
+
+    
     # ------------------------------------------------
-    # STYLES PROFESSIONNELS
+    # STYLES PROFESSIONNELS DU PDF
     # ------------------------------------------------
 
     style_titre = ParagraphStyle(
         "Titre",
         fontName=font_gras,
-        fontSize=19,
-        leading=25,
+        fontSize=20,
+        leading=26,
         alignment=TA_CENTER,
         textColor=bleu,
-        spaceAfter=12
+        spaceBefore=8,
+        spaceAfter=18
     )
 
     style_exercice = ParagraphStyle(
@@ -1076,9 +1445,9 @@ def generer_pdf_sujet(texte_sujet):
         leading=17,
         textColor=bleu,
         backColor=bleu_clair,
-        borderPadding=7,
-        spaceBefore=13,
-        spaceAfter=8,
+        borderPadding=8,
+        spaceBefore=16,
+        spaceAfter=10,
         keepWithNext=True
     )
 
@@ -1087,9 +1456,9 @@ def generer_pdf_sujet(texte_sujet):
         fontName=font_normal,
         fontSize=10,
         leading=16,
-        leftIndent=8,
-        spaceBefore=4,
-        spaceAfter=8
+        leftIndent=10,
+        spaceBefore=5,
+        spaceAfter=9
     )
 
     style_normal = ParagraphStyle(
@@ -1097,42 +1466,138 @@ def generer_pdf_sujet(texte_sujet):
         fontName=font_normal,
         fontSize=9.5,
         leading=15,
-        spaceAfter=5
+        textColor=colors.HexColor("#252525"),
+        spaceBefore=2,
+        spaceAfter=7
     )
 
     style_info = ParagraphStyle(
         "Information",
         fontName=font_normal,
         fontSize=9,
-        leading=15,
+        leading=14,
         textColor=colors.HexColor("#344054"),
-        spaceAfter=4
+        spaceAfter=5
     )
 
     style_consigne = ParagraphStyle(
         "Consigne",
         fontName=font_normal,
-        fontSize=9,
+        fontSize=9.5,
         leading=15,
-        spaceAfter=6
+        textColor=colors.HexColor("#344054"),
+        spaceBefore=3,
+        spaceAfter=8
     )
+
 
     # ------------------------------------------------
     # NETTOYAGE DU TEXTE
     # ------------------------------------------------
 
-    texte = str(texte_sujet or "")
+    # --------------------------------------------
+    # NETTOYAGE ET CONVERSION DU TEXTE MATHEMATIQUE
+    # --------------------------------------------
 
-    texte = texte.replace("\r\n", "\n")
-    texte = texte.replace("\r", "\n")
+    texte = str(texte_sujet or "")
+    texte = texte.replace("\r\n", "\n").replace("\r", "\n")
     texte = texte.replace("\\n", "\n")
 
-    # LaTeX courant
+    # --------------------------------------------
+    # VECTEURS
+    # --------------------------------------------
+
+    texte = re.sub(
+        r"\\(?:vec|overrightarrow)\{([^{}]+)\}",
+        r"→\1",
+        texte
+    )
+
+    # --------------------------------------------
+    # NORMES : \|u\| et \lVert u \rVert
+    # --------------------------------------------
+
+    texte = texte.replace(r"\lVert", "||")
+    texte = texte.replace(r"\rVert", "||")
+    texte = texte.replace(r"\|", "||")
+
+    texte = re.sub(
+        r"\|\|\s*(.*?)\s*\|\|",
+        r"||\1||",
+        texte
+    )
+
+    # --------------------------------------------
+    # ANGLES
+    # --------------------------------------------
+
+    texte = re.sub(
+        r"\\widehat\{([^{}]+)\}",
+        r"∠\1",
+        texte
+    )
+
+    texte = re.sub(
+        r"\\angle\s*([A-Za-z]+)",
+        r"∠\1",
+        texte
+    )
+
+    # --------------------------------------------
+    # MATRICES
+    # --------------------------------------------
+
+    def convertir_matrice(match):
+        contenu = match.group(1)
+        contenu = re.sub(r"\\\\", " ; ", contenu)
+        contenu = contenu.replace("&", " ; ")
+        contenu = re.sub(r"\s+", " ", contenu)
+        return "(" + contenu.strip() + ")"
+
+    texte = re.sub(
+        r"\\begin\{[pbv]?matrix\}(.*?)\\end\{[pbv]?matrix\}",
+        convertir_matrice,
+        texte,
+        flags=re.DOTALL
+    )
+
+    # --------------------------------------------
+    # FRACTIONS
+    # --------------------------------------------
+
+    texte = re.sub(
+        r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
+        r"(\1)/(\2)",
+        texte
+    )
+
+    texte = re.sub(
+        r"\\dfrac\{([^{}]+)\}\{([^{}]+)\}",
+        r"(\1)/(\2)",
+        texte
+    )
+
+    # --------------------------------------------
+    # RACINES CARREES
+    # --------------------------------------------
+
+    texte = re.sub(
+        r"\\sqrt\{([^{}]+)\}",
+        r"√(\1)",
+        texte
+    )
+
+    # --------------------------------------------
+    # SYMBOLes MATHEMATIQUES
+    # --------------------------------------------
+
     remplacements = {
         r"\in": "∈",
         r"\notin": "∉",
         r"\leq": "≤",
+        r"\le": "≤",
         r"\geq": "≥",
+        r"\ge": "≥",
         r"\neq": "≠",
         r"\times": "×",
         r"\div": "÷",
@@ -1144,50 +1609,87 @@ def generer_pdf_sujet(texte_sujet):
         r"\infty": "∞",
         r"\alpha": "α",
         r"\beta": "β",
-        r"\sqrt": "√"
+        r"\theta": "θ",
+        r"\Delta": "Δ",
+        r"\Rightarrow": "⇒",
+        r"\rightarrow": "→",
+        r"\sin": "sin",
+        r"\cos": "cos",
+        r"\tan": "tan",
+        r"\neq": "≠",
+        r"\pm": "±"
     }
-
-    texte = re.sub(
-        r"\\(?:text|mathrm)\{([^{}]*)\}",
-        r"\1",
-        texte
-    )
 
     for ancien, nouveau in remplacements.items():
         texte = texte.replace(ancien, nouveau)
 
-    # Fractions simples
+    # --------------------------------------------
+    # COMMANDES LATEX DE PRESENTATION
+    # --------------------------------------------
+
     texte = re.sub(
-        r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
-        r"(\1)/(\2)",
+        r"\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}",
+        r"\1",
         texte
     )
 
-    # Suppression des délimiteurs LaTeX
+    texte = re.sub(r"\\(?:left|right)", "", texte)
+
     texte = re.sub(r"\\[()\[\]]", "", texte)
+
     texte = texte.replace("$", "")
-    # Ajouter automatiquement des espaces pour les informations de l'élève
+
+    # --------------------------------------------
+    # PUISSANCES
+    # --------------------------------------------
+
+    exposants = {
+        "^0": "⁰",
+        "^1": "¹",
+        "^2": "²",
+        "^3": "³",
+        "^4": "⁴",
+        "^5": "⁵",
+        "^6": "⁶",
+        "^7": "⁷",
+        "^8": "⁸",
+        "^9": "⁹"
+    }
+
+    for ancien, nouveau in exposants.items():
+        texte = texte.replace(ancien, nouveau)
+
+    # --------------------------------------------
+    # IDENTIFICATION DE L'ELEVE
+    # --------------------------------------------
+
     texte = re.sub(
-    r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
-    r"\1 : ____________________ ",
-    texte
-     )
+        r"(?im)\b(Nom|Prénom|Date)[ \t]*:[ \t]*(?=(?:Prénom|Classe|Date)[ \t]*:|$)",
+        r"\1 : ____________________ ",
+        texte
+    )
 
-    # Remplacer les pointillés par des traits continus
-    texte = re.sub(r"\.{3,}", "________________________", texte)
-    # Remplacer les pointillés par des lignes continues
-    texte = re.sub(r"\.{3,}", "________________________", texte)
-   
-    # Exposants courants
-    
-    texte = texte.replace("^2", "²")
-    texte = texte.replace("^3", "³")
+    texte = re.sub(
+        r"\.{3,}",
+        "________________________",
+        texte
+    )
 
-    # Markdown
+    # --------------------------------------------
+    # NETTOYAGE MARKDOWN
+    # --------------------------------------------
+
     texte = texte.replace("```", "")
-  
-    texte = re.sub(r"(?m)^#{1,3}\s*", "", texte)
 
+    texte = re.sub(
+        r"(?m)^#{1,3}\s*",
+        "",
+        texte
+    )
+
+   
+       
+    
     # ------------------------------------------------
     # PIED DE PAGE ET NUMÉROTATION
     # ------------------------------------------------
@@ -1240,6 +1742,26 @@ def generer_pdf_sujet(texte_sujet):
     for ligne in lignes:
 
         ligne = ligne.strip()
+               # Détection et création des figures géométriques
+        if ligne.startswith("FIGURE_JSON:"):
+            try:
+                donnees_figure = json.loads(
+                    ligne.split("FIGURE_JSON:", 1)[1].strip()
+                )
+
+                story.append(Spacer(1, 14))
+                story.append(FigureGeometrique(donnees_figure))
+                story.append(Spacer(1, 12))
+
+            except (json.JSONDecodeError, TypeError, ValueError):
+                story.append(
+                    Paragraph(
+                        "Figure non disponible : format incorrect.",
+                        style_normal
+                    )
+                )
+
+            continue 
 
         if not ligne:
             story.append(Spacer(1, 5))
@@ -1560,11 +2082,73 @@ RÈGLES OBLIGATOIRES DE QUALITÉ :
 - Aucune phrase ne doit être coupée ou inachevée.
 - Vérifie que toutes les questions ont une réponse possible.
 - Vérifie la cohérence mathématique de chaque exercice.
-- Ne pose jamais une question qui dépend d'une figure absente.
-- Si une figure est nécessaire, fournis-la directement
-  sous forme de schéma ASCII simple et lisible.
-- Ne demande jamais à l'élève d'observer une figure
-  qui n'est pas présente dans le sujet.
+
+- Ne crée jamais de figure en ASCII.
+- Lorsqu'un exercice nécessite une figure géométrique,
+  indique-la avec un marqueur FIGURE_JSON.
+- La figure doit être adaptée au chapitre demandé.
+- Pour Pythagore, privilégie un triangle rectangle.
+- Pour les triangles, indique les coordonnées des points
+  et les éventuels angles droits.
+- Pour les cercles, indique le centre, le rayon
+  et les points nécessaires.
+- Pour les quadrilatères, indique les sommets
+  et leur position.
+- Pour les droites, indique si elles sont parallèles
+  ou perpendiculaires.
+  RÈGLES OBLIGATOIRES POUR LES FIGURES :
+
+- Pour "points_alignes", TOUS les points doivent être placés sur une seule et même droite.
+- Ils doivent tous avoir exactement la même coordonnée Y.
+- Exemple obligatoire :
+FIGURE_JSON: {{"type":"points_alignes","points":{{"R":[0,0],"T":[3,0],"S":[6,0]}}}}
+  
+- Ne jamais placer un point en dehors de cette droite.
+- Ne jamais créer de points non alignés lorsque le type est "points_alignes".
+- Utilise exactement ce format sur une seule ligne :
+
+FIGURE_JSON: {{"type":"triangle_rectangle","points":{{"A":[0,0],"B":[4,0],"C":[0,3]}},"angle_droit":"A"}}
+
+FIGURE_JSON: {{"type":"points_alignes","points":{{"A":[0,0],"B":[3,0],"C":[6,0]}}}}
+
+FIGURE_JSON: {{"type":"perpendiculaires","points":{{"O":[0,0],"M":[-3,0],"N":[0,3]}}}}
+
+
+FIGURE_JSON: {{"type":"segment","points":{{"R":[0,0],"T":[4,0],"S":[7,0]}}}}
+- RÈGLES OBLIGATOIRES POUR LES FIGURES :
+
+- Si l'exercice demande à l'élève de tracer, construire,
+  placer ou dessiner lui-même une figure, ne génère
+  aucune figure pour cet exercice.
+
+- Ne jamais afficher des points qui ne sont pas mentionnés
+  dans la consigne.
+
+- Ne jamais réutiliser les points d'un autre exercice.
+
+- Chaque figure doit correspondre uniquement à son exercice.
+
+- Si aucune figure n'est demandée pour être affichée,
+  ne génère aucun FIGURE_JSON.
+
+
+
+RÈGLES POUR LES FIGURES :
+
+- Pour trois points alignés sur une droite, utilise le type "points_alignes".
+- Pour deux droites perpendiculaires, utilise le type "perpendiculaires".
+- Pour un segment, utilise le type "segment".
+- Pour une demi-droite, utilise le type "demi_droite".
+- Pour une droite, utilise le type "droite".
+- Ajoute les marqueurs FIGURE_JSON directement dans le sujet, à l'endroit où la figure doit apparaître.
+- Utilise exactement les noms des points de l'énoncé.
+- Chaque figure doit être placée avant les questions qui s'y rapportent.
+
+
+- Les coordonnées doivent être cohérentes.
+- Les noms des points doivent correspondre aux questions.
+- N'invente jamais une figure qui contredit l'énoncé.
+- Si aucune figure n'est nécessaire, n'ajoute aucun marqueur.
 - Les points, droites et segments doivent être correctement
   nommés et utilisés.
 - Les longueurs représentées doivent être cohérentes
@@ -1578,6 +2162,18 @@ RÈGLES OBLIGATOIRES DE QUALITÉ :
 - N'utilise pas de séparateurs inutiles comme -- ou ___.
 - N'ajoute aucun texte technique ou commentaire destiné
   au développeur.
+  - RÈGLES PAR QUESTION :
+
+- Générer une figure uniquement pour la question qui
+  demande explicitement d'observer une figure.
+
+- Ne jamais placer une figure au début d'un exercice
+  si seule une question ultérieure en a besoin.
+
+- Pour l'exercice 3, question 1 : aucune figure.
+
+- Pour l'exercice 3, question 2 : afficher uniquement
+  la figure correspondant à cette question.
 
 VÉRIFICATION AVANT DE TERMINER :
 
@@ -1701,9 +2297,6 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
-# ============================================================
-# INTERFACE
-# ============================================================
 
 
         
