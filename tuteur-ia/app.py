@@ -1060,13 +1060,21 @@ def generer_pdf_sujet(texte_sujet):
                 145 / hauteur
             )
 
-            def position(nom):
-                x, y = points[nom]
+           
+            
+def position(nom):
+    x, y = points[nom]
 
-                return (
-                    45 + (x - min_x) * echelle,
-                    25 + (y - min_y) * echelle
-                )
+    # Pour les points alignés, imposer exactement
+    # la même hauteur à tous les points
+    if donnees.get("type") == "points_alignes":
+        y = min_y
+
+    return (
+        45 + (x - min_x) * echelle,
+        25 + (y - min_y) * echelle
+    )
+
 
             c.setStrokeColorRGB(0.08, 0.20, 0.38)
             c.setLineWidth(1.5)
