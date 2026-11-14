@@ -1094,8 +1094,7 @@ st.download_button(
     use_container_width=True
 )
 
-
- if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
+if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
     reinitialiser_session_pedago()
     st.rerun()
 
