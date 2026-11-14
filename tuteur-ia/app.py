@@ -520,120 +520,147 @@ def generer_pdf(texte_correction, enonce_exercice):
 
         # ============================================================
         # ÉTAPE 0 : SUPPRESSION DU LATEX / KATEX
+      
+       
         # ============================================================
-        texte = re.sub(r'\$\$(.+?)\$\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\$(.+?)\$', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\[(.+?)\\\]', r'\1', texte, flags=re.DOTALL)
-        texte = re.sub(r'\\\((.+?)\\\)', r'\1', texte, flags=re.DOTALL)
+        # ÉTAPE 0 : NORMALISATION DU TEXTE
+        # ============================================================
+        texte = texte.replace('\r\n', '\n').replace('\r', '\n')
+        texte = texte.replace('\\n', '\n')
 
-        texte = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1)/(\2)', texte)
+        # Supprimer les délimiteurs LaTeX sans supprimer les formules
+        texte = re.sub(r'\$\$(.*?)\$\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\$(.*?)\$', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
+        texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
 
-        texte = texte.replace(r'\times', '×')
-        texte = texte.replace(r'\cdot', '·')
-        texte = texte.replace(r'\leq', '≤')
-        texte = texte.replace(r'\geq', '≥')
-        texte = texte.replace(r'\neq', '≠')
-        texte = texte.replace(r'\infty', '∞')
-        texte = texte.replace(r'\pi', 'π')
-        texte = texte.replace(r'\alpha', 'α')
-        texte = texte.replace(r'\beta', 'β')
-        texte = texte.replace(r'\Delta', 'Δ')
-        texte = texte.replace(r'\mathbb{R}', 'ℝ')
+        # ============================================================
+        # ÉTAPE 1 : CONVERSION DES SYMBOLES MATHÉMATIQUES
+        # ============================================================
+        remplacements = {
+            r'\mathbb{R}': 'ℝ',
+            r'\mathbb{N}': 'ℕ',
+            r'\mathbb{Z}': 'ℤ',
+            r'\mathbb{Q}': 'ℚ',
+            r'\infty': '∞',
+            r'\times': '×',
+            r'\cdot': '·',
+            r'\leq': '≤',
+            r'\geq': '≥',
+            r'\neq': '≠',
+            r'\pi': 'π',
+            r'\alpha': 'α',
+            r'\beta': 'β',
+            r'\Delta': 'Δ',
+            r'\pm': '±',
+            r'\sqrt': '√',
+            r'\forall': '∀',
+            r'\in': '∈',
+            r'\notin': '∉',
+        }
 
-        texte = re.sub(r'_1', '₁', texte)
-        texte = re.sub(r'_2', '₂', texte)
-        texte = re.sub(r'_3', '₃', texte)
+        for ancien, nouveau in remplacements.items():
+            texte = texte.replace(ancien, nouveau)
 
-        texte = re.sub(r'\^2', '²', texte)
-        texte = re.sub(r'\^3', '³', texte)
+        # Fractions simples
+        texte = re.sub(
+            r'\\frac\{([^{}]+)\}\{([^{}]+)\}',
+            r'(\1)/(\2)',
+            texte
+        )
 
+        # Indices
+        texte = texte.replace('_1', '₁')
+        texte = texte.replace('_2', '₂')
+        texte = texte.replace('_3', '₃')
+
+        # Puissances
+        texte = texte.replace('^2', '²')
+        texte = texte.replace('^3', '³')
+
+        # ============================================================
+        # ÉTAPE 2 : SUPPRESSION DES COMMANDES LATEX RÉSIDUELLES
+        # ============================================================
         texte = re.sub(r'\\[a-zA-Z]+', '', texte)
         texte = texte.replace('{', '').replace('}', '')
 
         # ============================================================
-        # ÉTAPE 0bis : SUPPRESSION DES 'n' PARASITES
+        # ÉTAPE 3 : CORRECTION DES CARACTÈRES PARASITES
         # ============================================================
-        texte = re.sub(r'^-n\s+', '', texte)
+        texte = re.sub(r'^-n\s+', '', texte, flags=re.MULTILINE)
         texte = re.sub(r'(^|\n)\s*n\s+', r'\1', texte)
         texte = re.sub(r'(\w)-n\s+', r'\1 ', texte)
-        texte = re.sub(r'(\w)n\s+([A-ZÉÈÀÊÎÔÛ])', r'\1 \2', texte)
         texte = re.sub(r'(\d)n\b', r'\1', texte)
         texte = re.sub(r'(\w)n([A-ZÉÈÀÊÎÔÛ])', r'\1 \2', texte)
 
         # ============================================================
-        # ÉTAPE 1 : NORMALISATION
+        # ÉTAPE 4 : NETTOYAGE DES FORMULES RÉPÉTÉES
         # ============================================================
-        texte = texte.replace('\r\n', '\n').replace('\r', '\n')
-        texte = texte.replace('\\n', '\n')
-        texte = re.sub(r'(\S)\n(\S)', r'\1\2', texte)
+        texte = re.sub(
+            r'(f\(x\)\s*=\s*x²\s*\+\s*1)\s+\1',
+            r'\1',
+            texte
+        )
 
         # ============================================================
-        # ÉTAPE 2 : ÉCHAPPEMENT XML POUR REPORTLAB
+        # ÉTAPE 5 : ÉCHAPPEMENT XML POUR REPORTLAB
         # ============================================================
         texte = texte.replace('&', '&amp;')
         texte = texte.replace('<', '&lt;').replace('>', '&gt;')
-        texte = texte.replace('&lt;br/&gt;', '<br/>')
 
         # ============================================================
-        # ÉTAPE 3 : MARKDOWN → HTML REPORTLAB
+        # ÉTAPE 6 : MARKDOWN → HTML REPORTLAB
         # ============================================================
-        texte = re.sub(r'^###\s+(.*)$', r'<b>\1</b>', texte, flags=re.MULTILINE)
-        texte = re.sub(r'^##\s+(.*)$',  r'<b><font size="13">\1</font></b>', texte, flags=re.MULTILINE)
-        texte = re.sub(r'^#\s+(.*)$',   r'<b><font size="15">\1</font></b>', texte, flags=re.MULTILINE)
+        texte = re.sub(
+            r'^###\s+(.*)$',
+            r'<b>\1</b>',
+            texte,
+            flags=re.MULTILINE
+        )
 
-        # Saut de ligne après les titres Markdown
-        texte = re.sub(r'(<b><font size="1[35]">.*?</font></b>)([A-ZÉÈÀÊÎÔÛ])', r'\1<br/>\2', texte)
-        texte = re.sub(r'(<b>.*?</b>)([A-ZÉÈÀÊÎÔÛ])', r'\1<br/>\2', texte)
+        texte = re.sub(
+            r'^##\s+(.*)$',
+            r'<b><font size="13">\1</font></b>',
+            texte,
+            flags=re.MULTILINE
+        )
 
-        # ============================================================
-        # TITRES DANS TOUTES LES LANGUES
-        # ============================================================
-        titres_connus = [
-            # Français
-            "Rappel de cours", "Rappel théorique", "Exemple concret",
-            "Exemple théorique", "Application à l'exercice",
-            "Rappel :", "Concret :", "Théorique :", "Application :",
-            "Conclusion :", "Définition :", "Situation :", "Tarif :",
-            "Fonction :", "Énoncé :",
-            # Anglais
-            "Course reminder", "Theoretical reminder", "Concrete example",
-            "Theoretical example", "Application to the exercise",
-            "Reminder:", "Real-life example:", "Theory:",
-            # Allemand
-            "Kurserinnerung", "Theoretische Erinnerung", "Konkretes Beispiel",
-            "Theoretisches Beispiel", "Anwendung auf die Übung",
-            # Espagnol
-            "Recordatorio del curso", "Recordatorio teórico", "Ejemplo concreto",
-            "Ejemplo teórico", "Aplicación al ejercicio",
-            # Italien
-            "Promemoria del corso", "Promemoria teorico", "Esempio concreto",
-            "Esempio teorico", "Applicazione all'esercizio",
-            # Arabe
-            "تذكير بالدرس", "تذكير نظري", "مثال ملموس", "مثال نظري",
-            "تطبيق على التمرين",
-        ]
-        for titre in titres_connus:
-            for lettre in "ABCDEFGHIJKLMNOPQRSTUVWXYZÉÈÀÊÎÔÛ":
-                texte = texte.replace(titre + lettre, titre + "<br/>" + lettre)
-            texte = texte.replace(titre + " ", titre + "<br/>")
+        texte = re.sub(
+            r'^#\s+(.*)$',
+            r'<b><font size="15">\1</font></b>',
+            texte,
+            flags=re.MULTILINE
+        )
 
         # Listes Markdown
-        texte = re.sub(r'^\s*[-*]\s+(.*)$', r'• \1', texte, flags=re.MULTILINE)
+        texte = re.sub(
+            r'^\s*[-*]\s+(.*)$',
+            r'• \1',
+            texte,
+            flags=re.MULTILINE
+        )
 
-        # Gras / italique
+        # Gras et italique
         texte = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', texte)
-        texte = re.sub(r'\*(.+?)\*',     r'<i>\1</i>', texte)
+        texte = re.sub(r'\*(.+?)\*', r'<i>\1</i>', texte)
 
         # Séparateurs
-        texte = re.sub(r'^\s*---\s*$', '<br/>', texte, flags=re.MULTILINE)
+        texte = re.sub(
+            r'^\s*---\s*$',
+            '<br/>',
+            texte,
+            flags=re.MULTILINE
+        )
 
         # ============================================================
-        # ÉTAPE 4 : SAUTS DE LIGNE FINAUX
+        # ÉTAPE 7 : SAUTS DE LIGNE FINAUX
         # ============================================================
+        texte = re.sub(r'\n{2,}', '<br/><br/>', texte)
         texte = texte.replace('\n', '<br/>')
         texte = re.sub(r'(<br/>){3,}', '<br/><br/>', texte)
 
         return texte
+ 
 
     # --------------------------------------------------------
     # CONSTRUCTION DU PDF
