@@ -1066,12 +1066,12 @@ def generer_pdf_sujet(texte_sujet):
             def position(nom):
                 x, y = points[nom]
 
-              # Aligner horizontalement tous les points
-             if donnees.get("type") == "points_alignes":
-                 y = min_y
+           # Aligner horizontalement tous les points
+           if donnees.get("type") == "points_alignes":
+              y = min_y
 
-            return (
-               45 + (x - min_x) * echelle,
+          return (
+              45 + (x - min_x) * echelle,
               25 + (y - min_y) * echelle
            )
 
