@@ -1063,7 +1063,9 @@ EXPLICATIONS DES ÉTAPES DÉJÀ EFFECTUÉES :
 Rédige maintenant la correction complète demandée.
 """
 
-with st.spinner("📝 Préparation de la correction complète..."):
+
+
+    with st.spinner("📝 Préparation de la correction complète..."):
         try:
             recapitulatif_complet = _appeler_gemini(
                 instructions,
@@ -1076,13 +1078,12 @@ with st.spinner("📝 Préparation de la correction complète..."):
             afficher_erreur_ia(e)
             return
 
-
-     
     st.write("---")
     st.markdown(f"#### {t('coach_summary')}")
     st.markdown(recapitulatif_complet)
 
     pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
+
     st.download_button(
         label=t("button_download_pdf"),
         data=pdf_buffer,
@@ -1090,6 +1091,7 @@ with st.spinner("📝 Préparation de la correction complète..."):
         mime="application/pdf",
         use_container_width=True
     )
+
 
     if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
         reinitialiser_session_pedago()
