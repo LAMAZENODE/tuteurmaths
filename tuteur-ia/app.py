@@ -1066,11 +1066,11 @@ Rédige maintenant la correction complète demandée.
 
 
     with st.spinner("📝 Préparation de la correction complète..."):
-        try:
-            recapitulatif_complet = _appeler_gemini(
-                instructions,
-                contenu=contenu
-            )
+       try: 
+         recapitulatif_complet = _appeler_gemini(
+             instructions,
+             contenu=contenu
+          )
 
             st.session_state["derniere_correction"] = recapitulatif_complet
 
