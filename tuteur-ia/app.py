@@ -1065,9 +1065,10 @@ Rédige maintenant la correction complète demandée.
 """
 
 
- with st.spinner("📝 Préparation de la correction complète..."):
-     try:
+with st.spinner("📝 Préparation de la correction complète..."):
+    try:
         recapitulatif_complet = _appeler_gemini(
+
             instructions,
             contenu=contenu
         )
