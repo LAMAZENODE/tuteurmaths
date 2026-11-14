@@ -1052,7 +1052,7 @@ Vérifie les calculs et la cohérence de la rédaction.
 """
 
 
-contenu = f"""
+    contenu = f"""
 ÉNONCÉ DE L'EXERCICE :
 
 {exercice}
@@ -1064,7 +1064,7 @@ EXPLICATIONS DES ÉTAPES DÉJÀ EFFECTUÉES :
 Rédige maintenant la correction complète demandée.
 """
 
-with st.spinner("📝 Préparation de la correction complète..."):
+    with st.spinner("📝 Préparation de la correction complète..."):
         try:
             recapitulatif_complet = _appeler_gemini(
                 instructions,
