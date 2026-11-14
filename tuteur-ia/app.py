@@ -1052,7 +1052,7 @@ Vérifie les calculs et la cohérence de la rédaction.
 """
 
 
-    contenu = f"""
+contenu = f"""
 ÉNONCÉ DE L'EXERCICE :
 
 {exercice}
