@@ -939,23 +939,90 @@ def afficher_recapitulatif_final(nom_fichier="correction_coach_math.pdf"):
 
     exercice = st.session_state.get('dernier_enonce', '')
 
-    if st.session_state.get("preambule_theorique") is None:
-        with st.spinner("📖 Génération du rappel de cours..."):
-            preambule = generer_preambule_theorique(exercice)
-            st.session_state.preambule_theorique = preambule
-
-    preambule = st.session_state.preambule_theorique
-
-    resolution = "\n\n".join(
-        f"### {t('coach_step')} {i+1}\n{exp}"
-        for i, exp in enumerate(st.session_state.get("historique_explications", []))
+  
+    
+    historique = "\n\n".join(
+        st.session_state.get("historique_explications", [])
     )
 
-    recapitulatif_complet = (
-        f"# 📖 {t('preambule_title')}\n\n{preambule}\n\n"
-        f"---\n\n# 📝 {t('pdf_resolution')}\n\n{resolution}"
+    noms_langues = {
+        "fr": "français",
+        "en": "anglais",
+        "de": "allemand",
+        "es": "espagnol",
+        "it": "italien",
+        "ar": "arabe"
+    }
+
+    nom_langue = noms_langues.get(
+        st.session_state.langue, "français"
     )
-    st.session_state['derniere_correction'] = recapitulatif_complet
+
+    instructions = f"""
+Tu es un professeur expérimenté de mathématiques.
+
+Tu dois rédiger une correction complète et rigoureuse
+de l'exercice donné par l'élève.
+
+Réponds uniquement en {nom_langue}.
+
+La correction doit obligatoirement contenir ces 4 parties :
+
+1. RAPPEL DE COURS
+Présente les définitions, propriétés et formules
+nécessaires pour résoudre cet exercice.
+
+2. RÉSOLUTION DÉTAILLÉE
+Résous toutes les questions dans l'ordre.
+Détaille chaque étape du raisonnement.
+Montre les calculs et explique les méthodes utilisées.
+Ne saute aucune étape importante.
+
+3. RÉPONSE FINALE
+Présente clairement le résultat final de chaque question.
+Ajoute les unités lorsqu'elles sont nécessaires.
+Mets les réponses finales bien en évidence.
+
+4. VÉRIFICATION DU RÉSULTAT
+Vérifie réellement les résultats obtenus.
+Refais les calculs ou remplace les valeurs dans
+les formules pour contrôler les réponses.
+Explique pourquoi les résultats sont corrects.
+Si une vérification est impossible, indique-le clairement.
+
+IMPORTANT :
+- Vérifie la cohérence mathématique de toute la correction.
+- Ne donne pas de résultat inventé.
+- Corrige toute erreur éventuelle dans les étapes précédentes.
+- Utilise une présentation claire avec des titres.
+- Ne confonds pas une méthode de résolution avec la réponse finale.
+"""
+
+    contenu = f"""
+ÉNONCÉ DE L'EXERCICE :
+
+{exercice}
+
+EXPLICATIONS DES ÉTAPES DÉJÀ EFFECTUÉES :
+
+{historique}
+
+Rédige maintenant la correction complète demandée.
+"""
+
+    with st.spinner("📝 Préparation de la correction complète..."):
+        try:
+            recapitulatif_complet = _appeler_gemini(
+                instructions,
+                contenu=contenu
+            )
+
+            st.session_state["derniere_correction"] = recapitulatif_complet
+
+        except Exception as e:
+            afficher_erreur_ia(e)
+            return
+
 
     st.write("---")
     st.markdown(f"#### {t('coach_summary')}")
