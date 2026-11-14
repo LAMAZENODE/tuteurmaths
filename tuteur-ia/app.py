@@ -1065,10 +1065,11 @@ Rédige maintenant la correction complète demandée.
 """
 
 
+
+
 with st.spinner("📝 Préparation de la correction complète..."):
     try:
         recapitulatif_complet = _appeler_gemini(
-
             instructions,
             contenu=contenu
         )
@@ -1085,16 +1086,13 @@ st.markdown(recapitulatif_complet)
 
 pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
 
-   
-
-
-    st.download_button(
-        label=t("button_download_pdf"),
-        data=pdf_buffer,
-        file_name=nom_fichier,
-        mime="application/pdf",
-        use_container_width=True
-    )
+st.download_button(
+    label=t("button_download_pdf"),
+    data=pdf_buffer,
+    file_name=nom_fichier,
+    mime="application/pdf",
+    use_container_width=True
+)
 
 
     if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
