@@ -961,13 +961,13 @@ def afficher_coach_interactif(exercice):
 # ============================================================
 # AFFICHAGE RÉCAPITULATIF FINAL + PDF
 # ============================================================
+
+
 def afficher_recapitulatif_final(nom_fichier="correction_coach_math.pdf"):
     st.success(t("coach_done"))
 
-    exercice = st.session_state.get('dernier_enonce', '')
+    exercice = st.session_state.get("dernier_enonce", "")
 
-  
-    
     historique = "\n\n".join(
         st.session_state.get("historique_explications", [])
     )
@@ -985,9 +985,7 @@ def afficher_recapitulatif_final(nom_fichier="correction_coach_math.pdf"):
         st.session_state.langue, "français"
     )
 
-   
-    
-instructions = f"""
+    instructions = f"""
 Tu es un professeur expérimenté de mathématiques,
 spécialisé dans l'enseignement et la pédagogie.
 
@@ -1011,27 +1009,18 @@ LA CORRECTION DOIT CONTENIR 4 PARTIES :
 1. RAPPEL DE COURS
 Présente uniquement les définitions, propriétés et
 formules nécessaires à l'exercice.
-Évite les explications inutiles.
 
 2. RÉSOLUTION DÉTAILLÉE
 Résous toutes les questions dans l'ordre exact
 de l'énoncé.
 Détaille les calculs et les raisonnements.
-Explique chaque étape importante.
-Respecte les priorités opératoires.
-Ne saute aucune étape nécessaire.
 
 3. RÉPONSE FINALE
 Présente clairement les résultats de chaque question.
 Ajoute les unités lorsqu'elles sont nécessaires.
-Ne donne pas de résultats qui ne répondent pas
-à la question posée.
 
 4. VÉRIFICATION DU RÉSULTAT
 Vérifie réellement les calculs effectués.
-Utilise une substitution ou une autre méthode
-lorsque cela est mathématiquement possible.
-N'invente jamais une vérification.
 
 PRÉSENTATION MATHÉMATIQUE :
 - Utilise une notation mathématique rigoureuse.
@@ -1041,18 +1030,14 @@ PRÉSENTATION MATHÉMATIQUE :
   \\mathbb{{N}}, \\mathbb{{Z}}.
 - Sépare clairement les différentes étapes.
 - Évite les formules répétées inutilement.
-- N'utilise aucun caractère parasite comme n isolé.
 - Ne répète pas les titres.
 - N'ajoute aucun texte hors de la correction.
 
 CONTRÔLE FINAL :
-Avant de répondre, vérifie que chaque résultat
-correspond exactement à la question de l'élève.
 Vérifie les calculs et la cohérence de la rédaction.
 """
 
-
-contenu = f"""
+    contenu = f"""
 ÉNONCÉ DE L'EXERCICE :
 
 {exercice}
@@ -1064,39 +1049,36 @@ EXPLICATIONS DES ÉTAPES DÉJÀ EFFECTUÉES :
 Rédige maintenant la correction complète demandée.
 """
 
+    with st.spinner("📝 Préparation de la correction complète..."):
+        try:
+            recapitulatif_complet = _appeler_gemini(
+                instructions,
+                contenu=contenu
+            )
 
+            st.session_state["derniere_correction"] = recapitulatif_complet
 
+        except Exception as e:
+            afficher_erreur_ia(e)
+            return
 
-with st.spinner("📝 Préparation de la correction complète..."):
-    try:
-        recapitulatif_complet = _appeler_gemini(
-            instructions,
-            contenu=contenu
-        )
+    st.write("---")
+    st.markdown(f"#### {t('coach_summary')}")
+    st.markdown(recapitulatif_complet)
 
-        st.session_state["derniere_correction"] = recapitulatif_complet
+    pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
 
-    except Exception as e:
-        afficher_erreur_ia(e)
-        return
+    st.download_button(
+        label=t("button_download_pdf"),
+        data=pdf_buffer,
+        file_name=nom_fichier,
+        mime="application/pdf",
+        use_container_width=True
+    )
 
-st.write("---")
-st.markdown(f"#### {t('coach_summary')}")
-st.markdown(recapitulatif_complet)
-
-pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
-
-st.download_button(
-    label=t("button_download_pdf"),
-    data=pdf_buffer,
-    file_name=nom_fichier,
-    mime="application/pdf",
-    use_container_width=True
-)
-
-if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
-    reinitialiser_session_pedago()
-    st.rerun()
+    if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
+        reinitialiser_session_pedago()
+        st.rerun()
 
 # ============================================================
 # GESTION D'ERREUR IA LISIBLE
