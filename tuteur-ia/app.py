@@ -1066,11 +1066,11 @@ Rédige maintenant la correction complète demandée.
 
 
     with st.spinner("📝 Préparation de la correction complète..."):
-       try: 
-         recapitulatif_complet = _appeler_gemini(
-             instructions,
-             contenu=contenu
-          )
+        try:
+            recapitulatif_complet = _appeler_gemini(
+                instructions,
+                contenu=contenu
+            )
 
             st.session_state["derniere_correction"] = recapitulatif_complet
 
@@ -1083,6 +1083,9 @@ Rédige maintenant la correction complète demandée.
     st.markdown(recapitulatif_complet)
 
     pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
+
+   
+
 
     st.download_button(
         label=t("button_download_pdf"),
