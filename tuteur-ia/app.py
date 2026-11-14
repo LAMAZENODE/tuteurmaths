@@ -1095,9 +1095,9 @@ st.download_button(
 )
 
 
-    if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
-        reinitialiser_session_pedago()
-        st.rerun()
+ if st.button(t("coach_restart"), use_container_width=True, key="restart_btn"):
+    reinitialiser_session_pedago()
+    st.rerun()
 
 # ============================================================
 # GESTION D'ERREUR IA LISIBLE
