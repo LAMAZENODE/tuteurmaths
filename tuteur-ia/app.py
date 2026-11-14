@@ -1676,7 +1676,7 @@ def generer_pdf_sujet(texte_sujet):
                     ligne.split("FIGURE_JSON:", 1)[1].strip()
                 )
 
-                story.append(Spacer(1, 8))
+                story.append(Spacer(1, 14))
                 story.append(FigureGeometrique(donnees_figure))
                 story.append(Spacer(1, 12))
 
