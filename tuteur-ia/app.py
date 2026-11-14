@@ -1054,9 +1054,10 @@ def generer_pdf_sujet(texte_sujet):
             largeur = max(max_x - min_x, 1)
             hauteur = max(max_y - min_y, 1)
 
+          
             echelle = min(
-                300 / largeur,
-                130 / hauteur
+                350 / largeur,
+                145 / hauteur
             )
 
             def position(nom):
