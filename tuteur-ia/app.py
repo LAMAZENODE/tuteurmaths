@@ -1065,24 +1065,24 @@ Rédige maintenant la correction complète demandée.
 """
 
 
-    with st.spinner("📝 Préparation de la correction complète..."):
-        try:
-            recapitulatif_complet = _appeler_gemini(
-                instructions,
-                contenu=contenu
-            )
+ with st.spinner("📝 Préparation de la correction complète..."):
+     try:
+        recapitulatif_complet = _appeler_gemini(
+            instructions,
+            contenu=contenu
+        )
 
-            st.session_state["derniere_correction"] = recapitulatif_complet
+        st.session_state["derniere_correction"] = recapitulatif_complet
 
-        except Exception as e:
-            afficher_erreur_ia(e)
-            return
+    except Exception as e:
+        afficher_erreur_ia(e)
+        return
 
-    st.write("---")
-    st.markdown(f"#### {t('coach_summary')}")
-    st.markdown(recapitulatif_complet)
+st.write("---")
+st.markdown(f"#### {t('coach_summary')}")
+st.markdown(recapitulatif_complet)
 
-    pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
+pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
 
    
 
