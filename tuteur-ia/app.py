@@ -1077,9 +1077,10 @@ with st.spinner("📝 Préparation de la correction complète..."):
             return
 
 
-      st.write("---")
-      st.markdown(f"#### {t('coach_summary')}")
-       st.markdown(recapitulatif_complet)
+     
+    st.write("---")
+    st.markdown(f"#### {t('coach_summary')}")
+    st.markdown(recapitulatif_complet)
 
     pdf_buffer = generer_pdf(recapitulatif_complet, exercice)
     st.download_button(
