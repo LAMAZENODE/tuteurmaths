@@ -1059,26 +1059,19 @@ def generer_pdf_sujet(texte_sujet):
                 350 / largeur,
                 145 / hauteur
             )
-
-           
-            
-           
             def position(nom):
                 x, y = points[nom]
 
-           # Aligner horizontalement tous les points
-           if donnees.get("type") == "points_alignes":
-              y = min_y
+                if donnees.get("type") == "points_alignes":
+                    y = min_y
 
-          return (
-              45 + (x - min_x) * echelle,
-              25 + (y - min_y) * echelle
-           )
-
+                return (
+                    45 + (x - min_x) * echelle,
+                    25 + (y - min_y) * echelle
+                )
 
             c.setStrokeColorRGB(0.08, 0.20, 0.38)
             c.setLineWidth(1.5)
-
             type_figure = donnees.get("type", "")
 
             noms = list(points.keys())
