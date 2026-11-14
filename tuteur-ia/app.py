@@ -1347,18 +1347,21 @@ def generer_pdf_sujet(texte_sujet):
 
     styles = getSampleStyleSheet()
 
+
+    
     # ------------------------------------------------
-    # STYLES PROFESSIONNELS
+    # STYLES PROFESSIONNELS DU PDF
     # ------------------------------------------------
 
     style_titre = ParagraphStyle(
         "Titre",
         fontName=font_gras,
-        fontSize=19,
-        leading=25,
+        fontSize=20,
+        leading=26,
         alignment=TA_CENTER,
         textColor=bleu,
-        spaceAfter=12
+        spaceBefore=8,
+        spaceAfter=18
     )
 
     style_exercice = ParagraphStyle(
@@ -1368,9 +1371,9 @@ def generer_pdf_sujet(texte_sujet):
         leading=17,
         textColor=bleu,
         backColor=bleu_clair,
-        borderPadding=7,
-        spaceBefore=13,
-        spaceAfter=8,
+        borderPadding=8,
+        spaceBefore=16,
+        spaceAfter=10,
         keepWithNext=True
     )
 
@@ -1379,9 +1382,9 @@ def generer_pdf_sujet(texte_sujet):
         fontName=font_normal,
         fontSize=10,
         leading=16,
-        leftIndent=8,
-        spaceBefore=4,
-        spaceAfter=8
+        leftIndent=10,
+        spaceBefore=5,
+        spaceAfter=9
     )
 
     style_normal = ParagraphStyle(
@@ -1389,25 +1392,30 @@ def generer_pdf_sujet(texte_sujet):
         fontName=font_normal,
         fontSize=9.5,
         leading=15,
-        spaceAfter=5
+        textColor=colors.HexColor("#252525"),
+        spaceBefore=2,
+        spaceAfter=7
     )
 
     style_info = ParagraphStyle(
         "Information",
         fontName=font_normal,
         fontSize=9,
-        leading=15,
+        leading=14,
         textColor=colors.HexColor("#344054"),
-        spaceAfter=4
+        spaceAfter=5
     )
 
     style_consigne = ParagraphStyle(
         "Consigne",
         fontName=font_normal,
-        fontSize=9,
+        fontSize=9.5,
         leading=15,
-        spaceAfter=6
+        textColor=colors.HexColor("#344054"),
+        spaceBefore=3,
+        spaceAfter=8
     )
+
 
     # ------------------------------------------------
     # NETTOYAGE DU TEXTE
