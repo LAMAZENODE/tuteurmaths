@@ -2248,12 +2248,12 @@ Réponds uniquement avec le sujet final en français.
 
 
    
-                        sujet = _appeler_gemini(
-                        instructions,
-                        contenu="Génère le sujet demandé."
-                    )
+                  sujet = _appeler_gemini(
+                     instructions,
+                     contenu="Génère le sujet demandé."
+                     )
 
-                    if sujet:
+                  if sujet:
 
                         with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
 
