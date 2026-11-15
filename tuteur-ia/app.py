@@ -2249,27 +2249,29 @@ Réponds uniquement avec le sujet final en français.
 
 
              
-                try:
-                    sujet = _appeler_gemini(
-                        instructions,
-                        contenu="Génère le sujet demandé."
-                    )
+              
+                
+                sujet = _appeler_gemini(
+                    instructions,
+                    contenu="Génère le sujet demandé."
+                )
 
-                    if sujet:
-                        with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
-                            sujet_verifie = _appeler_gemini(
-                                prompt_verification,
-                                contenu="Effectue une vérification indépendante du sujet."
-                            )
+                if sujet:
+                    with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
+                        sujet_verifie = _appeler_gemini(
+                            prompt_verification,
+                            contenu="Effectue une vérification indépendante du sujet."
+                        )
 
-                        if sujet_verifie and sujet_verifie.strip():
-                            st.session_state.sujet_genere = sujet_verifie
-                            st.session_state.correction_sujet = ""
-                            st.success("✅ Vérification terminée.")
-                        else:
-                            st.error("La vérification du sujet a échoué.")
+                    if sujet_verifie and sujet_verifie.strip():
+                        st.session_state.sujet_genere = sujet_verifie
+                        st.session_state.correction_sujet = ""
+                        st.success("✅ Vérification terminée.")
                     else:
-                        st.error("La génération du sujet a échoué.")
+                        st.error("La vérification du sujet a échoué.")
+                else:
+                    st.error("La génération du sujet a échoué.")
+
 
                 except Exception as e:
                     st.error(f"Erreur de génération : {e}")
