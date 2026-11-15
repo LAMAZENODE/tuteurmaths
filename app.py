@@ -2239,14 +2239,86 @@ Réponds uniquement avec le sujet final en français.
 """
 
 
-                    sujet = _appeler_gemini(
-                        instructions,
-                        contenu="Génère le sujet demandé."
-                    )
 
-                    if sujet:
-                        st.session_state.sujet_genere = sujet
-                        st.session_state.correction_sujet = ""
+                    
+sujet = _appeler_gemini(
+    instructions,
+    contenu="Génère le sujet demandé."
+)
+
+if sujet:
+
+    with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
+
+        prompt_verification = f"""
+Tu es un deuxième professeur de mathématiques expérimenté.
+Tu dois effectuer une vérification indépendante et rigoureuse.
+
+Voici le sujet généré :
+
+{sujet}
+
+INFORMATIONS À CONTRÔLER :
+
+1. Vérifie chaque calcul mathématique.
+2. Recalcule les résultats indépendamment.
+3. Vérifie les formules et les propriétés utilisées.
+4. Vérifie les données numériques et les coordonnées.
+5. Vérifie les figures géométriques et leur cohérence avec les énoncés.
+6. Vérifie que chaque question possède une solution possible.
+7. Vérifie que les questions correspondent au niveau scolaire demandé.
+8. Vérifie que les exercices sont progressifs.
+9. Vérifie les barèmes de chaque question.
+10. Vérifie que le total est exactement de 20 points.
+11. Vérifie les notations mathématiques.
+12. Vérifie qu'aucune question ne contient de contradiction.
+
+RÈGLES DE CORRECTION :
+
+- Ne considère jamais qu'un calcul est juste simplement
+  parce qu'il a été présenté comme correct.
+- Refais les calculs toi-même.
+- Corrige toutes les erreurs détectées.
+- Remplace les questions impossibles ou incohérentes
+  par des questions adaptées au même chapitre.
+- Conserve le niveau, le thème et la durée demandés.
+- Ne donne aucune réponse aux élèves.
+- Ne fournis aucune correction détaillée.
+- Conserve une présentation professionnelle.
+- Ne supprime aucun exercice valide.
+
+RÈGLE FINALE :
+
+Retourne uniquement le sujet complet après vérification
+et correction.
+
+Ne retourne aucun commentaire destiné au développeur.
+Ne prétends pas qu'un sujet est parfait si tu n'as pas
+pu vérifier un élément.
+"""
+
+        sujet_verifie = _appeler_gemini(
+            prompt_verification,
+            contenu="Effectue une vérification indépendante du sujet."
+        )
+
+    if sujet_verifie and sujet_verifie.strip():
+
+        st.session_state.sujet_genere = sujet_verifie
+        st.session_state.correction_sujet = ""
+
+        st.success(
+            "✅ Deuxième vérification IA effectuée. "
+            "Le sujet est prêt pour le contrôle de l'enseignant."
+        )
+
+    else:
+        st.error(
+            "⚠️ La vérification n'a pas abouti. "
+            "Le téléchargement du sujet est suspendu. "
+            "Veuillez réessayer."
+        )
+
 
                 except Exception as e:
                     st.error(f"Erreur de génération : {e}")
