@@ -2617,12 +2617,3 @@ else:
                 st.session_state['dernier_enonce']
             )
 
-
-
-
-
-
-
-
-
-
