@@ -2070,12 +2070,12 @@ def afficher_generateur_sujet():
             st.warning("Veuillez indiquer un chapitre ou un thème.")
 
         else:
-            with st.spinner("⏳ Création de votre sujet..."):
+          
+            
 
-                try:
-                
-                    
-                    instructions = f"""
+        with st.spinner("⏳ Création de votre sujet..."):
+            try:
+                instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
@@ -2089,160 +2089,37 @@ Difficulté : {difficulte}
 Durée : {duree}
 
 PRÉSENTATION DU SUJET :
-
 1. Un seul titre principal.
 2. Une seule zone pour le nom, le prénom, la classe et la date.
-3. Indique clairement le chapitre, le niveau, la durée
-   et le barème total.
+3. Indique le chapitre, le niveau, la durée et le barème total.
 4. Ajoute des consignes générales courtes et précises.
 5. Organise les exercices du plus simple au plus difficile.
 6. Attribue un barème à chaque exercice.
 7. Le total des points doit être exactement égal à 20.
 
-RÈGLES OBLIGATOIRES DE QUALITÉ :
-
-
-- Le titre principal doit apparaître une seule fois.
-- Les informations Nom, Prénom, Classe et Date
-  doivent apparaître une seule fois.
-- Ne crée pas une deuxième zone d'identification.
-- Si une question propose plusieurs mots à utiliser,
-  vérifie qu'il y a assez de phrases pour les employer.
-- Pour chaque exercice, vérifie que le nombre de points
-  correspond exactement à son contenu.
-- Ne crée pas de schéma ASCII si sa lecture risque
-  d'être ambiguë.
-- Pour les constructions géométriques, indique clairement
-  quand l'élève doit utiliser une feuille séparée.
-- Termine toujours toutes les consignes et tous les exercices.
-- Ne coupe jamais le sujet au milieu d'une phrase.
-
+RÈGLES DE QUALITÉ :
 - Chaque question doit être complète et compréhensible.
-- Aucune phrase ne doit être coupée ou inachevée.
-- Vérifie que toutes les questions ont une réponse possible.
 - Vérifie la cohérence mathématique de chaque exercice.
-
 - Ne crée jamais de figure en ASCII.
-- Lorsqu'un exercice nécessite une figure géométrique,
-  indique-la avec un marqueur FIGURE_JSON.
-- La figure doit être adaptée au chapitre demandé.
-- Pour Pythagore, privilégie un triangle rectangle.
-- Pour les triangles, indique les coordonnées des points
-  et les éventuels angles droits.
-- Pour les cercles, indique le centre, le rayon
-  et les points nécessaires.
-- Pour les quadrilatères, indique les sommets
-  et leur position.
-- Pour les droites, indique si elles sont parallèles
-  ou perpendiculaires.
-  RÈGLES OBLIGATOIRES POUR LES FIGURES :
-
-- Pour "points_alignes", TOUS les points doivent être placés sur une seule et même droite.
-- Ils doivent tous avoir exactement la même coordonnée Y.
-- Exemple obligatoire :
-FIGURE_JSON: {{"type":"points_alignes","points":{{"R":[0,0],"T":[3,0],"S":[6,0]}}}}
-  
-- Ne jamais placer un point en dehors de cette droite.
-- Ne jamais créer de points non alignés lorsque le type est "points_alignes".
-- Utilise exactement ce format sur une seule ligne :
-
-FIGURE_JSON: {{"type":"triangle_rectangle","points":{{"A":[0,0],"B":[4,0],"C":[0,3]}},"angle_droit":"A"}}
-
-FIGURE_JSON: {{"type":"points_alignes","points":{{"A":[0,0],"B":[3,0],"C":[6,0]}}}}
-
-FIGURE_JSON: {{"type":"perpendiculaires","points":{{"O":[0,0],"M":[-3,0],"N":[0,3]}}}}
-
-
-FIGURE_JSON: {{"type":"segment","points":{{"R":[0,0],"T":[4,0],"S":[7,0]}}}}
-- RÈGLES OBLIGATOIRES POUR LES FIGURES :
-
-- Si l'exercice demande à l'élève de tracer, construire,
-  placer ou dessiner lui-même une figure, ne génère
-  aucune figure pour cet exercice.
-
-- Ne jamais afficher des points qui ne sont pas mentionnés
-  dans la consigne.
-
-- Ne jamais réutiliser les points d'un autre exercice.
-
-- Chaque figure doit correspondre uniquement à son exercice.
-
-- Si aucune figure n'est demandée pour être affichée,
-  ne génère aucun FIGURE_JSON.
-
-
-
-RÈGLES POUR LES FIGURES :
-
-- Pour trois points alignés sur une droite, utilise le type "points_alignes".
-- Pour deux droites perpendiculaires, utilise le type "perpendiculaires".
-- Pour un segment, utilise le type "segment".
-- Pour une demi-droite, utilise le type "demi_droite".
-- Pour une droite, utilise le type "droite".
-- Ajoute les marqueurs FIGURE_JSON directement dans le sujet, à l'endroit où la figure doit apparaître.
-- Utilise exactement les noms des points de l'énoncé.
-- Chaque figure doit être placée avant les questions qui s'y rapportent.
-
-
-- Les coordonnées doivent être cohérentes.
-- Les noms des points doivent correspondre aux questions.
-- N'invente jamais une figure qui contredit l'énoncé.
-- Si aucune figure n'est nécessaire, n'ajoute aucun marqueur.
-- Les points, droites et segments doivent être correctement
-  nommés et utilisés.
-- Les longueurs représentées doivent être cohérentes
-  avec les questions posées.
-- Ne demande pas de citer un point extérieur à une droite
-  si tous les points proposés appartiennent à cette droite.
+- Utilise FIGURE_JSON uniquement lorsqu'une figure doit être observée.
+- Les points et coordonnées doivent être cohérents.
+- Pour points_alignes, tous les points doivent avoir la même coordonnée Y.
+- Ne réutilise jamais les points d'un autre exercice.
+- Ne génère aucune figure si l'élève doit la construire lui-même.
 - Prévois suffisamment de lignes pour les réponses.
-- Pour les constructions, précise clairement le matériel
-  et les consignes.
 - Ne répète pas les informations d'identification.
-- N'utilise pas de séparateurs inutiles comme -- ou ___.
-- N'ajoute aucun texte technique ou commentaire destiné
-  au développeur.
-  - RÈGLES PAR QUESTION :
+- Ne fournis aucune correction ni réponse.
 
-- Générer une figure uniquement pour la question qui
-  demande explicitement d'observer une figure.
-
-- Ne jamais placer une figure au début d'un exercice
-  si seule une question ultérieure en a besoin.
-
-- Pour l'exercice 3, question 1 : aucune figure.
-
-- Pour l'exercice 3, question 2 : afficher uniquement
-  la figure correspondant à cette question.
-
-VÉRIFICATION AVANT DE TERMINER :
-
-Relis tout le sujet.
-Vérifie les calculs, les figures, les notations,
-les consignes et le total des points.
-Corrige toute contradiction avant de répondre.
-
-FORMAT DE SORTIE :
-
-Utilise des titres clairs :
+FORMAT :
 SUJET D'ÉVALUATION
 Exercice 1
 Exercice 2
-Exercice 3, etc.
+Exercice 3
 
-Utilise une numérotation simple.
-Utilise une notation mathématique lisible.
-Laisse des espaces pour les réponses.
-
-IMPORTANT :
-Ne fournis aucune correction ni réponse.
 Réponds uniquement avec le sujet final en français.
 """
 
-
-                   
-                    
-
-                    prompt_verification = """
+                prompt_verification = """
 Tu es un professeur de mathématiques expérimenté.
 Vérifie intégralement le sujet suivant :
 
@@ -2252,38 +2129,35 @@ Vérifie les calculs, les figures, les notations,
 les consignes et le total des points.
 Corrige toute contradiction avant de répondre.
 
-FORMAT DE SORTIE :
 Réponds uniquement avec le sujet final en français.
 Ne fournis aucune correction ni réponse.
 """
 
-                    sujet = _appeler_gemini(
-                        instructions,
-                        contenu="Génère le sujet demandé."
-                    )
+                sujet = _appeler_gemini(
+                    instructions,
+                    contenu="Génère le sujet demandé."
+                )
 
-                    if sujet:
-                        with st.spinner(
-                            "🔍 Vérification mathématique et pédagogique du sujet..."
-                        ):
-                            sujet_verifie = _appeler_gemini(
-                                prompt_verification.replace("{sujet}", sujet),
-                                contenu="Effectue une vérification indépendante du sujet."
-                            )
+                if sujet:
+                    with st.spinner(
+                        "🔍 Vérification mathématique et pédagogique du sujet..."
+                    ):
+                        sujet_verifie = _appeler_gemini(
+                            prompt_verification.replace("{sujet}", sujet),
+                            contenu="Effectue une vérification indépendante du sujet."
+                        )
 
-                        if sujet_verifie and sujet_verifie.strip():
-                            st.session_state.sujet_genere = sujet_verifie
-                            st.session_state.correction_sujet = ""
-                            st.success("✅ Vérification terminée.")
-                        else:
-                            st.error("La vérification du sujet a échoué.")
-
+                    if sujet_verifie and sujet_verifie.strip():
+                        st.session_state.sujet_genere = sujet_verifie
+                        st.session_state.correction_sujet = ""
+                        st.success("✅ Vérification terminée.")
                     else:
-                        st.error("La génération du sujet a échoué.")
+                        st.error("La vérification du sujet a échoué.")
+                else:
+                    st.error("La génération du sujet a échoué.")
 
-                except Exception as e:
-                    st.error(f"Erreur de génération : {e}")
-
+            except Exception as e:
+                st.error(f"Erreur de génération : {e}")
 
 
 
