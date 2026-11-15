@@ -2240,11 +2240,11 @@ Réponds uniquement avec le sujet final en français.
 
 
 
-                    
-sujet = _appeler_gemini(
-    instructions,
-    contenu="Génère le sujet demandé."
-)
+try:                    
+   sujet = _appeler_gemini(
+      instructions,
+      contenu="Génère le sujet demandé."
+   )
 
 if sujet:
 
