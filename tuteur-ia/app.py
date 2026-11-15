@@ -2239,6 +2239,47 @@ Réponds uniquement avec le sujet final en français.
 """
 
 
+                    prompt_verification = f"""
+Tu es un professeur de mathématiques expérimenté.
+Vérifie intégralement le sujet suivant :
+
+{sujet}
+
+Vérifie les calculs, les figures, les notations,
+les consignes et le total des points.
+Corrige toute contradiction avant de répondre.
+
+FORMAT DE SORTIE :
+Réponds uniquement avec le sujet final en français.
+Ne fournis aucune correction ni réponse.
+"""
+
+                    sujet = _appeler_gemini(
+                        instructions,
+                        contenu="Génère le sujet demandé."
+                    )
+
+                    if sujet:
+                        with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
+                            sujet_verifie = _appeler_gemini(
+                                prompt_verification.replace("{sujet}", sujet),
+                                contenu="Effectue une vérification indépendante du sujet."
+                            )
+
+                        if sujet_verifie and sujet_verifie.strip():
+                            st.session_state.sujet_genere = sujet_verifie
+                            st.session_state.correction_sujet = ""
+                            st.success("✅ Vérification terminée.")
+                        else:
+                            st.error("La vérification du sujet a échoué.")
+                    else:
+                        st.error("La génération du sujet a échoué.")
+
+                except Exception as e:
+                    st.error(f"Erreur de génération : {e}")
+
+
+
 
 
 
