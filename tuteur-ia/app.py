@@ -2246,7 +2246,7 @@ Réponds uniquement avec le sujet final en français.
 
 
 
-try:
+
     sujet = _appeler_gemini(
         instructions,
         contenu="Génère le sujet demandé."
@@ -2347,23 +2347,23 @@ Réponds en français.
                 st.error(f"Erreur de correction : {e}")
 
    
-        if st.session_state.get("correction_sujet"):
+       
+                if st.session_state.get("correction_sujet"):
 
-        st.success("✅ Le corrigé enseignant est prêt.")
+            st.success("✅ Le corrigé enseignant est prêt.")
 
-        pdf_correction = generer_pdf_sujet(
-            st.session_state.correction_sujet
-        )
+            pdf_correction = generer_pdf_sujet(
+                st.session_state.correction_sujet
+            )
 
-        st.download_button(
-            "📘 Télécharger le corrigé enseignant en PDF",
-            data=pdf_correction.getvalue(),
-            file_name="corrige_enseignant.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-            key="download_correction_enseignant"
-        )
-
+            st.download_button(
+                "📘 Télécharger le corrigé enseignant en PDF",
+                data=pdf_correction.getvalue(),
+                file_name="corrige_enseignant.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="download_correction_enseignant"
+            )
 
         
 # ============================================================
