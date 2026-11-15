@@ -2239,14 +2239,167 @@ Réponds uniquement avec le sujet final en français.
 """
 
 
-                    sujet = _appeler_gemini(
-                        instructions,
-                        contenu="Génère le sujet demandé."
-                    )
+
+                    
+sujet = _appeler_gemini(
+    instructions,
+    contenu="Génère le sujet demandé."
+)
+
+if sujet:
+
+   
 
                     if sujet:
-                        st.session_state.sujet_genere = sujet
-                        st.session_state.correction_sujet = ""
+
+                        with st.spinner("🧮 Étape 1/3 : Résolution indépendante des exercices..."):
+
+                            prompt_resolution = f"""
+Tu es un professeur de mathématiques chargé de résoudre
+indépendamment un sujet d'évaluation.
+
+SUJET À RÉSOUDRE :
+{sujet}
+
+MISSION :
+
+Résous intégralement chaque exercice et chaque question.
+
+Pour chaque question :
+1. Recopie son numéro.
+2. Effectue les calculs étape par étape.
+3. Vérifie les formules utilisées.
+4. Vérifie les coordonnées et les figures.
+5. Donne le résultat exact.
+6. Signale toute question impossible ou ambiguë.
+
+IMPORTANT :
+Ne fais pas confiance aux résultats annoncés dans le sujet.
+Recommence tous les calculs indépendamment.
+
+Réponds uniquement avec le corrigé détaillé
+et les éventuelles erreurs détectées.
+"""
+
+                            resolution_independante = _appeler_gemini(
+                                prompt_resolution,
+                                contenu="Résous indépendamment tous les exercices."
+                            )
+
+                        if not resolution_independante:
+                            st.error("La résolution indépendante a échoué.")
+                            return
+
+                        with st.spinner("🔍 Étape 2/3 : Contrôle des résultats..."):
+
+                            prompt_audit = f"""
+Tu es un examinateur indépendant de mathématiques.
+
+Tu disposes de deux documents :
+
+SUJET ORIGINAL :
+{sujet}
+
+RÉSOLUTION INDÉPENDANTE :
+{resolution_independante}
+
+MISSION :
+
+Compare les deux documents question par question.
+
+Contrôle :
+- Les données numériques.
+- Les calculs et les résultats.
+- Les formules mathématiques.
+- Les propriétés utilisées.
+- Les figures et les noms des points.
+- La possibilité de résoudre chaque question.
+- Le niveau scolaire demandé.
+- La cohérence pédagogique.
+- Le barème et son total de 20 points.
+- Les éventuelles contradictions.
+
+Ne considère pas automatiquement la résolution
+indépendante comme correcte : vérifie aussi ses calculs.
+
+Si une erreur est présente dans le sujet,
+propose une correction précise.
+
+Si une question ne peut pas être vérifiée,
+signale-le explicitement.
+
+Retourne un rapport structuré indiquant :
+1. Les questions correctes.
+2. Les erreurs détectées.
+3. Les corrections nécessaires.
+4. Les éléments qui restent à vérifier.
+"""
+
+                            rapport_audit = _appeler_gemini(
+                                prompt_audit,
+                                contenu="Compare le sujet et sa résolution indépendante."
+                            )
+
+                        if not rapport_audit:
+                            st.error("Le contrôle indépendant a échoué.")
+                            return
+
+                        with st.spinner("✏️ Étape 3/3 : Correction finale du sujet..."):
+
+                            prompt_final = f"""
+Tu es un professeur expérimenté chargé de finaliser
+un sujet d'évaluation de mathématiques.
+
+SUJET ORIGINAL :
+{sujet}
+
+RÉSOLUTION INDÉPENDANTE :
+{resolution_independante}
+
+RAPPORT DE VÉRIFICATION :
+{rapport_audit}
+
+MISSION :
+
+Produis une version corrigée et complète du sujet.
+
+- Corrige les erreurs mathématiques confirmées.
+- Corrige les contradictions.
+- Corrige les incohérences entre figures et énoncés.
+- Améliore les formulations ambiguës.
+- Respecte le niveau scolaire demandé.
+- Conserve les exercices corrects.
+- Vérifie que le barème total est de 20 points.
+- Ne fournis aucune réponse aux élèves.
+- Ne fournis aucune correction détaillée.
+
+Si une erreur ne peut pas être corrigée avec certitude,
+ne prétends pas que le sujet est validé.
+
+Retourne uniquement le sujet final complet.
+"""
+
+                            sujet_verifie = _appeler_gemini(
+                                prompt_final,
+                                contenu="Produis le sujet final après les trois contrôles."
+                            )
+
+                        if sujet_verifie and sujet_verifie.strip():
+
+                            st.session_state.sujet_genere = sujet_verifie
+                            st.session_state.correction_sujet = ""
+
+                            st.success(
+                                "✅ Les trois étapes de contrôle IA sont terminées. "
+                                "Le sujet est prêt pour la validation de l'enseignant."
+                            )
+
+                        else:
+                            st.error(
+                                "⚠️ La correction finale a échoué. "
+                                "Le sujet ne peut pas être téléchargé."
+                            )
+
 
                 except Exception as e:
                     st.error(f"Erreur de génération : {e}")
@@ -2616,4 +2769,3 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
-
