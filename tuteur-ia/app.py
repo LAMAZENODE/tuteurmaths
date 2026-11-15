@@ -2240,17 +2240,18 @@ Réponds uniquement avec le sujet final en français.
 
 
 
-try:                    
-   sujet = _appeler_gemini(
-      instructions,
-      contenu="Génère le sujet demandé."
-   )
 
-if sujet:
+try:
+    sujet = _appeler_gemini(
+        instructions,
+        contenu="Génère le sujet demandé."
+    )
 
-    with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
+    if sujet:
 
-        prompt_verification = f"""
+        with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
+
+            prompt_verification = f"""
 Tu es un deuxième professeur de mathématiques expérimenté.
 Tu dois effectuer une vérification indépendante et rigoureuse.
 
@@ -2275,8 +2276,6 @@ INFORMATIONS À CONTRÔLER :
 
 RÈGLES DE CORRECTION :
 
-- Ne considère jamais qu'un calcul est juste simplement
-  parce qu'il a été présenté comme correct.
 - Refais les calculs toi-même.
 - Corrige toutes les erreurs détectées.
 - Remplace les questions impossibles ou incohérentes
@@ -2284,44 +2283,38 @@ RÈGLES DE CORRECTION :
 - Conserve le niveau, le thème et la durée demandés.
 - Ne donne aucune réponse aux élèves.
 - Ne fournis aucune correction détaillée.
-- Conserve une présentation professionnelle.
 - Ne supprime aucun exercice valide.
 
-RÈGLE FINALE :
-
-Retourne uniquement le sujet complet après vérification
-et correction.
-
+Retourne uniquement le sujet complet après vérification.
 Ne retourne aucun commentaire destiné au développeur.
-Ne prétends pas qu'un sujet est parfait si tu n'as pas
-pu vérifier un élément.
 """
 
-        sujet_verifie = _appeler_gemini(
-            prompt_verification,
-            contenu="Effectue une vérification indépendante du sujet."
-        )
+            sujet_verifie = _appeler_gemini(
+                prompt_verification,
+                contenu="Effectue une vérification indépendante du sujet."
+            )
 
-    if sujet_verifie and sujet_verifie.strip():
+        if sujet_verifie and sujet_verifie.strip():
 
-        st.session_state.sujet_genere = sujet_verifie
-        st.session_state.correction_sujet = ""
+            st.session_state.sujet_genere = sujet_verifie
+            st.session_state.correction_sujet = ""
 
-        st.success(
-            "✅ Deuxième vérification IA effectuée. "
-            "Le sujet est prêt pour le contrôle de l'enseignant."
-        )
+            st.success(
+                "✅ Deuxième vérification IA effectuée. "
+                "Le sujet est prêt pour le contrôle de l'enseignant."
+            )
+
+        else:
+            st.error(
+                "⚠️ La vérification n'a pas abouti. "
+                "Le téléchargement du sujet est suspendu."
+            )
 
     else:
-        st.error(
-            "⚠️ La vérification n'a pas abouti. "
-            "Le téléchargement du sujet est suspendu. "
-            "Veuillez réessayer."
-        )
+        st.error("La génération du sujet a échoué.")
 
-
-                except Exception as e:
-                    st.error(f"Erreur de génération : {e}")
+except Exception as e:
+    st.error(f"Erreur de génération : {e}")
 
     # Affichage et téléchargement du sujet
     if st.session_state.sujet_genere:
