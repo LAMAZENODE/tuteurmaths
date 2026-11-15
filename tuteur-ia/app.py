@@ -2241,6 +2241,9 @@ Réponds uniquement avec le sujet final en français.
 
 
 
+
+
+
 try:
     sujet = _appeler_gemini(
         instructions,
@@ -2251,43 +2254,7 @@ try:
 
         with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
 
-            prompt_verification = f"""
-Tu es un deuxième professeur de mathématiques expérimenté.
-Tu dois effectuer une vérification indépendante et rigoureuse.
-
-Voici le sujet généré :
-
-{sujet}
-
-INFORMATIONS À CONTRÔLER :
-
-1. Vérifie chaque calcul mathématique.
-2. Recalcule les résultats indépendamment.
-3. Vérifie les formules et les propriétés utilisées.
-4. Vérifie les données numériques et les coordonnées.
-5. Vérifie les figures géométriques et leur cohérence avec les énoncés.
-6. Vérifie que chaque question possède une solution possible.
-7. Vérifie que les questions correspondent au niveau scolaire demandé.
-8. Vérifie que les exercices sont progressifs.
-9. Vérifie les barèmes de chaque question.
-10. Vérifie que le total est exactement de 20 points.
-11. Vérifie les notations mathématiques.
-12. Vérifie qu'aucune question ne contient de contradiction.
-
-RÈGLES DE CORRECTION :
-
-- Refais les calculs toi-même.
-- Corrige toutes les erreurs détectées.
-- Remplace les questions impossibles ou incohérentes
-  par des questions adaptées au même chapitre.
-- Conserve le niveau, le thème et la durée demandés.
-- Ne donne aucune réponse aux élèves.
-- Ne fournis aucune correction détaillée.
-- Ne supprime aucun exercice valide.
-
-Retourne uniquement le sujet complet après vérification.
-Ne retourne aucun commentaire destiné au développeur.
-"""
+            # TON BLOC prompt_verification ICI
 
             sujet_verifie = _appeler_gemini(
                 prompt_verification,
@@ -2299,23 +2266,16 @@ Ne retourne aucun commentaire destiné au développeur.
             st.session_state.sujet_genere = sujet_verifie
             st.session_state.correction_sujet = ""
 
-            st.success(
-                "✅ Deuxième vérification IA effectuée. "
-                "Le sujet est prêt pour le contrôle de l'enseignant."
-            )
+            st.success("✅ Vérification terminée.")
 
         else:
-            st.error(
-                "⚠️ La vérification n'a pas abouti. "
-                "Le téléchargement du sujet est suspendu."
-            )
+            st.error("La vérification du sujet a échoué.")
 
     else:
         st.error("La génération du sujet a échoué.")
 
 except Exception as e:
     st.error(f"Erreur de génération : {e}")
-
     # Affichage et téléchargement du sujet
     if st.session_state.sujet_genere:
 
