@@ -2064,16 +2064,16 @@ def afficher_generateur_sujet():
             use_container_width=True
         )
 
-  
-        if generer:
-
+      if generer:
         if not chapitre.strip():
             st.warning("Veuillez indiquer un chapitre ou un thème.")
-
         else:
             with st.spinner("⏳ Création de votre sujet..."):
                 try:
                     instructions = f"""
+       
+          
+        
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
