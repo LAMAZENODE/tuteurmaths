@@ -2064,15 +2064,16 @@ def afficher_generateur_sujet():
             use_container_width=True
         )
 
-    if generer:
-        if not chapitre.strip():
-            st.warning("Veuillez indiquer un chapitre ou un thème.")
-        else:
+   
+    
+if generer:
+    if not chapitre.strip():
+        st.warning("Veuillez indiquer un chapitre ou un thème.")
+    else:
+        try:
             with st.spinner("⏳ Création de votre sujet..."):
-                try:
-                    instructions = f"""    
 
-        
+                instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
@@ -2116,7 +2117,14 @@ Exercice 3
 Réponds uniquement avec le sujet final en français.
 """
 
-                prompt_verification = """
+                sujet = _appeler_gemini(
+                    instructions,
+                    contenu="Génère le sujet demandé."
+                )
+
+                if sujet and sujet.strip():
+
+                    prompt_verification = f"""
 Tu es un professeur de mathématiques expérimenté.
 Vérifie intégralement le sujet suivant :
 
@@ -2130,50 +2138,9 @@ Réponds uniquement avec le sujet final en français.
 Ne fournis aucune correction ni réponse.
 """
 
-                sujet = _appeler_gemini(
-                    instructions,
-                    contenu="Génère le sujet demandé."
-                )
-
-                if sujet:
                     with st.spinner(
                         "🔍 Vérification mathématique et pédagogique du sujet..."
                     ):
-                        sujet_verifie = _appeler_gemini(
-                            prompt_verification.replace("{sujet}", sujet),
-                            contenu="Effectue une vérification indépendante du sujet."
-                        )
-
-                    if sujet_verifie and sujet_verifie.strip():
-                        st.session_state.sujet_genere = sujet_verifie
-                        st.session_state.correction_sujet = ""
-                        st.success("✅ Vérification terminée.")
-                    else:
-                        st.error("La vérification du sujet a échoué.")
-                else:
-                    st.error("La génération du sujet a échoué.")
-
-            except Exception as e:
-                st.error(f"Erreur de génération : {e}")
-
-
-
-
-
-
-
-
-
-             
-              
-                
-                sujet = _appeler_gemini(
-                    instructions,
-                    contenu="Génère le sujet demandé."
-                )
-
-                if sujet:
-                    with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
                         sujet_verifie = _appeler_gemini(
                             prompt_verification,
                             contenu="Effectue une vérification indépendante du sujet."
@@ -2185,13 +2152,13 @@ Ne fournis aucune correction ni réponse.
                         st.success("✅ Vérification terminée.")
                     else:
                         st.error("La vérification du sujet a échoué.")
+
                 else:
                     st.error("La génération du sujet a échoué.")
 
+        except Exception as e:
+            st.error(f"Erreur de génération : {e}")
 
-                except Exception as e:
-                    st.error(f"Erreur de génération : {e}")
-   
 
 # ============================================================
 # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
