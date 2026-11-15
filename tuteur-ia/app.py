@@ -2241,17 +2241,19 @@ Réponds uniquement avec le sujet final en français.
 
 
                     
-sujet = _appeler_gemini(
-    instructions,
-    contenu="Génère le sujet demandé."
-)
+try:
+    sujet = _appeler_gemini(
+        instructions,
+        contenu="Génère le sujet demandé."
+    )
+
+    if sujet:
+        with st.spinner("🧮 Étape 1/3 : Résolution indépendante des exercices..."):
 
 
    
 
-                    if sujet:
-
-                        with st.spinner("🧮 Étape 1/3 : Résolution indépendante des exercices..."):
+            
 
                             prompt_resolution = f"""
 Tu es un professeur de mathématiques chargé de résoudre
