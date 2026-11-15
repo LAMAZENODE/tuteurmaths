@@ -2063,9 +2063,11 @@ def afficher_generateur_sujet():
             "🚀 Générer mon sujet",
             use_container_width=True
         )
+   
     if generer:
-    if not chapitre.strip():
-        st.warning("Veuillez indiquer un chapitre ou un thème.")
+        if not chapitre.strip():
+            st.warning("Veuillez indiquer un chapitre ou un thème.")
+        
     else:
         try:
             with st.spinner("⏳ Création de votre sujet..."):
