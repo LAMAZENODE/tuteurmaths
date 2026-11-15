@@ -2222,27 +2222,30 @@ Réponds en français.
 
                 st.session_state.correction_sujet = response or ""
 
-                if not st.session_state.correction_sujet:
-                    st.error("La correction n'a pas pu être générée.")
+               
+                
+if not st.session_state.correction_sujet:
+    st.error("La correction n'a pas pu être générée.")
 
-            except Exception as e:
-                st.error(f"Erreur de correction : {e}")
+except Exception as e:
+    st.error(f"Erreur de correction : {e}")
 
-   
-       
-            if st.session_state.get("correction_sujet"):
 
-            st.success("✅ Le corrigé enseignant est prêt.")
+if st.session_state.get("correction_sujet"):
 
-            pdf_correction = generer_pdf_sujet(
-                st.session_state.correction_sujet
-            )
+    st.success("✅ Le corrigé enseignant est prêt.")
 
-            st.download_button(
-                "📘 Télécharger le corrigé enseignant en PDF",
-                data=pdf_correction.getvalue(),
-                file_name="corrige_enseignant.pdf",
-                mime="application/pdf",
+    pdf_correction = generer_pdf_sujet(
+        st.session_state.correction_sujet
+    )
+
+    st.download_button(
+        "📘 Télécharger le corrigé enseignant en PDF",
+        data=pdf_correction.getvalue(),
+        file_name="corrige_enseignant.pdf",
+        mime="application/pdf",
+    )
+
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
