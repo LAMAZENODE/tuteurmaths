@@ -2239,7 +2239,10 @@ Réponds uniquement avec le sujet final en français.
 """
 
 
-                    prompt_verification = f"""
+                   
+                    
+
+                    prompt_verification = """
 Tu es un professeur de mathématiques expérimenté.
 Vérifie intégralement le sujet suivant :
 
@@ -2260,7 +2263,9 @@ Ne fournis aucune correction ni réponse.
                     )
 
                     if sujet:
-                        with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
+                        with st.spinner(
+                            "🔍 Vérification mathématique et pédagogique du sujet..."
+                        ):
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification.replace("{sujet}", sujet),
                                 contenu="Effectue une vérification indépendante du sujet."
@@ -2272,13 +2277,12 @@ Ne fournis aucune correction ni réponse.
                             st.success("✅ Vérification terminée.")
                         else:
                             st.error("La vérification du sujet a échoué.")
+
                     else:
                         st.error("La génération du sujet a échoué.")
 
                 except Exception as e:
                     st.error(f"Erreur de génération : {e}")
-
-
 
 
 
