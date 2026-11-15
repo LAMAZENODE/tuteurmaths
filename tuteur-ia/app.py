@@ -2247,16 +2247,16 @@ Réponds uniquement avec le sujet final en français.
 
 
 
-   
-                  sujet = _appeler_gemini(
-                     instructions,
-                     contenu="Génère le sujet demandé."
-                     )
 
-                  if sujet:
+             
+                try:
+                    sujet = _appeler_gemini(
+                        instructions,
+                        contenu="Génère le sujet demandé."
+                    )
 
+                    if sujet:
                         with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
-
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification,
                                 contenu="Effectue une vérification indépendante du sujet."
@@ -2268,12 +2268,12 @@ Réponds uniquement avec le sujet final en français.
                             st.success("✅ Vérification terminée.")
                         else:
                             st.error("La vérification du sujet a échoué.")
-
                     else:
                         st.error("La génération du sujet a échoué.")
 
                 except Exception as e:
                     st.error(f"Erreur de génération : {e}")
+   
 
 # ============================================================
 # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
