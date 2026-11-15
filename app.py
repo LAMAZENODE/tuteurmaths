@@ -2063,19 +2063,16 @@ def afficher_generateur_sujet():
             "🚀 Générer mon sujet",
             use_container_width=True
         )
-
+   
     if generer:
-
         if not chapitre.strip():
             st.warning("Veuillez indiquer un chapitre ou un thème.")
-
-        else:
+        
+    else:
+        try:
             with st.spinner("⏳ Création de votre sujet..."):
 
-                try:
-                
-                    
-                    instructions = f"""
+                instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
@@ -2089,276 +2086,116 @@ Difficulté : {difficulte}
 Durée : {duree}
 
 PRÉSENTATION DU SUJET :
-
 1. Un seul titre principal.
 2. Une seule zone pour le nom, le prénom, la classe et la date.
-3. Indique clairement le chapitre, le niveau, la durée
-   et le barème total.
+3. Indique le chapitre, le niveau, la durée et le barème total.
 4. Ajoute des consignes générales courtes et précises.
 5. Organise les exercices du plus simple au plus difficile.
 6. Attribue un barème à chaque exercice.
 7. Le total des points doit être exactement égal à 20.
 
-RÈGLES OBLIGATOIRES DE QUALITÉ :
-
-
-- Le titre principal doit apparaître une seule fois.
-- Les informations Nom, Prénom, Classe et Date
-  doivent apparaître une seule fois.
-- Ne crée pas une deuxième zone d'identification.
-- Si une question propose plusieurs mots à utiliser,
-  vérifie qu'il y a assez de phrases pour les employer.
-- Pour chaque exercice, vérifie que le nombre de points
-  correspond exactement à son contenu.
-- Ne crée pas de schéma ASCII si sa lecture risque
-  d'être ambiguë.
-- Pour les constructions géométriques, indique clairement
-  quand l'élève doit utiliser une feuille séparée.
-- Termine toujours toutes les consignes et tous les exercices.
-- Ne coupe jamais le sujet au milieu d'une phrase.
-
+RÈGLES DE QUALITÉ :
 - Chaque question doit être complète et compréhensible.
-- Aucune phrase ne doit être coupée ou inachevée.
-- Vérifie que toutes les questions ont une réponse possible.
 - Vérifie la cohérence mathématique de chaque exercice.
-
 - Ne crée jamais de figure en ASCII.
-- Lorsqu'un exercice nécessite une figure géométrique,
-  indique-la avec un marqueur FIGURE_JSON.
-- La figure doit être adaptée au chapitre demandé.
-- Pour Pythagore, privilégie un triangle rectangle.
-- Pour les triangles, indique les coordonnées des points
-  et les éventuels angles droits.
-- Pour les cercles, indique le centre, le rayon
-  et les points nécessaires.
-- Pour les quadrilatères, indique les sommets
-  et leur position.
-- Pour les droites, indique si elles sont parallèles
-  ou perpendiculaires.
-  RÈGLES OBLIGATOIRES POUR LES FIGURES :
-
-- Pour "points_alignes", TOUS les points doivent être placés sur une seule et même droite.
-- Ils doivent tous avoir exactement la même coordonnée Y.
-- Exemple obligatoire :
-FIGURE_JSON: {{"type":"points_alignes","points":{{"R":[0,0],"T":[3,0],"S":[6,0]}}}}
-  
-- Ne jamais placer un point en dehors de cette droite.
-- Ne jamais créer de points non alignés lorsque le type est "points_alignes".
-- Utilise exactement ce format sur une seule ligne :
-
-FIGURE_JSON: {{"type":"triangle_rectangle","points":{{"A":[0,0],"B":[4,0],"C":[0,3]}},"angle_droit":"A"}}
-
-FIGURE_JSON: {{"type":"points_alignes","points":{{"A":[0,0],"B":[3,0],"C":[6,0]}}}}
-
-FIGURE_JSON: {{"type":"perpendiculaires","points":{{"O":[0,0],"M":[-3,0],"N":[0,3]}}}}
-
-
-FIGURE_JSON: {{"type":"segment","points":{{"R":[0,0],"T":[4,0],"S":[7,0]}}}}
-- RÈGLES OBLIGATOIRES POUR LES FIGURES :
-
-- Si l'exercice demande à l'élève de tracer, construire,
-  placer ou dessiner lui-même une figure, ne génère
-  aucune figure pour cet exercice.
-
-- Ne jamais afficher des points qui ne sont pas mentionnés
-  dans la consigne.
-
-- Ne jamais réutiliser les points d'un autre exercice.
-
-- Chaque figure doit correspondre uniquement à son exercice.
-
-- Si aucune figure n'est demandée pour être affichée,
-  ne génère aucun FIGURE_JSON.
-
-
-
-RÈGLES POUR LES FIGURES :
-
-- Pour trois points alignés sur une droite, utilise le type "points_alignes".
-- Pour deux droites perpendiculaires, utilise le type "perpendiculaires".
-- Pour un segment, utilise le type "segment".
-- Pour une demi-droite, utilise le type "demi_droite".
-- Pour une droite, utilise le type "droite".
-- Ajoute les marqueurs FIGURE_JSON directement dans le sujet, à l'endroit où la figure doit apparaître.
-- Utilise exactement les noms des points de l'énoncé.
-- Chaque figure doit être placée avant les questions qui s'y rapportent.
-
-
-- Les coordonnées doivent être cohérentes.
-- Les noms des points doivent correspondre aux questions.
-- N'invente jamais une figure qui contredit l'énoncé.
-- Si aucune figure n'est nécessaire, n'ajoute aucun marqueur.
-- Les points, droites et segments doivent être correctement
-  nommés et utilisés.
-- Les longueurs représentées doivent être cohérentes
-  avec les questions posées.
-- Ne demande pas de citer un point extérieur à une droite
-  si tous les points proposés appartiennent à cette droite.
+- Utilise FIGURE_JSON uniquement lorsqu'une figure doit être observée.
+- Les points et coordonnées doivent être cohérents.
+- Pour points_alignes, tous les points doivent avoir la même coordonnée Y.
+- Ne réutilise jamais les points d'un autre exercice.
+- Ne génère aucune figure si l'élève doit la construire lui-même.
 - Prévois suffisamment de lignes pour les réponses.
-- Pour les constructions, précise clairement le matériel
-  et les consignes.
 - Ne répète pas les informations d'identification.
-- N'utilise pas de séparateurs inutiles comme -- ou ___.
-- N'ajoute aucun texte technique ou commentaire destiné
-  au développeur.
-  - RÈGLES PAR QUESTION :
+- Ne fournis aucune correction ni réponse.
 
-- Générer une figure uniquement pour la question qui
-  demande explicitement d'observer une figure.
+FORMAT :
+SUJET D'ÉVALUATION
+Exercice 1
+Exercice 2
+Exercice 3
 
-- Ne jamais placer une figure au début d'un exercice
-  si seule une question ultérieure en a besoin.
+Réponds uniquement avec le sujet final en français.
+"""
 
-- Pour l'exercice 3, question 1 : aucune figure.
+                sujet = _appeler_gemini(
+                    instructions,
+                    contenu="Génère le sujet demandé."
+                )
 
-- Pour l'exercice 3, question 2 : afficher uniquement
-  la figure correspondant à cette question.
+                if sujet and sujet.strip():
 
-VÉRIFICATION AVANT DE TERMINER :
+                    prompt_verification = f"""
+Tu es un professeur de mathématiques expérimenté.
+Vérifie intégralement le sujet suivant :
 
-Relis tout le sujet.
+{sujet}
+
 Vérifie les calculs, les figures, les notations,
 les consignes et le total des points.
 Corrige toute contradiction avant de répondre.
 
-FORMAT DE SORTIE :
-
-Utilise des titres clairs :
-SUJET D'ÉVALUATION
-Exercice 1
-Exercice 2
-Exercice 3, etc.
-
-Utilise une numérotation simple.
-Utilise une notation mathématique lisible.
-Laisse des espaces pour les réponses.
-
-IMPORTANT :
-Ne fournis aucune correction ni réponse.
 Réponds uniquement avec le sujet final en français.
+Ne fournis aucune correction ni réponse.
 """
 
+                    with st.spinner(
+                        "🔍 Vérification mathématique et pédagogique du sujet..."
+                    ):
+                        sujet_verifie = _appeler_gemini(
+                            prompt_verification,
+                            contenu="Effectue une vérification indépendante du sujet."
+                        )
+
+                    if sujet_verifie and sujet_verifie.strip():
+                        st.session_state.sujet_genere = sujet_verifie
+                        st.session_state.correction_sujet = ""
+                        st.success("✅ Vérification terminée.")
+                    else:
+                        st.error("La vérification du sujet a échoué.")
+
+                else:
+                    st.error("La génération du sujet a échoué.")
+
+        except Exception as e:
+            st.error(f"Erreur de génération : {e}")
 
 
-                    
-sujet = _appeler_gemini(
-    instructions,
-    contenu="Génère le sujet demandé."
-)
+# ============================================================
+# AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
+# ============================================================
 
-if sujet:
+if st.session_state.get("sujet_genere"):
 
-    with st.spinner("🔍 Vérification mathématique et pédagogique du sujet..."):
+    st.markdown("---")
+    st.markdown("### 📄 Sujet d'évaluation")
 
-        prompt_verification = f"""
-Tu es un deuxième professeur de mathématiques expérimenté.
-Tu dois effectuer une vérification indépendante et rigoureuse.
+    st.markdown(st.session_state.sujet_genere)
 
-Voici le sujet généré :
+    pdf_sujet = generer_pdf_sujet(
+        st.session_state.sujet_genere
+    )
 
-{sujet}
+    st.download_button(
+        "📥 Télécharger le sujet en PDF",
+        data=pdf_sujet.getvalue(),
+        file_name="sujet_evaluation.pdf",
+        mime="application/pdf",
+        use_container_width=True,
+        key="download_sujet_evaluation"
+    )
 
-INFORMATIONS À CONTRÔLER :
+    st.markdown("---")
+    st.markdown("### 🔐 Correction réservée à l'enseignant")
 
-1. Vérifie chaque calcul mathématique.
-2. Recalcule les résultats indépendamment.
-3. Vérifie les formules et les propriétés utilisées.
-4. Vérifie les données numériques et les coordonnées.
-5. Vérifie les figures géométriques et leur cohérence avec les énoncés.
-6. Vérifie que chaque question possède une solution possible.
-7. Vérifie que les questions correspondent au niveau scolaire demandé.
-8. Vérifie que les exercices sont progressifs.
-9. Vérifie les barèmes de chaque question.
-10. Vérifie que le total est exactement de 20 points.
-11. Vérifie les notations mathématiques.
-12. Vérifie qu'aucune question ne contient de contradiction.
+    if st.button(
+        "✏️ Générer la correction détaillée",
+        use_container_width=True,
+        key="btn_correction_sujet"
+    ):
 
-RÈGLES DE CORRECTION :
+        with st.spinner("⏳ Préparation du corrigé enseignant..."):
 
-- Ne considère jamais qu'un calcul est juste simplement
-  parce qu'il a été présenté comme correct.
-- Refais les calculs toi-même.
-- Corrige toutes les erreurs détectées.
-- Remplace les questions impossibles ou incohérentes
-  par des questions adaptées au même chapitre.
-- Conserve le niveau, le thème et la durée demandés.
-- Ne donne aucune réponse aux élèves.
-- Ne fournis aucune correction détaillée.
-- Conserve une présentation professionnelle.
-- Ne supprime aucun exercice valide.
-
-RÈGLE FINALE :
-
-Retourne uniquement le sujet complet après vérification
-et correction.
-
-Ne retourne aucun commentaire destiné au développeur.
-Ne prétends pas qu'un sujet est parfait si tu n'as pas
-pu vérifier un élément.
-"""
-
-        sujet_verifie = _appeler_gemini(
-            prompt_verification,
-            contenu="Effectue une vérification indépendante du sujet."
-        )
-
-    if sujet_verifie and sujet_verifie.strip():
-
-        st.session_state.sujet_genere = sujet_verifie
-        st.session_state.correction_sujet = ""
-
-        st.success(
-            "✅ Deuxième vérification IA effectuée. "
-            "Le sujet est prêt pour le contrôle de l'enseignant."
-        )
-
-    else:
-        st.error(
-            "⚠️ La vérification n'a pas abouti. "
-            "Le téléchargement du sujet est suspendu. "
-            "Veuillez réessayer."
-        )
-
-
-                except Exception as e:
-                    st.error(f"Erreur de génération : {e}")
-
-    # Affichage et téléchargement du sujet
-    if st.session_state.sujet_genere:
-
-        st.markdown("---")
-        st.markdown("### 📄 Sujet d'évaluation")
-
-        st.markdown(st.session_state.sujet_genere)
-
-        pdf_sujet = generer_pdf_sujet(
-            st.session_state.sujet_genere
-        )
-
-        st.download_button(
-            "📥 Télécharger le sujet en PDF",
-            data=pdf_sujet.getvalue(),
-            file_name="sujet_evaluation.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-            key="download_sujet_evaluation"
-        )
-
-        st.markdown("---")
-        st.markdown("### 🔐 Correction réservée à l'enseignant")
-
-    
-          
-        if st.button(    
-            "✏️ Générer la correction détaillée",
-            use_container_width=True,
-            key="btn_correction_sujet"
-        ):
-
-            with st.spinner("⏳ Préparation du corrigé enseignant..."):
-
-                try:
-                    prompt = f"""
+            try:
+                prompt = f"""
 Tu es un professeur expérimenté de mathématiques.
 
 Voici le sujet à corriger :
@@ -2378,21 +2215,22 @@ Vérifie la cohérence des résultats.
 Réponds en français.
 """
 
-                    response = _appeler_gemini(
-                        prompt,
-                        contenu="Génère la correction détaillée du sujet."
-                    )
+    
+                response = _appeler_gemini(
+                    prompt,
+                    contenu="Génère la correction détaillée du sujet."
+                )
 
-                    st.session_state.correction_sujet = response or ""
+                st.session_state.correction_sujet = response or ""
 
-                    if not st.session_state.correction_sujet:
-                        st.error("La correction n'a pas pu être générée.")
+            except Exception as e:
+                st.error(f"Erreur de correction : {e}")
+                st.session_state.correction_sujet = ""
 
-                except Exception as e:
-                    st.error(f"Erreur de correction : {e}")
+        if not st.session_state.correction_sujet:
+            st.error("La correction n'a pas pu être générée.")
 
-        # Affichage et téléchargement du corrigé
-        if st.session_state.correction_sujet:
+        if st.session_state.get("correction_sujet"):
 
             st.success("✅ Le corrigé enseignant est prêt.")
 
@@ -2408,8 +2246,8 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
-
-
+       
+                
         
 # ============================================================
 # INTERFACE
@@ -2538,7 +2376,7 @@ elif not est_abonne:
         st.write("---")
         st.markdown(f"##### {t('testimonials_title')}")
         st.info(t("testimonial_text"))
-            # Générateur toujours accessible après vérification de l'email
+    # Générateur toujours accessible après vérification de l'email
     if st.session_state.get("email_verifie"):
         afficher_generateur_sujet()
 
@@ -2688,4 +2526,3 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
-
