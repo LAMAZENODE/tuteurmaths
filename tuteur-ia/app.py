@@ -2244,6 +2244,8 @@ Réponds uniquement avec le sujet final en français.
 
 
 
+
+
 try:
     sujet = _appeler_gemini(
         instructions,
@@ -2262,12 +2264,9 @@ try:
             )
 
         if sujet_verifie and sujet_verifie.strip():
-
             st.session_state.sujet_genere = sujet_verifie
             st.session_state.correction_sujet = ""
-
             st.success("✅ Vérification terminée.")
-
         else:
             st.error("La vérification du sujet a échoué.")
 
@@ -2276,42 +2275,45 @@ try:
 
 except Exception as e:
     st.error(f"Erreur de génération : {e}")
-    # Affichage et téléchargement du sujet
-    if st.session_state.sujet_genere:
 
-        st.markdown("---")
-        st.markdown("### 📄 Sujet d'évaluation")
 
-        st.markdown(st.session_state.sujet_genere)
+# ============================================================
+# AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
+# ============================================================
 
-        pdf_sujet = generer_pdf_sujet(
-            st.session_state.sujet_genere
-        )
+if st.session_state.get("sujet_genere"):
 
-        st.download_button(
-            "📥 Télécharger le sujet en PDF",
-            data=pdf_sujet.getvalue(),
-            file_name="sujet_evaluation.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-            key="download_sujet_evaluation"
-        )
+    st.markdown("---")
+    st.markdown("### 📄 Sujet d'évaluation")
 
-        st.markdown("---")
-        st.markdown("### 🔐 Correction réservée à l'enseignant")
+    st.markdown(st.session_state.sujet_genere)
 
-    
-          
-        if st.button(    
-            "✏️ Générer la correction détaillée",
-            use_container_width=True,
-            key="btn_correction_sujet"
-        ):
+    pdf_sujet = generer_pdf_sujet(
+        st.session_state.sujet_genere
+    )
 
-            with st.spinner("⏳ Préparation du corrigé enseignant..."):
+    st.download_button(
+        "📥 Télécharger le sujet en PDF",
+        data=pdf_sujet.getvalue(),
+        file_name="sujet_evaluation.pdf",
+        mime="application/pdf",
+        use_container_width=True,
+        key="download_sujet_evaluation"
+    )
 
-                try:
-                    prompt = f"""
+    st.markdown("---")
+    st.markdown("### 🔐 Correction réservée à l'enseignant")
+
+    if st.button(
+        "✏️ Générer la correction détaillée",
+        use_container_width=True,
+        key="btn_correction_sujet"
+    ):
+
+        with st.spinner("⏳ Préparation du corrigé enseignant..."):
+
+            try:
+                prompt = f"""
 Tu es un professeur expérimenté de mathématiques.
 
 Voici le sujet à corriger :
@@ -2331,23 +2333,23 @@ Vérifie la cohérence des résultats.
 Réponds en français.
 """
 
-                    response = _appeler_gemini(
-                        prompt,
-                        contenu="Génère la correction détaillée du sujet."
-                    )
+                response = _appeler_gemini(
+                    prompt,
+                    contenu="Génère la correction détaillée du sujet."
+                )
 
-                    st.session_state.correction_sujet = response or ""
+                st.session_state.correction_sujet = response or ""
 
-                    if not st.session_state.correction_sujet:
-                        st.error("La correction n'a pas pu être générée.")
+                if not st.session_state.correction_sujet:
+                    st.error("La correction n'a pas pu être générée.")
 
-                except Exception as e:
-                    st.error(f"Erreur de correction : {e}")
+            except Exception as e:
+                st.error(f"Erreur de correction : {e}")
 
-        # Affichage et téléchargement du corrigé
-        if st.session_state.correction_sujet:
+    if st.session_state.get("correction_sujet"):
 
-            st.success("✅ Le corrigé enseignant est prêt.")
+        st.success("✅ Le corrigé enseignant est prêt.")
+
 
             pdf_correction = generer_pdf_sujet(
                 st.session_state.correction_sujet
