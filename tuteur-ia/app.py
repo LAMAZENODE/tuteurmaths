@@ -2230,7 +2230,7 @@ Réponds en français.
 
    
        
-                if st.session_state.get("correction_sujet"):
+            if st.session_state.get("correction_sujet"):
 
             st.success("✅ Le corrigé enseignant est prêt.")
 
