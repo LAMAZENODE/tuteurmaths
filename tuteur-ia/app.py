@@ -2246,7 +2246,6 @@ sujet = _appeler_gemini(
     contenu="Génère le sujet demandé."
 )
 
-if sujet:
 
    
 
