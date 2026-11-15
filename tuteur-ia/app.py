@@ -2346,23 +2346,23 @@ Réponds en français.
             except Exception as e:
                 st.error(f"Erreur de correction : {e}")
 
-    if st.session_state.get("correction_sujet"):
+   
+        if st.session_state.get("correction_sujet"):
 
         st.success("✅ Le corrigé enseignant est prêt.")
 
+        pdf_correction = generer_pdf_sujet(
+            st.session_state.correction_sujet
+        )
 
-            pdf_correction = generer_pdf_sujet(
-                st.session_state.correction_sujet
-            )
-
-            st.download_button(
-                "📘 Télécharger le corrigé enseignant en PDF",
-                data=pdf_correction.getvalue(),
-                file_name="corrige_enseignant.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-                key="download_correction_enseignant"
-            )
+        st.download_button(
+            "📘 Télécharger le corrigé enseignant en PDF",
+            data=pdf_correction.getvalue(),
+            file_name="corrige_enseignant.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            key="download_correction_enseignant"
+        )
 
 
         
@@ -2493,7 +2493,7 @@ elif not est_abonne:
         st.write("---")
         st.markdown(f"##### {t('testimonials_title')}")
         st.info(t("testimonial_text"))
-            # Générateur toujours accessible après vérification de l'email
+    # Générateur toujours accessible après vérification de l'email
     if st.session_state.get("email_verifie"):
         afficher_generateur_sujet()
 
