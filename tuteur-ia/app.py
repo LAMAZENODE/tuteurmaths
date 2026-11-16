@@ -2196,7 +2196,10 @@ Réponds uniquement avec le sujet final en français.
 """
               
                 
-
+st.write("DEBUG NIVEAU :", niveau)
+st.write("DEBUG CHAPITRE :", chapitre)
+st.write("DEBUG DURÉE :", duree)
+st.write("DEBUG PROMPT :", instructions)
               
 
                sujet = _appeler_gemini(
