@@ -2063,17 +2063,21 @@ def afficher_generateur_sujet():
             "🚀 Générer mon sujet",
             use_container_width=True
         )
-   
+
+    # ------------------------------------------------
+    # GÉNÉRATION DU SUJET
+    # ------------------------------------------------
+
     if generer:
+
         if not chapitre.strip():
             st.warning("Veuillez indiquer un chapitre ou un thème.")
-        
-    else:
-        try:
-            with st.spinner("⏳ Création de votre sujet..."):
 
-  
-               instructions = f"""
+        else:
+            try:
+                with st.spinner("⏳ Création de votre sujet..."):
+
+                    instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
@@ -2092,33 +2096,21 @@ DURÉE : {duree}
 
 ATTENTION : ces paramètres sont obligatoires.
 
-1. Le niveau scolaire demandé doit être respecté
-EXACTEMENT.
-
-2. Tu ne dois JAMAIS remplacer le niveau demandé
-par un autre niveau.
-
-3. Si le niveau demandé est Terminale, tous les
-exercices doivent être de niveau Terminale.
-
-4. Si le niveau demandé est Première, tous les
-exercices doivent être de niveau Première.
-
+1. Le niveau scolaire demandé doit être respecté EXACTEMENT.
+2. Tu ne dois JAMAIS remplacer le niveau demandé par un autre.
+3. Si le niveau demandé est Terminale, tous les exercices
+doivent être de niveau Terminale.
+4. Si le niveau demandé est Première, tous les exercices
+doivent être de niveau Première.
 5. Cette règle s'applique à tous les niveaux,
 de la 6ème à la Terminale.
-
-6. Le chapitre demandé doit être respecté
-EXACTEMENT.
-
+6. Le chapitre demandé doit être respecté EXACTEMENT.
 7. INTERDICTION de remplacer le chapitre demandé
 par un autre chapitre.
-
 8. Les notions, méthodes, calculs et raisonnements
 doivent correspondre au programme du niveau choisi.
-
 9. Il est strictement interdit de produire un sujet
 de 6ème lorsque le niveau demandé est Terminale.
-
 10. Avant de répondre, vérifie que le titre,
 le niveau, le chapitre et tous les exercices
 correspondent aux paramètres demandés.
@@ -2194,22 +2186,15 @@ Exercice 3
 
 Réponds uniquement avec le sujet final en français.
 """
-              
-                
-st.write("DEBUG NIVEAU :", niveau)
-st.write("DEBUG CHAPITRE :", chapitre)
-st.write("DEBUG DURÉE :", duree)
-st.write("DEBUG PROMPT :", instructions)
-              
 
-               sujet = _appeler_gemini(
-                    instructions,
-                    contenu="Génère le sujet demandé."
-               ) 
+                    sujet = _appeler_gemini(
+                        instructions,
+                        contenu="Génère le sujet demandé."
+                    )
 
-               if sujet and sujet.strip():
+                    if sujet and sujet.strip():
 
-                    prompt_verification = f"""
+                        prompt_verification = f"""
 Tu es un inspecteur pédagogique et un professeur
 de mathématiques expérimenté.
 
@@ -2241,25 +2226,18 @@ au chapitre demandé : {chapitre}.
 3. Vérifie que CHAQUE exercice est adapté au niveau
 scolaire demandé.
 
-4. Si le niveau demandé est Terminale, aucun exercice
-de niveau 6ème, 5ème, 4ème, 3ème, Seconde ou Première
-ne doit être accepté comme exercice principal.
-
-5. Vérifie que les notions utilisées correspondent
+4. Vérifie que les notions utilisées correspondent
 au programme de mathématiques du niveau demandé.
 
-6. Vérifie que le sujet ne traite pas d'un autre chapitre.
+5. Vérifie que le sujet ne traite pas d'un autre chapitre.
 
 SI LE SUJET NE RESPECTE PAS LE NIVEAU OU LE CHAPITRE :
 
-Tu dois rejeter le sujet initial et en rédiger
-un nouveau entièrement.
+Rejette le sujet initial et rédige un nouveau sujet
+entièrement adapté aux paramètres demandés.
 
 Ne tente pas de transformer un sujet de 6ème
 en sujet de Terminale par de simples modifications.
-
-Le nouveau sujet doit respecter strictement
-les paramètres demandés.
 
 ==================================================
 VÉRIFICATION MATHÉMATIQUE
@@ -2293,64 +2271,71 @@ Réponds uniquement en français.
                     with st.spinner(
                         "🔍 Vérification du niveau, du chapitre et des mathématiques..."
                     ):
+
                         sujet_verifie = _appeler_gemini(
                             prompt_verification,
-                            contenu="Vérifie le niveau scolaire, le chapitre et la qualité mathématique. Rejette et recrée intégralement tout sujet non conforme."
+                            contenu=(
+                                "Vérifie le niveau scolaire, le chapitre "
+                                "et la qualité mathématique. Rejette et "
+                                "recrée tout sujet non conforme."
+                            )
                         )
 
                     if sujet_verifie and sujet_verifie.strip():
+
                         st.session_state.sujet_genere = sujet_verifie
                         st.session_state.correction_sujet = ""
+
                         st.success(
                             "✅ Vérification pédagogique et mathématique terminée."
                         )
+
                     else:
                         st.error("La vérification du sujet a échoué.")
 
-               
-               
+                else:
+                    st.error("La génération du sujet a échoué.")
 
-        except Exception as e:
-            st.error(f"Erreur de génération : {e}")
+            except Exception as e:
+                st.error(f"Erreur de génération : {e}")
 
+    # ------------------------------------------------
+    # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
+    # ------------------------------------------------
 
-# ============================================================
-# AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
-# ============================================================
+    if st.session_state.get("sujet_genere"):
 
-if st.session_state.get("sujet_genere"):
+        st.markdown("---")
+        st.markdown("### 📄 Sujet d'évaluation")
 
-    st.markdown("---")
-    st.markdown("### 📄 Sujet d'évaluation")
+        st.markdown(st.session_state.sujet_genere)
 
-    st.markdown(st.session_state.sujet_genere)
+        pdf_sujet = generer_pdf_sujet(
+            st.session_state.sujet_genere
+        )
 
-    pdf_sujet = generer_pdf_sujet(
-        st.session_state.sujet_genere
-    )
+        st.download_button(
+            "📥 Télécharger le sujet en PDF",
+            data=pdf_sujet.getvalue(),
+            file_name="sujet_evaluation.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            key="download_sujet_evaluation"
+        )
 
-    st.download_button(
-        "📥 Télécharger le sujet en PDF",
-        data=pdf_sujet.getvalue(),
-        file_name="sujet_evaluation.pdf",
-        mime="application/pdf",
-        use_container_width=True,
-        key="download_sujet_evaluation"
-    )
+        st.markdown("---")
+        st.markdown("### 🔐 Correction réservée à l'enseignant")
 
-    st.markdown("---")
-    st.markdown("### 🔐 Correction réservée à l'enseignant")
+        if st.button(
+            "✏️ Générer la correction détaillée",
+            use_container_width=True,
+            key="btn_correction_sujet"
+        ):
 
-    if st.button(
-        "✏️ Générer la correction détaillée",
-        use_container_width=True,
-        key="btn_correction_sujet"
-    ):
+            with st.spinner("⏳ Préparation du corrigé enseignant..."):
 
-        with st.spinner("⏳ Préparation du corrigé enseignant..."):
-
-            try:
-                prompt = f"""
+                try:
+                    prompt = f"""
 Tu es un professeur expérimenté de mathématiques.
 
 Voici le sujet à corriger :
@@ -2370,20 +2355,19 @@ Vérifie la cohérence des résultats.
 Réponds en français.
 """
 
-    
-                response = _appeler_gemini(
-                    prompt,
-                    contenu="Génère la correction détaillée du sujet."
-                )
+                    response = _appeler_gemini(
+                        prompt,
+                        contenu="Génère la correction détaillée du sujet."
+                    )
 
-                st.session_state.correction_sujet = response or ""
+                    st.session_state.correction_sujet = response or ""
 
-            except Exception as e:
-                st.error(f"Erreur de correction : {e}")
-                st.session_state.correction_sujet = ""
+                except Exception as e:
+                    st.error(f"Erreur de correction : {e}")
+                    st.session_state.correction_sujet = ""
 
-        if not st.session_state.correction_sujet:
-            st.error("La correction n'a pas pu être générée.")
+            if not st.session_state.correction_sujet:
+                st.error("La correction n'a pas pu être générée.")
 
         if st.session_state.get("correction_sujet"):
 
@@ -2401,6 +2385,7 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
+
        
                 
         
