@@ -2293,8 +2293,8 @@ Réponds uniquement en français.
                     else:
                         st.error("La vérification du sujet a échoué.")
 
-                else:
-                    st.error("La génération du sujet a échoué.")
+                   else:
+                      st.error("La génération du sujet a échoué.")
 
             except Exception as e:
                 st.error(f"Erreur de génération : {e}")
