@@ -2073,7 +2073,7 @@ def afficher_generateur_sujet():
             with st.spinner("⏳ Création de votre sujet..."):
 
   
-instructions = f"""
+               instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
