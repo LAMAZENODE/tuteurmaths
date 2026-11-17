@@ -2068,6 +2068,7 @@ def afficher_generateur_sujet():
     # GÉNÉRATION DU SUJET
     # ------------------------------------------------
 
+    
     if generer:
 
         if not chapitre.strip():
@@ -2082,107 +2083,24 @@ Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
 
-==================================================
-RÈGLE ABSOLUE : RESPECT DU NIVEAU ET DU CHAPITRE
-==================================================
-
-Tu dois impérativement respecter les paramètres suivants :
-
-NIVEAU SCOLAIRE DEMANDÉ : {niveau}
-CHAPITRE DEMANDÉ : {chapitre}
-TYPE DE SUJET : {type_sujet}
+NIVEAU SCOLAIRE : {niveau}
+CHAPITRE : {chapitre}
+TYPE : {type_sujet}
 DIFFICULTÉ : {difficulte}
 DURÉE : {duree}
 
-ATTENTION : ces paramètres sont obligatoires.
+Respecte impérativement le niveau et le chapitre demandés.
+Tous les exercices doivent être adaptés au niveau choisi.
+Le barème total doit être exactement de 20 points.
 
-1. Le niveau scolaire demandé doit être respecté EXACTEMENT.
-2. Tu ne dois JAMAIS remplacer le niveau demandé par un autre.
-3. Si le niveau demandé est Terminale, tous les exercices
-doivent être de niveau Terminale.
-4. Si le niveau demandé est Première, tous les exercices
-doivent être de niveau Première.
-5. Cette règle s'applique à tous les niveaux,
-de la 6ème à la Terminale.
-6. Le chapitre demandé doit être respecté EXACTEMENT.
-7. INTERDICTION de remplacer le chapitre demandé
-par un autre chapitre.
-8. Les notions, méthodes, calculs et raisonnements
-doivent correspondre au programme du niveau choisi.
-9. Il est strictement interdit de produire un sujet
-de 6ème lorsque le niveau demandé est Terminale.
-10. Avant de répondre, vérifie que le titre,
-le niveau, le chapitre et tous les exercices
-correspondent aux paramètres demandés.
-
-EXEMPLE :
-Si les paramètres sont :
-Niveau : Terminale
-Chapitre : les matrices
-
-Tu dois produire exclusivement un sujet de Terminale
-sur les matrices, avec des exercices adaptés à ce niveau.
-
-Tu ne dois produire aucun exercice de calcul élémentaire
-de niveau 6ème.
-
-==================================================
-PRÉSENTATION DU SUJET
-==================================================
-
-1. Un seul titre principal.
-2. Une seule zone pour le nom, le prénom, la classe
-et la date.
-3. Indique le chapitre, le niveau, la durée
-et le barème total.
-4. Ajoute des consignes générales courtes et précises.
-5. Organise les exercices du plus simple au plus difficile.
-6. Attribue un barème à chaque exercice.
-7. Le total des points doit être exactement égal à 20.
-
-==================================================
-RÈGLES DE QUALITÉ MATHÉMATIQUE
-==================================================
-
-- Chaque question doit être complète et compréhensible.
-- Vérifie la cohérence mathématique de chaque exercice.
-- Adapte le vocabulaire au niveau scolaire demandé.
-- Utilise des notions conformes au programme du niveau.
-- Ne crée jamais de figure en ASCII.
-- Utilise FIGURE_JSON uniquement lorsqu'une figure
-  doit être observée.
-- Les points et coordonnées doivent être cohérents.
-- Pour points_alignes, tous les points doivent avoir
-  la même coordonnée Y.
-- Ne réutilise jamais les points d'un autre exercice.
-- Ne génère aucune figure si l'élève doit la construire.
-- Prévois suffisamment de lignes pour les réponses.
-- Ne répète pas les informations d'identification.
-- Ne fournis aucune correction ni réponse.
-
-==================================================
-VÉRIFICATION FINALE OBLIGATOIRE
-==================================================
-
-Avant de produire le sujet, effectue ces contrôles :
-
-- Le niveau est-il exactement : {niveau} ?
-- Le chapitre est-il exactement : {chapitre} ?
-- Tous les exercices sont-ils adaptés à ce niveau ?
-- Les exercices traitent-ils bien du chapitre demandé ?
-- La durée est-elle respectée ?
-- Le barème total est-il exactement de 20 points ?
-
-Si un seul de ces critères n'est pas respecté,
-corrige le sujet avant de répondre.
-
-FORMAT :
-
-SUJET D'ÉVALUATION
-
-Exercice 1
-Exercice 2
-Exercice 3
+Présente un seul titre principal.
+Prévois une zone nom, prénom, classe et date.
+Indique le chapitre, le niveau, la durée et le barème.
+Organise les exercices du plus simple au plus difficile.
+Vérifie les calculs et la cohérence mathématique.
+N'utilise pas de figures ASCII.
+Utilise FIGURE_JSON uniquement si une figure doit être observée.
+Ne fournis aucune correction ni réponse.
 
 Réponds uniquement avec le sujet final en français.
 """
@@ -2198,108 +2116,64 @@ Réponds uniquement avec le sujet final en français.
 Tu es un inspecteur pédagogique et un professeur
 de mathématiques expérimenté.
 
-Tu dois effectuer une vérification indépendante
-et particulièrement rigoureuse du sujet.
-
 PARAMÈTRES OBLIGATOIRES :
-
-Niveau demandé : {niveau}
-Chapitre demandé : {chapitre}
-Type de sujet : {type_sujet}
+Niveau : {niveau}
+Chapitre : {chapitre}
+Type : {type_sujet}
 Difficulté : {difficulte}
 Durée : {duree}
 
 SUJET À VÉRIFIER :
-
 {sujet}
 
-==================================================
-CONTRÔLE PRIORITAIRE DU NIVEAU
-==================================================
+Vérifie rigoureusement :
+1. Le niveau exact de chaque exercice.
+2. Le respect du chapitre demandé.
+3. La conformité au programme scolaire.
+4. Tous les calculs et raisonnements.
+5. Les figures et coordonnées.
+6. Les consignes et notations.
+7. Le barème total de 20 points.
+8. La cohérence de la durée.
 
-1. Vérifie que le niveau réel du sujet correspond
-exactement au niveau demandé : {niveau}.
+Si le niveau ou le chapitre ne correspondent pas,
+rejette le sujet et rédige un nouveau sujet complet.
 
-2. Vérifie que le chapitre correspond exactement
-au chapitre demandé : {chapitre}.
-
-3. Vérifie que CHAQUE exercice est adapté au niveau
-scolaire demandé.
-
-4. Vérifie que les notions utilisées correspondent
-au programme de mathématiques du niveau demandé.
-
-5. Vérifie que le sujet ne traite pas d'un autre chapitre.
-
-SI LE SUJET NE RESPECTE PAS LE NIVEAU OU LE CHAPITRE :
-
-Rejette le sujet initial et rédige un nouveau sujet
-entièrement adapté aux paramètres demandés.
-
-Ne tente pas de transformer un sujet de 6ème
-en sujet de Terminale par de simples modifications.
-
-==================================================
-VÉRIFICATION MATHÉMATIQUE
-==================================================
-
-- Vérifie tous les calculs.
-- Vérifie les figures et les coordonnées.
-- Vérifie les notations mathématiques.
-- Vérifie les consignes.
-- Vérifie la cohérence des exercices.
-- Vérifie le barème de chaque exercice.
-- Vérifie que le total est exactement de 20 points.
-- Vérifie que la durée est cohérente.
-
-Si une erreur est détectée, corrige-la.
-
-==================================================
-RÉSULTAT FINAL
-==================================================
-
-Retourne uniquement le sujet final corrigé.
-
-Le niveau doit être : {niveau}
-Le chapitre doit être : {chapitre}
-
-Ne fournis aucune correction ni réponse.
-
-Réponds uniquement en français.
+Retourne uniquement le sujet final corrigé en français.
+Ne fournis aucune correction.
 """
 
-           
-                    with st.spinner(
-                        "🔍 Vérification du niveau, du chapitre et des mathématiques..."
-                    ):
+                        with st.spinner(
+                            "🔍 Vérification du niveau, du chapitre et des mathématiques..."
+                        ):
 
-                        sujet_verifie = _appeler_gemini(
-                            prompt_verification,
-                            contenu=(
-                                "Vérifie le niveau scolaire, le chapitre "
-                                "et la qualité mathématique. Rejette et "
-                                "recrée tout sujet non conforme."
+                            sujet_verifie = _appeler_gemini(
+                                prompt_verification,
+                                contenu=(
+                                    "Vérifie le niveau scolaire, le chapitre "
+                                    "et la qualité mathématique. Rejette et "
+                                    "recrée tout sujet non conforme."
+                                )
                             )
-                        )
 
-                    if sujet_verifie and sujet_verifie.strip():
+                        if sujet_verifie and sujet_verifie.strip():
 
-                        st.session_state.sujet_genere = sujet_verifie
-                        st.session_state.correction_sujet = ""
+                            st.session_state.sujet_genere = sujet_verifie
+                            st.session_state.correction_sujet = ""
 
-                        st.success(
-                            "✅ Vérification pédagogique et mathématique terminée."
-                        )
+                            st.success(
+                                "✅ Vérification pédagogique et mathématique terminée."
+                            )
+
+                        else:
+                            st.error("La vérification du sujet a échoué.")
 
                     else:
-                        st.error("La vérification du sujet a échoué.")
-
-                else:
-                    st.error("La génération du sujet a échoué.")
+                        st.error("La génération du sujet a échoué.")
 
             except Exception as e:
                 st.error(f"Erreur de génération : {e}")
-     
+
                     
 
     # ------------------------------------------------
