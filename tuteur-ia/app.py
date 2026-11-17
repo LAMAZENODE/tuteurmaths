@@ -2175,57 +2175,53 @@ Réponds uniquement en français.
   
 
                         with st.spinner(
-                            "🔍 Vérification du niveau, du chapitre et des mathématiques..."
+                            "🔍 Vérification pédagogique et mathématique..."
                         ):
-
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification,
-                                contenu=(
-                                    "Vérifie le niveau scolaire, le chapitre "
-                                    "et la qualité mathématique. Rejette et "
-                                    "recrée tout sujet non conforme."
-                                )
+                                contenu="Vérifie le sujet et retourne uniquement le sujet final."
                             )
 
-      
-if sujet_verifie and sujet_verifie.strip():
+                        if sujet_verifie and sujet_verifie.strip():
 
-    # Vérifier que Gemini n'a pas renvoyé un rapport
-    mots_interdits = [
-        "RAPPORT D'INSPECTION",
-        "RAPPORT DE VÉRIFICATION",
-        "ANALYSE CRITIQUE",
-        "STATUT DE VALIDATION",
-        "MOTIF DU REJET",
-        "INSPECTEUR PÉDAGOGIQUE"
-    ]
+                            mots_interdits = [
+                                "RAPPORT D'INSPECTION",
+                                "RAPPORT DE VÉRIFICATION",
+                                "ANALYSE CRITIQUE",
+                                "STATUT DE VALIDATION",
+                                "MOTIF DU REJET"
+                            ]
 
-    texte_sujet = sujet_verifie.strip()
+                            texte_sujet = sujet_verifie.strip()
 
-    if any(
-        mot in texte_sujet.upper()
-        for mot in mots_interdits
-    ):
-        st.error(
-            "⚠️ Gemini a renvoyé un rapport de vérification "
-            "au lieu du sujet. Veuillez relancer la génération."
-        )
+                            if any(
+                                mot in texte_sujet.upper()
+                                for mot in mots_interdits
+                            ):
+                                st.error(
+                                    "⚠️ Rapport de vérification détecté. "
+                                    "Veuillez relancer la génération."
+                                )
 
-    else:
-        st.session_state.sujet_genere = texte_sujet
-        st.session_state.correction_sujet = ""
+                            else:
+                                st.session_state.sujet_genere = texte_sujet
+                                st.session_state.correction_sujet = ""
 
-        st.success(
-            "✅ Vérification pédagogique et mathématique terminée."
-        )
-                 
-
+                                st.success(
+                                    "✅ Vérification terminée."
+                                )
 
                         else:
                             st.error("La vérification du sujet a échoué.")
 
                     else:
                         st.error("La génération du sujet a échoué.")
+
+                       
+                        
+
+               
+                            
 
             except Exception as e:
                 st.error(f"Erreur de génération : {e}")
