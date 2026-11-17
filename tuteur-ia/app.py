@@ -2112,7 +2112,10 @@ Réponds uniquement avec le sujet final en français.
 
                     if sujet and sujet.strip():
 
-                        prompt_verification = f"""
+ 
+                      
+                      
+prompt_verification = f"""
 Tu es un inspecteur pédagogique et un professeur
 de mathématiques expérimenté.
 
@@ -2126,22 +2129,50 @@ Durée : {duree}
 SUJET À VÉRIFIER :
 {sujet}
 
-Vérifie rigoureusement :
-1. Le niveau exact de chaque exercice.
-2. Le respect du chapitre demandé.
-3. La conformité au programme scolaire.
-4. Tous les calculs et raisonnements.
-5. Les figures et coordonnées.
-6. Les consignes et notations.
-7. Le barème total de 20 points.
-8. La cohérence de la durée.
+EFFECTUE UNE VÉRIFICATION INTERNE ET RIGOUREUSE :
 
-Si le niveau ou le chapitre ne correspondent pas,
-rejette le sujet et rédige un nouveau sujet complet.
+1. Vérifie le niveau exact de chaque exercice.
+2. Vérifie le respect du chapitre demandé.
+3. Vérifie la conformité au programme scolaire.
+4. Vérifie tous les calculs et raisonnements.
+5. Vérifie les figures et coordonnées.
+6. Vérifie les consignes et notations.
+7. Vérifie le barème total de 20 points.
+8. Vérifie la cohérence de la durée.
+9. Vérifie la présentation du sujet.
 
-Retourne uniquement le sujet final corrigé en français.
+RÈGLE ABSOLUE :
+
+Tu ne dois JAMAIS changer le niveau demandé.
+Tu ne dois JAMAIS changer le chapitre demandé.
+
+Si le sujet est conforme, conserve-le en corrigeant
+uniquement les éventuelles erreurs.
+
+Si le sujet est non conforme, ne change pas les
+paramètres demandés et signale que la génération
+doit être refusée.
+
+FORMAT DE SORTIE OBLIGATOIRE :
+
+Retourne UNIQUEMENT le sujet d'évaluation final.
+
+Le document doit commencer directement par son titre.
+
+INTERDICTION D'AFFICHER :
+- Rapport d'inspection.
+- Rapport de vérification.
+- Analyse critique.
+- Statut de validation.
+- Commentaires pédagogiques.
+- Motifs de rejet.
+- Explications destinées à l'enseignant.
+
 Ne fournis aucune correction.
+Ne mets aucun texte avant ou après le sujet.
+Réponds uniquement en français.
 """
+  
 
                         with st.spinner(
                             "🔍 Vérification du niveau, du chapitre et des mathématiques..."
@@ -2156,14 +2187,39 @@ Ne fournis aucune correction.
                                 )
                             )
 
-                        if sujet_verifie and sujet_verifie.strip():
+      
+if sujet_verifie and sujet_verifie.strip():
 
-                            st.session_state.sujet_genere = sujet_verifie
-                            st.session_state.correction_sujet = ""
+    # Vérifier que Gemini n'a pas renvoyé un rapport
+    mots_interdits = [
+        "RAPPORT D'INSPECTION",
+        "RAPPORT DE VÉRIFICATION",
+        "ANALYSE CRITIQUE",
+        "STATUT DE VALIDATION",
+        "MOTIF DU REJET",
+        "INSPECTEUR PÉDAGOGIQUE"
+    ]
 
-                            st.success(
-                                "✅ Vérification pédagogique et mathématique terminée."
-                            )
+    texte_sujet = sujet_verifie.strip()
+
+    if any(
+        mot in texte_sujet.upper()
+        for mot in mots_interdits
+    ):
+        st.error(
+            "⚠️ Gemini a renvoyé un rapport de vérification "
+            "au lieu du sujet. Veuillez relancer la génération."
+        )
+
+    else:
+        st.session_state.sujet_genere = texte_sujet
+        st.session_state.correction_sujet = ""
+
+        st.success(
+            "✅ Vérification pédagogique et mathématique terminée."
+        )
+                 
+
 
                         else:
                             st.error("La vérification du sujet a échoué.")
