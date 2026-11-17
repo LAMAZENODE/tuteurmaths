@@ -2063,139 +2063,156 @@ def afficher_generateur_sujet():
             "🚀 Générer mon sujet",
             use_container_width=True
         )
-   
+
+    # ------------------------------------------------
+    # GÉNÉRATION DU SUJET
+    # ------------------------------------------------
+
+    
     if generer:
+
         if not chapitre.strip():
             st.warning("Veuillez indiquer un chapitre ou un thème.")
-        
-    else:
-        try:
-            with st.spinner("⏳ Création de votre sujet..."):
 
-                instructions = f"""
+        else:
+            try:
+                with st.spinner("⏳ Création de votre sujet..."):
+
+                    instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
 
-Crée un sujet de {type_sujet} en mathématiques.
+NIVEAU SCOLAIRE : {niveau}
+CHAPITRE : {chapitre}
+TYPE : {type_sujet}
+DIFFICULTÉ : {difficulte}
+DURÉE : {duree}
 
-INFORMATIONS :
+Respecte impérativement le niveau et le chapitre demandés.
+Tous les exercices doivent être adaptés au niveau choisi.
+Le barème total doit être exactement de 20 points.
+
+Présente un seul titre principal.
+Prévois une zone nom, prénom, classe et date.
+Indique le chapitre, le niveau, la durée et le barème.
+Organise les exercices du plus simple au plus difficile.
+Vérifie les calculs et la cohérence mathématique.
+N'utilise pas de figures ASCII.
+Utilise FIGURE_JSON uniquement si une figure doit être observée.
+Ne fournis aucune correction ni réponse.
+
+Réponds uniquement avec le sujet final en français.
+"""
+
+                    sujet = _appeler_gemini(
+                        instructions,
+                        contenu="Génère le sujet demandé."
+                    )
+
+                    if sujet and sujet.strip():
+
+                        prompt_verification = f"""
+Tu es un inspecteur pédagogique et un professeur
+de mathématiques expérimenté.
+
+PARAMÈTRES OBLIGATOIRES :
 Niveau : {niveau}
 Chapitre : {chapitre}
+Type : {type_sujet}
 Difficulté : {difficulte}
 Durée : {duree}
 
-PRÉSENTATION DU SUJET :
-1. Un seul titre principal.
-2. Une seule zone pour le nom, le prénom, la classe et la date.
-3. Indique le chapitre, le niveau, la durée et le barème total.
-4. Ajoute des consignes générales courtes et précises.
-5. Organise les exercices du plus simple au plus difficile.
-6. Attribue un barème à chaque exercice.
-7. Le total des points doit être exactement égal à 20.
-
-RÈGLES DE QUALITÉ :
-- Chaque question doit être complète et compréhensible.
-- Vérifie la cohérence mathématique de chaque exercice.
-- Ne crée jamais de figure en ASCII.
-- Utilise FIGURE_JSON uniquement lorsqu'une figure doit être observée.
-- Les points et coordonnées doivent être cohérents.
-- Pour points_alignes, tous les points doivent avoir la même coordonnée Y.
-- Ne réutilise jamais les points d'un autre exercice.
-- Ne génère aucune figure si l'élève doit la construire lui-même.
-- Prévois suffisamment de lignes pour les réponses.
-- Ne répète pas les informations d'identification.
-- Ne fournis aucune correction ni réponse.
-
-FORMAT :
-SUJET D'ÉVALUATION
-Exercice 1
-Exercice 2
-Exercice 3
-
-Réponds uniquement avec le sujet final en français.
-"""
-
-                sujet = _appeler_gemini(
-                    instructions,
-                    contenu="Génère le sujet demandé."
-                )
-
-                if sujet and sujet.strip():
-
-                    prompt_verification = f"""
-Tu es un professeur de mathématiques expérimenté.
-Vérifie intégralement le sujet suivant :
-
+SUJET À VÉRIFIER :
 {sujet}
 
-Vérifie les calculs, les figures, les notations,
-les consignes et le total des points.
-Corrige toute contradiction avant de répondre.
+Vérifie rigoureusement :
+1. Le niveau exact de chaque exercice.
+2. Le respect du chapitre demandé.
+3. La conformité au programme scolaire.
+4. Tous les calculs et raisonnements.
+5. Les figures et coordonnées.
+6. Les consignes et notations.
+7. Le barème total de 20 points.
+8. La cohérence de la durée.
 
-Réponds uniquement avec le sujet final en français.
-Ne fournis aucune correction ni réponse.
+Si le niveau ou le chapitre ne correspondent pas,
+rejette le sujet et rédige un nouveau sujet complet.
+
+Retourne uniquement le sujet final corrigé en français.
+Ne fournis aucune correction.
 """
 
-                    with st.spinner(
-                        "🔍 Vérification mathématique et pédagogique du sujet..."
-                    ):
-                        sujet_verifie = _appeler_gemini(
-                            prompt_verification,
-                            contenu="Effectue une vérification indépendante du sujet."
-                        )
+                        with st.spinner(
+                            "🔍 Vérification du niveau, du chapitre et des mathématiques..."
+                        ):
 
-                    if sujet_verifie and sujet_verifie.strip():
-                        st.session_state.sujet_genere = sujet_verifie
-                        st.session_state.correction_sujet = ""
-                        st.success("✅ Vérification terminée.")
+                            sujet_verifie = _appeler_gemini(
+                                prompt_verification,
+                                contenu=(
+                                    "Vérifie le niveau scolaire, le chapitre "
+                                    "et la qualité mathématique. Rejette et "
+                                    "recrée tout sujet non conforme."
+                                )
+                            )
+
+                        if sujet_verifie and sujet_verifie.strip():
+
+                            st.session_state.sujet_genere = sujet_verifie
+                            st.session_state.correction_sujet = ""
+
+                            st.success(
+                                "✅ Vérification pédagogique et mathématique terminée."
+                            )
+
+                        else:
+                            st.error("La vérification du sujet a échoué.")
+
                     else:
-                        st.error("La vérification du sujet a échoué.")
+                        st.error("La génération du sujet a échoué.")
 
-                else:
-                    st.error("La génération du sujet a échoué.")
+            except Exception as e:
+                st.error(f"Erreur de génération : {e}")
 
-        except Exception as e:
-            st.error(f"Erreur de génération : {e}")
+                    
 
+    # ------------------------------------------------
+    # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
+    # ------------------------------------------------
 
-# ============================================================
-# AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
-# ============================================================
+    if st.session_state.get("sujet_genere"):
 
-if st.session_state.get("sujet_genere"):
+        st.markdown("---")
+        st.markdown("### 📄 Sujet d'évaluation")
 
-    st.markdown("---")
-    st.markdown("### 📄 Sujet d'évaluation")
+        st.markdown(st.session_state.sujet_genere)
 
-    st.markdown(st.session_state.sujet_genere)
+        pdf_sujet = generer_pdf_sujet(
+            st.session_state.sujet_genere
+        )
 
-    pdf_sujet = generer_pdf_sujet(
-        st.session_state.sujet_genere
-    )
+        st.download_button(
+            "📥 Télécharger le sujet en PDF",
+            data=pdf_sujet.getvalue(),
+            file_name="sujet_evaluation.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            key="download_sujet_evaluation"
+        )
 
-    st.download_button(
-        "📥 Télécharger le sujet en PDF",
-        data=pdf_sujet.getvalue(),
-        file_name="sujet_evaluation.pdf",
-        mime="application/pdf",
-        use_container_width=True,
-        key="download_sujet_evaluation"
-    )
+        st.markdown("---")
+        st.markdown("### 🔐 Correction réservée à l'enseignant")
 
-    st.markdown("---")
-    st.markdown("### 🔐 Correction réservée à l'enseignant")
+        if st.button(
+            "✏️ Générer la correction détaillée",
+            use_container_width=True,
+            key="btn_correction_sujet"
+        ):
 
-    if st.button(
-        "✏️ Générer la correction détaillée",
-        use_container_width=True,
-        key="btn_correction_sujet"
-    ):
+            with st.spinner("⏳ Préparation du corrigé enseignant..."):
 
-        with st.spinner("⏳ Préparation du corrigé enseignant..."):
-
-            try:
-                prompt = f"""
+                try:
+                    prompt = f"""
 Tu es un professeur expérimenté de mathématiques.
 
 Voici le sujet à corriger :
@@ -2215,20 +2232,19 @@ Vérifie la cohérence des résultats.
 Réponds en français.
 """
 
-    
-                response = _appeler_gemini(
-                    prompt,
-                    contenu="Génère la correction détaillée du sujet."
-                )
+                    response = _appeler_gemini(
+                        prompt,
+                        contenu="Génère la correction détaillée du sujet."
+                    )
 
-                st.session_state.correction_sujet = response or ""
+                    st.session_state.correction_sujet = response or ""
 
-            except Exception as e:
-                st.error(f"Erreur de correction : {e}")
-                st.session_state.correction_sujet = ""
+                except Exception as e:
+                    st.error(f"Erreur de correction : {e}")
+                    st.session_state.correction_sujet = ""
 
-        if not st.session_state.correction_sujet:
-            st.error("La correction n'a pas pu être générée.")
+            if not st.session_state.correction_sujet:
+                st.error("La correction n'a pas pu être générée.")
 
         if st.session_state.get("correction_sujet"):
 
@@ -2246,6 +2262,9 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
+  
+                        
+
        
                 
         
@@ -2526,3 +2545,4 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
+
