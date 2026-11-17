@@ -2268,6 +2268,7 @@ Ne fournis aucune correction ni réponse.
 Réponds uniquement en français.
 """
 
+           
                     with st.spinner(
                         "🔍 Vérification du niveau, du chapitre et des mathématiques..."
                     ):
@@ -2293,11 +2294,13 @@ Réponds uniquement en français.
                     else:
                         st.error("La vérification du sujet a échoué.")
 
-             else:
-                 st.error("La génération du sujet a échoué.")
+                else:
+                    st.error("La génération du sujet a échoué.")
 
             except Exception as e:
                 st.error(f"Erreur de génération : {e}")
+     
+                    
 
     # ------------------------------------------------
     # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
@@ -2385,6 +2388,8 @@ Réponds en français.
                 use_container_width=True,
                 key="download_correction_enseignant"
             )
+  
+                        
 
        
                 
