@@ -2269,7 +2269,7 @@ pas effectivement effectué.
   
                          with st.spinner(
                             "🔍 Vérification pédagogique et mathématique..."
-                        ):
+                         ):
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification,
                                 contenu="Vérifie le sujet et retourne uniquement le sujet final."
