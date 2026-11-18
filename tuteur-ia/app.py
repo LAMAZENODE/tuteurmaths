@@ -2413,8 +2413,8 @@ Retourne le sujet complet corrigé.
                             prompt_deuxieme_verification = f"""
 
 
-
-Tu es un deuxième inspecteur mathématique indépendant.
+Tu es un deuxième inspecteur mathématique indépendant,
+expert en mathématiques et en pédagogie du système scolaire français.
 
 NIVEAU : {niveau}
 CHAPITRE : {chapitre}
@@ -2428,14 +2428,27 @@ SUJET À CONTRÔLER :
 MISSION :
 
 1. Vérifie indépendamment chaque question.
-2. Effectue tous les calculs en interne.
+2. Effectue tous les calculs nécessaires en interne.
 3. Contrôle les dérivées, équations, inéquations,
-   tableaux, résultats et unités.
-4. Vérifie les données et les contradictions.
-5. Vérifie le niveau pédagogique et le barème.
-6. Vérifie les corrections apportées précédemment.
-7. Corrige les erreurs restantes dans les énoncés.
-8. Ne modifie pas inutilement les exercices.
+   tableaux de signes, tableaux de variations et résultats.
+4. Vérifie la cohérence des données numériques,
+   des unités et des hypothèses.
+5. Vérifie l'absence de contradiction dans les énoncés.
+6. Vérifie l'adaptation au niveau scolaire demandé.
+7. Vérifie la cohérence du barème et le total des points.
+8. Vérifie les corrections apportées par le premier inspecteur.
+9. Détecte les erreurs mathématiques restantes.
+10. Corrige uniquement les erreurs réellement détectées.
+
+RÈGLES DE MODIFICATION :
+
+- Conserve les exercices et leur structure initiale.
+- Ne change pas inutilement les nombres et les données.
+- Ne supprime aucune question.
+- N'ajoute aucun exercice.
+- Ne modifie pas le niveau de difficulté sans nécessité.
+- Ne modifie pas le barème sauf en cas d'erreur.
+- Ne transforme jamais une question en question de corrigé.
 
 INTERDICTIONS ABSOLUES :
 
@@ -2445,25 +2458,51 @@ INTERDICTIONS ABSOLUES :
 - Ne donne aucun résultat recherché.
 - Ne remplis aucun tableau de variations.
 - Ne remplis aucun tableau de signes.
+- Ne révèle aucune réponse destinée aux élèves.
 
 FORMAT DE RÉPONSE OBLIGATOIRE :
 
-Si toutes les vérifications sont satisfaisantes,
-commence par :
+CAS 1 : TOUTES LES VÉRIFICATIONS SONT SATISFAISANTES.
+
+Commence impérativement par :
 
 SUJET CONFORME
 
-Puis retourne uniquement le sujet complet corrigé,
-sans aucune solution ni correction.
+Puis retourne uniquement le sujet complet,
+avec les éventuelles corrections nécessaires.
 
-Si une erreur importante ne peut pas être corrigée
-ou si une vérification essentielle est impossible,
-commence par :
+Ne donne aucune explication supplémentaire.
+Ne donne aucune solution.
+
+CAS 2 : UNE ERREUR IMPORTANTE SUBSISTE.
+
+Commence impérativement par :
 
 SUJET NON VALIDÉ
 
-Explique brièvement le problème sans donner
-les réponses aux exercices.
+Explique brièvement les problèmes détectés,
+sans révéler les réponses aux exercices.
+
+Si une erreur peut être corrigée sans modifier
+la nature de l'exercice, propose une correction.
+
+CAS 3 : UNE VÉRIFICATION ESSENTIELLE EST IMPOSSIBLE.
+
+Commence impérativement par :
+
+SUJET NON VALIDÉ
+
+Indique précisément quelle vérification est impossible.
+Ne prétends jamais avoir vérifié ce qui ne l'a pas été.
+
+CONTRÔLE FINAL :
+
+Avant de rendre le résultat, vérifie une dernière fois :
+- L'absence de solutions dans le texte.
+- L'absence de résultats attendus.
+- La cohérence mathématique du sujet.
+- Le respect du niveau demandé.
+- Le total du barème.
 
 IMPORTANT :
 
@@ -2475,47 +2514,75 @@ par une autre fonction de l'application.
 """
 
 
+                           
+                            
+                           with st.spinner(
+                               "🔬 Deuxième vérification indépendante..."
+                           ):
+                               deuxieme_controle = _appeler_gemini(
+                                   prompt_deuxieme_verification,
+                                   contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
+                               )
 
-                            with st.spinner(
-                                "🔬 Deuxième vérification indépendante..."
-                            ):
-                                deuxieme_controle = _appeler_gemini(
-                                    prompt_deuxieme_verification,
-                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
-                                )
+                           if deuxieme_controle and deuxieme_controle.strip():
 
-                            if (
-                                deuxieme_controle
-                                and deuxieme_controle.strip()
-                            ):
+                               texte_final = deuxieme_controle.strip()
 
-                                texte_final = deuxieme_controle.strip()
+                               if texte_final.startswith("SUJET CONFORME"):
 
-                                if texte_final.startswith("SUJET CONFORME"):
-                                    st.session_state.sujet_genere = (
-                                        texte_final.replace(
-                                            "SUJET CONFORME", "", 1
-                                        ).strip()
-                                    )
-                                    st.session_state.correction_sujet = ""
+                                   sujet_accepte = texte_final.replace(
+                                       "SUJET CONFORME", "", 1
+                                   ).strip()
 
-                                    st.success(
-                                        "✅ Sujet corrigé et doublement vérifié."
-                                    )
+                                   if sujet_accepte:
 
-                                else:
-                                    st.session_state.sujet_genere = ""
-                                    st.error(
-                                        "⚠️ Le sujet n'a pas obtenu "
-                                        "la validation finale."
-                                    )
-                                    st.warning(texte_final)
+                                       st.session_state.sujet_genere = sujet_accepte
+                                       st.session_state.correction_sujet = ""
 
-                            else:
-                                st.error(
-                                    "❌ La deuxième vérification a échoué. "
-                                    "Le sujet ne peut pas être validé."
-                                )
+                                       st.success(
+                                           "✅ Sujet corrigé et doublement vérifié."
+                                       )
+
+                                   else:
+                                       st.session_state.sujet_genere = ""
+                                       st.session_state.correction_sujet = ""
+
+                                       st.error(
+                                           "⚠️ Le deuxième vérificateur n'a retourné aucun sujet."
+                                       )
+
+                               elif texte_final.startswith("SUJET NON VALIDÉ"):
+
+                                   st.session_state.sujet_genere = ""
+                                   st.session_state.correction_sujet = ""
+
+                                   st.error(
+                                       "❌ Sujet non validé par le deuxième vérificateur."
+                                   )
+
+                                   st.warning(texte_final)
+
+                               else:
+
+                                   st.session_state.sujet_genere = ""
+                                   st.session_state.correction_sujet = ""
+
+                                   st.error(
+                                       "⚠️ Réponse du deuxième vérificateur non conforme au format attendu."
+                                   )
+
+                                   st.warning(texte_final)
+
+                           else:
+
+                               st.session_state.sujet_genere = ""
+                               st.session_state.correction_sujet = ""
+
+                               st.error(
+                                   "❌ La deuxième vérification a échoué. "
+                                   "Le sujet ne peut pas être validé."
+                               )
+
 
                         else:
                             st.error(
