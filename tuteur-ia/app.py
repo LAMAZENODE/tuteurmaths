@@ -2115,7 +2115,7 @@ Réponds uniquement avec le sujet final en français.
  
                       
                       
-                       prompt_verification = f"""
+                        prompt_verification = f"""
 Tu es un inspecteur pédagogique et un professeur
 de mathématiques expérimenté.
 
@@ -2171,7 +2171,7 @@ INTERDICTION D'AFFICHER :
 Ne fournis aucune correction.
 Ne mets aucun texte avant ou après le sujet.
 Réponds uniquement en français.
-"""
+                        """
   
 
                         with st.spinner(
