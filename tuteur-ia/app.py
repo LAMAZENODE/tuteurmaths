@@ -2117,11 +2117,18 @@ Réponds uniquement avec le sujet final en français.
                       
                        
                       
-                        prompt_verification = f"""
-Tu es un inspecteur pédagogique expert des programmes
-officiels de mathématiques français.
+                      
+                       
+prompt_verification = f"""
+Tu es un inspecteur pédagogique expert en mathématiques,
+spécialisé dans les programmes officiels français du collège
+et du lycée.
 
-NIVEAU INITIALEMENT CHOISI : {niveau}
+Tu es également un mathématicien rigoureux chargé de contrôler
+la validité de chaque sujet d'évaluation avant sa diffusion.
+
+INFORMATIONS DU SUJET :
+NIVEAU : {niveau}
 CHAPITRE : {chapitre}
 TYPE : {type_sujet}
 DIFFICULTÉ : {difficulte}
@@ -2130,51 +2137,136 @@ DURÉE : {duree}
 SUJET À VÉRIFIER :
 {sujet}
 
-MISSION OBLIGATOIRE :
+==================================================
+MISSION 1 : VÉRIFICATION MATHÉMATIQUE APPROFONDIE
+==================================================
 
-1. Vérifie à quel niveau scolaire le chapitre demandé
-   est réellement enseigné dans le programme français
-   en vigueur.
+Tu dois résoudre toi-même chaque question du sujet.
 
-2. Compare ce niveau avec le niveau initialement choisi.
+Ne te contente jamais de vérifier si les formules semblent
+correctes.
 
-3. Si le niveau choisi est incorrect :
-   - Corrige le niveau scolaire dans le sujet.
-   - Remplace toutes les mentions de l'ancien niveau
-     par le niveau correct.
-   - Adapte les exercices au niveau réellement attendu.
-   - Conserve le chapitre demandé.
-   - Ne présente pas de remarque pédagogique dans le PDF.
+Pour chaque exercice :
 
-4. Si le niveau choisi est correct :
-   - Conserve le niveau.
-   - Vérifie et corrige les éventuelles erreurs.
+1. Refaire tous les calculs indépendamment.
+2. Vérifier toutes les expressions algébriques.
+3. Recalculer toutes les dérivées.
+4. Vérifier les primitives lorsqu'elles sont demandées.
+5. Vérifier les équations et les inéquations.
+6. Vérifier les ensembles de solutions.
+7. Vérifier les tableaux de signes.
+8. Vérifier les tableaux de variations.
+9. Vérifier les extremums et leurs valeurs exactes.
+10. Vérifier les limites lorsqu'elles sont demandées.
+11. Vérifier les unités et les arrondis.
+12. Vérifier la cohérence des résultats d'une question
+    avec les questions suivantes.
 
-5. Vérifie la justesse mathématique de tous les exercices,
-   les calculs, les consignes et le barème.
+IMPORTANT :
+Tu dois effectuer les calculs mathématiques réellement.
+Ne valide jamais une formule simplement parce qu'elle
+est accompagnée d'une indication dans l'énoncé.
 
-6. Le barème doit être exactement de 20 points.
+==================================================
+MISSION 2 : DÉTECTION DES CONTRADICTIONS
+==================================================
 
-7. Vérifie que la durée est adaptée au sujet.
+Vérifie particulièrement :
 
-RÈGLES IMPORTANTES :
+- Les données numériques incohérentes.
+- Les résultats annoncés qui ne correspondent pas aux calculs.
+- Les indications qui conduisent à une réponse fausse.
+- Les hypothèses incompatibles avec les fonctions définies.
+- Les intervalles incorrects.
+- Les questions impossibles à résoudre.
+- Les questions dont plusieurs réponses sont possibles
+  alors qu'une seule est attendue.
+- Les erreurs dans les barèmes.
+- Les erreurs de notation mathématique.
 
-- La conformité au programme scolaire est prioritaire.
-- Ne conserve jamais un niveau scolaire incorrect.
-- Ne laisse aucune note du type :
-  "ce chapitre a été déplacé de Première vers Terminale".
-- Ne mentionne jamais tes vérifications dans le sujet.
-- Ne fournis aucune correction des exercices.
+Si une erreur est détectée dans une question,
+vérifie également toutes les questions qui en dépendent.
 
-FORMAT DE SORTIE :
+==================================================
+MISSION 3 : VÉRIFICATION PÉDAGOGIQUE
+==================================================
 
-Retourne uniquement le sujet final corrigé.
-Commence directement par le titre.
-Le niveau indiqué dans le document doit être le niveau
-scolaire réellement adapté au chapitre.
+Vérifie que :
 
-Réponds uniquement en français.
+- Le contenu correspond au niveau demandé.
+- Les notions appartiennent au chapitre annoncé.
+- La difficulté est adaptée à la classe.
+- Les consignes sont compréhensibles.
+- La durée est réaliste.
+- Le barème correspond au total annoncé.
+- Les compétences évaluées sont pertinentes.
+
+Ne considère pas une notion comme hors programme
+sans avoir vérifié sa pertinence pour le niveau demandé.
+
+==================================================
+MISSION 4 : CORRECTION DES ERREURS
+==================================================
+
+Pour chaque erreur détectée :
+
+1. Indique précisément la question concernée.
+2. Cite la formule ou l'affirmation incorrecte.
+3. Explique pourquoi elle est incorrecte.
+4. Donne le calcul mathématique correct.
+5. Propose une formulation corrigée de la question.
+6. Vérifie que la correction ne crée pas une nouvelle
+   incohérence dans le reste du sujet.
+
+Tu dois privilégier la correction de l'énoncé plutôt
+que de supprimer une question intéressante.
+
+==================================================
+MISSION 5 : CONTRÔLE FINAL
+==================================================
+
+Avant de déclarer le sujet valide :
+
+- Refaire une dernière vérification de tous les calculs.
+- Vérifier la cohérence de tous les exercices.
+- Vérifier le total des points.
+- Vérifier que chaque question possède une réponse possible.
+- Vérifier que les corrections proposées sont exactes.
+
+RÈGLE ABSOLUE :
+
+Il est interdit de déclarer un sujet conforme si une erreur
+mathématique importante subsiste.
+
+Si tu n'es pas certain d'un résultat, signale-le.
+N'invente jamais une validation.
+
+==================================================
+FORMAT DE RÉPONSE OBLIGATOIRE
+==================================================
+
+Commence par l'un des trois statuts :
+
+SUJET CONFORME
+SUJET À CORRIGER
+SUJET NON CONFORME
+
+Puis présente :
+
+1. BILAN GÉNÉRAL
+2. ERREURS MATHÉMATIQUES DÉTECTÉES
+3. ERREURS PÉDAGOGIQUES DÉTECTÉES
+4. CORRECTIONS PROPOSÉES
+5. VÉRIFICATION DU BARÈME
+6. CONCLUSION FINALE
+
+Si aucune erreur n'est détectée, indique clairement
+qu'aucune erreur n'a été identifiée après vérification.
+
+Ne prétends jamais avoir vérifié un calcul que tu n'as
+pas effectivement effectué.
 """
+ 
   
 
                         with st.spinner(
