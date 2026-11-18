@@ -2267,7 +2267,7 @@ pas effectivement effectué.
                  
                 
   
-                        with st.spinner(
+                         with st.spinner(
                             "🔍 Vérification pédagogique et mathématique..."
                         ):
                             sujet_verifie = _appeler_gemini(
