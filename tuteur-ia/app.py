@@ -2313,6 +2313,8 @@ MISSION 6 : VÉRIFICATION DU BARÈME
 Vérifie que :
 
 - Le total des points correspond au barème annoncé.
+
+
 - Chaque question possède une attribution cohérente.
 - Les points sont proportionnés au travail demandé.
 - Aucune question importante n'est sous-évaluée.
@@ -2388,7 +2390,8 @@ mathématiques et pédagogiques.
 
 2. CORRIGER :
 Réécris intégralement le sujet en intégrant toutes les
-corrections nécessaires.
+corrections nécessaires.                        
+                                
 
 RÈGLES :
 - Ne retourne pas un simple rapport.
