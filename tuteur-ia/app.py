@@ -2271,7 +2271,7 @@ pas effectivement effectué.
                                 contenu="Vérifie le sujet et retourne uniquement le sujet final."
                             )
 
-                        if sujet_verifie and sujet_verifie.strip():
+                    if sujet_verifie and sujet_verifie.strip():
 
                             mots_interdits = [
                                 "RAPPORT D'INSPECTION",
