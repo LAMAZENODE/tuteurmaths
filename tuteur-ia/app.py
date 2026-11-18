@@ -2218,45 +2218,119 @@ Si aucune erreur n'est détectée, indique-le clairement.
 Ne prétends jamais avoir effectué un calcul non vérifié.
 """
 
+                  
+                   
                         with st.spinner(
-                            "🔍 Vérification pédagogique et mathématique..."
+                            "🔍 Première vérification mathématique et pédagogique..."
                         ):
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification,
-                                contenu="Vérifie le sujet et retourne uniquement le sujet final."
+                                contenu="Analyse le sujet, résous chaque question, détecte les erreurs et retourne le sujet corrigé complet. Si aucune erreur n'existe, conserve le sujet original."
                             )
 
                         if sujet_verifie and sujet_verifie.strip():
 
-                            mots_interdits = [
-                                "RAPPORT D'INSPECTION",
-                                "RAPPORT DE VÉRIFICATION",
-                                "ANALYSE CRITIQUE",
-                                "STATUT DE VALIDATION",
-                                "MOTIF DU REJET"
-                            ]
+                            # DEUXIÈME VÉRIFICATION INDÉPENDANTE
 
-                            texte_sujet = sujet_verifie.strip()
+                            prompt_deuxieme_verification = f"""
+Tu es un deuxième inspecteur mathématique indépendant.
 
-                            if any(
-                                mot in texte_sujet.upper()
-                                for mot in mots_interdits
+Tu n'as pas participé à la première vérification.
+
+Ta mission est de contrôler intégralement le sujet corrigé
+ci-dessous, sans faire confiance aux conclusions précédentes.
+
+NIVEAU : {niveau}
+CHAPITRE : {chapitre}
+TYPE : {type_sujet}
+DIFFICULTÉ : {difficulte}
+DURÉE : {duree}
+
+SUJET À CONTRÔLER :
+{sujet_verifie}
+
+CONSIGNES OBLIGATOIRES :
+
+1. Résous indépendamment chaque question.
+2. Refais tous les calculs.
+3. Vérifie les dérivées, équations, inéquations,
+   limites, tableaux et résultats.
+4. Vérifie les données et les éventuelles contradictions.
+5. Vérifie le niveau pédagogique et le barème.
+6. Ne fais confiance à aucun résultat annoncé.
+7. Si une erreur subsiste, corrige-la.
+8. Vérifie toutes les questions dépendant de cette erreur.
+9. Si tu ne peux pas vérifier un résultat, signale-le.
+10. Ne prétends jamais qu'une vérification a été effectuée
+    si elle ne l'a pas été.
+
+RÈGLE FINALE :
+
+Retourne le sujet complet, et non un rapport d'inspection.
+
+Si une erreur importante subsiste ou si une vérification
+essentielle est impossible, indique clairement :
+
+SUJET NON VALIDÉ
+
+Dans ce cas, ne présente pas le sujet comme conforme.
+
+Si toutes les vérifications sont satisfaisantes, indique :
+
+SUJET CONFORME
+
+Puis retourne le sujet complet corrigé.
+
+N'invente aucune donnée et ne modifie pas inutilement
+la structure des exercices.
+"""
+
+                            with st.spinner(
+                                "🔬 Deuxième vérification indépendante..."
                             ):
-                                st.error(
-                                    "⚠️ Rapport de vérification détecté. "
-                                    "Veuillez relancer la génération."
+                                deuxieme_controle = _appeler_gemini(
+                                    prompt_deuxieme_verification,
+                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                                 )
-                            else:
-                                st.session_state.sujet_genere = texte_sujet
-                                st.session_state.correction_sujet = ""
 
-                                st.success(
-                                    "✅ Vérification terminée."
+                            if (
+                                deuxieme_controle
+                                and deuxieme_controle.strip()
+                            ):
+
+                                texte_final = deuxieme_controle.strip()
+
+                                if texte_final.startswith("SUJET CONFORME"):
+                                    st.session_state.sujet_genere = (
+                                        texte_final.replace(
+                                            "SUJET CONFORME", "", 1
+                                        ).strip()
+                                    )
+                                    st.session_state.correction_sujet = ""
+
+                                    st.success(
+                                        "✅ Sujet corrigé et doublement vérifié."
+                                    )
+
+                                else:
+                                    st.session_state.sujet_genere = ""
+                                    st.error(
+                                        "⚠️ Le sujet n'a pas obtenu "
+                                        "la validation finale."
+                                    )
+                                    st.warning(texte_final)
+
+                            else:
+                                st.error(
+                                    "❌ La deuxième vérification a échoué. "
+                                    "Le sujet ne peut pas être validé."
                                 )
 
                         else:
-                            st.error("La vérification du sujet a échoué.")
-
+                            st.error(
+                                "❌ La première vérification du sujet a échoué."
+                            )
+ 
                     else:
                         st.error("La génération du sujet a échoué.")
     
