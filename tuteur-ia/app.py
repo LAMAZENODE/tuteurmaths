@@ -2579,7 +2579,7 @@ par une autre fonction de l'application.
                                    "❌ La deuxième vérification a échoué."
                                )
  
-                                   "Le sujet ne peut pas être validé."
+                                    "Le sujet ne peut pas être validé."
                                )
 
 
