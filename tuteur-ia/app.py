@@ -2571,7 +2571,7 @@ par une autre fonction de l'application.
                                    )
                                    st.warning(texte_final)
 
-                           else:
+                            else:
                                st.session_state.sujet_genere = ""
                                st.session_state.correction_sujet = ""
 
