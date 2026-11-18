@@ -2263,7 +2263,9 @@ pas effectivement effectué.
  
   
 
-                      with st.spinner(
+                     
+                 
+                        with st.spinner(
                             "🔍 Vérification pédagogique et mathématique..."
                         ):
                             sujet_verifie = _appeler_gemini(
@@ -2271,7 +2273,7 @@ pas effectivement effectué.
                                 contenu="Vérifie le sujet et retourne uniquement le sujet final."
                             )
 
-                    if sujet_verifie and sujet_verifie.strip():
+                        if sujet_verifie and sujet_verifie.strip():
 
                             mots_interdits = [
                                 "RAPPORT D'INSPECTION",
@@ -2300,11 +2302,12 @@ pas effectivement effectué.
                                     "✅ Vérification terminée."
                                 )
 
-                       else:
+                        else:
                             st.error("La vérification du sujet a échoué.")
 
                     else:
                         st.error("La génération du sujet a échoué.")
+       
 
                        
                         
