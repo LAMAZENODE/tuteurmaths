@@ -2115,63 +2115,66 @@ Réponds uniquement avec le sujet final en français.
  
                       
                       
+                       
+                      
                         prompt_verification = f"""
-Tu es un inspecteur pédagogique et un professeur
-de mathématiques expérimenté.
+Tu es un inspecteur pédagogique expert des programmes
+officiels de mathématiques français.
 
-PARAMÈTRES OBLIGATOIRES :
-Niveau : {niveau}
-Chapitre : {chapitre}
-Type : {type_sujet}
-Difficulté : {difficulte}
-Durée : {duree}
+NIVEAU INITIALEMENT CHOISI : {niveau}
+CHAPITRE : {chapitre}
+TYPE : {type_sujet}
+DIFFICULTÉ : {difficulte}
+DURÉE : {duree}
 
 SUJET À VÉRIFIER :
 {sujet}
 
-EFFECTUE UNE VÉRIFICATION INTERNE ET RIGOUREUSE :
+MISSION OBLIGATOIRE :
 
-1. Vérifie le niveau exact de chaque exercice.
-2. Vérifie le respect du chapitre demandé.
-3. Vérifie la conformité au programme scolaire.
-4. Vérifie tous les calculs et raisonnements.
-5. Vérifie les figures et coordonnées.
-6. Vérifie les consignes et notations.
-7. Vérifie le barème total de 20 points.
-8. Vérifie la cohérence de la durée.
-9. Vérifie la présentation du sujet.
+1. Vérifie à quel niveau scolaire le chapitre demandé
+   est réellement enseigné dans le programme français
+   en vigueur.
 
-RÈGLE ABSOLUE :
+2. Compare ce niveau avec le niveau initialement choisi.
 
-Tu ne dois JAMAIS changer le niveau demandé.
-Tu ne dois JAMAIS changer le chapitre demandé.
+3. Si le niveau choisi est incorrect :
+   - Corrige le niveau scolaire dans le sujet.
+   - Remplace toutes les mentions de l'ancien niveau
+     par le niveau correct.
+   - Adapte les exercices au niveau réellement attendu.
+   - Conserve le chapitre demandé.
+   - Ne présente pas de remarque pédagogique dans le PDF.
 
-Si le sujet est conforme, conserve-le en corrigeant
-uniquement les éventuelles erreurs.
+4. Si le niveau choisi est correct :
+   - Conserve le niveau.
+   - Vérifie et corrige les éventuelles erreurs.
 
-Si le sujet est non conforme, ne change pas les
-paramètres demandés et signale que la génération
-doit être refusée.
+5. Vérifie la justesse mathématique de tous les exercices,
+   les calculs, les consignes et le barème.
 
-FORMAT DE SORTIE OBLIGATOIRE :
+6. Le barème doit être exactement de 20 points.
 
-Retourne UNIQUEMENT le sujet d'évaluation final.
+7. Vérifie que la durée est adaptée au sujet.
 
-Le document doit commencer directement par son titre.
+RÈGLES IMPORTANTES :
 
-INTERDICTION D'AFFICHER :
-- Rapport d'inspection.
-- Rapport de vérification.
-- Analyse critique.
-- Statut de validation.
-- Commentaires pédagogiques.
-- Motifs de rejet.
-- Explications destinées à l'enseignant.
+- La conformité au programme scolaire est prioritaire.
+- Ne conserve jamais un niveau scolaire incorrect.
+- Ne laisse aucune note du type :
+  "ce chapitre a été déplacé de Première vers Terminale".
+- Ne mentionne jamais tes vérifications dans le sujet.
+- Ne fournis aucune correction des exercices.
 
-Ne fournis aucune correction.
-Ne mets aucun texte avant ou après le sujet.
+FORMAT DE SORTIE :
+
+Retourne uniquement le sujet final corrigé.
+Commence directement par le titre.
+Le niveau indiqué dans le document doit être le niveau
+scolaire réellement adapté au chapitre.
+
 Réponds uniquement en français.
-                        """
+"""
   
 
                         with st.spinner(
