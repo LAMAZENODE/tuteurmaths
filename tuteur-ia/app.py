@@ -2225,7 +2225,29 @@ Ne prétends jamais avoir effectué un calcul non vérifié.
                         ):
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification,
-                                contenu="Analyse le sujet, résous chaque question, détecte les erreurs et retourne le sujet corrigé complet. Si aucune erreur n'existe, conserve le sujet original."
+                               
+                                contenu="""
+Tu dois obligatoirement effectuer deux opérations :
+
+1. ANALYSER :
+Résous toutes les questions et identifie toutes les erreurs
+mathématiques et pédagogiques.
+
+2. CORRIGER :
+Réécris intégralement le sujet en intégrant toutes les
+corrections nécessaires.
+
+RÈGLES :
+- Ne retourne pas un simple rapport.
+- Ne conserve aucune erreur détectée.
+- Vérifie les questions dépendantes.
+- Conserve les exercices et leur structure.
+- Vérifie que le barème total reste cohérent.
+- Si une question est impossible à corriger sans inventer
+  des données, signale-le.
+
+Retourne le sujet complet corrigé.
+"""
                             )
 
                         if sujet_verifie and sujet_verifie.strip():
