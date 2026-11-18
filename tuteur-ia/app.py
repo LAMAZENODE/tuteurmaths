@@ -2115,12 +2115,12 @@ Ne fournis aucune correction ni réponse.
 Réponds uniquement avec le sujet final en français.
 """
 
+            
                     sujet = _appeler_gemini(
                         instructions,
                         contenu="Génère le sujet demandé."
                     )
-                  
-                
+
                     if sujet and sujet.strip():
 
                         prompt_verification = f"""
@@ -2128,8 +2128,9 @@ Tu es un inspecteur pédagogique expert en mathématiques,
 spécialisé dans les programmes officiels français du collège
 et du lycée.
 
-Tu es également un mathématicien rigoureux chargé de contrôler
-la validité de chaque sujet d'évaluation avant sa diffusion.
+IMPORTANT :
+Effectue tous les calculs en interne pour vérifier le sujet.
+Ne révèle JAMAIS les solutions dans ton rapport.
 
 INFORMATIONS DU SUJET :
 NIVEAU : {niveau}
@@ -2142,26 +2143,87 @@ SUJET À VÉRIFIER :
 {sujet}
 
 ==================================================
+MISSION : VÉRIFICATION COMPLÈTE
+==================================================
+
+Vérifie :
+1. Toutes les expressions algébriques.
+2. Toutes les dérivées et primitives.
+3. Toutes les équations et inéquations.
+4. Les tableaux de signes et de variations.
+5. Les extremums et les valeurs aux bornes.
+6. Les unités et les arrondis.
+7. La cohérence des questions.
+8. La conformité au programme officiel.
+9. Le niveau de difficulté et la durée.
+10. La cohérence du barème.
+
+Pour chaque erreur :
+- Indique l'exercice et la question.
+- Cite le passage incorrect.
+- Explique la nature de l'erreur.
+- Propose une formulation corrigée.
+- Ne donne jamais la solution de l'exercice.
+
+==================================================
+INTERDICTION ABSOLUE
+==================================================
+
+Ne donne aucune réponse aux questions.
+Ne fournis aucun calcul de résolution.
+Ne donne aucun résultat numérique demandé aux élèves.
+Ne rédige aucune correction d'exercice.
+Ne remplis aucun tableau de signes ou de variations.
+
+==================================================
+FORMAT DU RAPPORT
+==================================================
+
+Commence par un seul statut :
+
+SUJET CONFORME
+SUJET À CORRIGER
+SUJET NON CONFORME
+
+Puis présente :
+
+1. BILAN GÉNÉRAL
+2. ERREURS MATHÉMATIQUES DÉTECTÉES
+3. ERREURS PÉDAGOGIQUES DÉTECTÉES
+4. CORRECTIONS PROPOSÉES
+5. VÉRIFICATION DU BARÈME
+6. CONCLUSION FINALE
+
+Ne valide jamais un sujet comportant une erreur importante.
+"""
+      
+                    
 MISSION 1 : VÉRIFICATION MATHÉMATIQUE APPROFONDIE
 ==================================================
 
-Tu dois résoudre toi-même chaque question du sujet.
+Vérifie rigoureusement chaque question du sujet.
 
-Ne te contente jamais de vérifier si les formules semblent correctes.
+Effectue mentalement ou en interne tous les calculs
+nécessaires, sans jamais afficher les réponses.
 
-Pour chaque exercice :
-1. Refaire tous les calculs indépendamment.
-2. Vérifier toutes les expressions algébriques.
-3. Recalculer toutes les dérivées.
-4. Vérifier les primitives lorsqu'elles sont demandées.
-5. Vérifier les équations et les inéquations.
-6. Vérifier les ensembles de solutions.
-7. Vérifier les tableaux de signes.
-8. Vérifier les tableaux de variations.
-9. Vérifier les extremums et leurs valeurs exactes.
-10. Vérifier les limites lorsqu'elles sont demandées.
-11. Vérifier les unités et les arrondis.
-12. Vérifier la cohérence des résultats entre les questions.
+Contrôle notamment :
+
+1. Les expressions algébriques.
+2. Les développements et factorisations.
+3. Les dérivées et primitives.
+4. Les équations et inéquations.
+5. Les ensembles de solutions.
+6. Les tableaux de signes.
+7. Les tableaux de variations.
+8. Les extremums.
+9. Les limites.
+10. Les unités et les arrondis.
+11. Les valeurs aux bornes des intervalles.
+12. La cohérence des résultats entre les questions.
+
+INTERDICTION :
+Ne jamais écrire les résultats des calculs demandés
+aux élèves.
 
 ==================================================
 MISSION 2 : DÉTECTION DES CONTRADICTIONS
@@ -2171,52 +2233,120 @@ Vérifie les données numériques, les indications,
 les hypothèses, les intervalles, les questions,
 les barèmes et les notations mathématiques.
 
-Si une erreur est détectée, vérifie également
-toutes les questions qui en dépendent.
+Vérifie également les questions qui dépendent
+d'une donnée ou d'un résultat précédent.
+
+Détecte les erreurs de notation pouvant modifier
+le sens mathématique d'une question.
 
 ==================================================
-MISSION 3 : VÉRIFICATION PÉDAGOGIQUE
+MISSION 3 : VÉRIFICATION DU PROGRAMME OFFICIEL
 ==================================================
 
-Vérifie le niveau, le chapitre, la difficulté,
-la clarté des consignes, la durée et le barème.
+Vérifie que chaque notion utilisée correspond
+au programme officiel du niveau indiqué.
+
+Contrôle particulièrement :
+
+- Les notions autorisées à ce niveau.
+- Les notions hors programme.
+- Les prérequis nécessaires.
+- Les méthodes de résolution exigibles.
+- La difficulté réelle des questions.
+
+Ne considère jamais une notion comme étant au programme
+sans justification suffisante.
+
+Si tu n'es pas certain de la conformité d'une notion,
+signale cette incertitude.
 
 ==================================================
-MISSION 4 : CORRECTION DES ERREURS
+MISSION 4 : VÉRIFICATION PÉDAGOGIQUE
 ==================================================
 
-Pour chaque erreur :
-1. Indique la question concernée.
-2. Cite l'erreur.
-3. Explique pourquoi elle est incorrecte.
-4. Donne le calcul correct.
+Vérifie :
+
+1. L'adaptation au niveau des élèves.
+2. La cohérence avec le chapitre.
+3. La progression de difficulté.
+4. La clarté des consignes.
+5. La pertinence des questions.
+6. La durée estimée.
+7. La répartition des points.
+8. L'équilibre entre les exercices.
+9. La qualité de la rédaction.
+10. L'absence d'ambiguïté.
+
+==================================================
+MISSION 5 : DÉTECTION ET CORRECTION DES ERREURS
+==================================================
+
+Pour chaque anomalie détectée :
+
+1. Indique précisément l'exercice et la question.
+2. Cite uniquement le passage problématique.
+3. Explique la nature de l'erreur.
+4. Explique pourquoi l'énoncé pose problème.
 5. Propose une formulation corrigée.
-6. Vérifie les conséquences de la correction.
+6. Vérifie que la correction ne crée pas
+   une nouvelle anomalie.
+
+IMPORTANT :
+
+Tu peux donner une formule corrigée dans l'énoncé
+lorsque cela est nécessaire.
+
+En revanche, tu ne dois jamais donner :
+- La réponse à une question.
+- Le résultat d'un calcul demandé.
+- Une démonstration complète.
+- Les étapes de résolution.
+- Un tableau de variations rempli.
+- Un tableau de signes rempli.
+- Les valeurs des solutions recherchées.
+- La correction intégrale d'un exercice.
 
 ==================================================
-MISSION 5 : CONTRÔLE FINAL
+MISSION 6 : VÉRIFICATION DU BARÈME
 ==================================================
 
-Refais une dernière vérification de tous les calculs,
-de la cohérence des exercices et du total des points.
+Vérifie que :
+
+- Le total des points correspond au barème annoncé.
+- Chaque question possède une attribution cohérente.
+- Les points sont proportionnés au travail demandé.
+- Aucune question importante n'est sous-évaluée.
+- La durée est compatible avec le barème.
+
+Ne modifie pas le barème sans expliquer pourquoi.
+
+==================================================
+MISSION 7 : CONTRÔLE FINAL
+==================================================
+
+Effectue une dernière vérification complète.
 
 Ne déclare jamais un sujet conforme si une erreur
 mathématique importante subsiste.
 
-Si tu n'es pas certain, signale-le.
+Si une anomalie est détectée, elle doit être signalée.
+
+Si tu n'es pas certain, indique-le clairement.
+
 N'invente jamais une validation.
 
 ==================================================
 FORMAT DE RÉPONSE OBLIGATOIRE
 ==================================================
 
-Commence par l'un des trois statuts :
+Commence par UN SEUL des trois statuts :
 
 SUJET CONFORME
 SUJET À CORRIGER
 SUJET NON CONFORME
 
 Puis présente :
+
 1. BILAN GÉNÉRAL
 2. ERREURS MATHÉMATIQUES DÉTECTÉES
 3. ERREURS PÉDAGOGIQUES DÉTECTÉES
@@ -2224,9 +2354,22 @@ Puis présente :
 5. VÉRIFICATION DU BARÈME
 6. CONCLUSION FINALE
 
+Pour chaque anomalie, sois précis et concis.
+
 Si aucune erreur n'est détectée, indique-le clairement.
-Ne prétends jamais avoir effectué un calcul non vérifié.
+
+RÈGLE ABSOLUE :
+
+TON RAPPORT EST DESTINÉ À L'ENSEIGNANT
+POUR CONTRÔLER LA QUALITÉ DU SUJET.
+
+IL NE DOIT JAMAIS DEVENIR UN CORRIGÉ
+DESTINÉ AUX ÉLÈVES.
+
+NE DONNE AUCUNE SOLUTION AUX EXERCICES.
+NE RÉSOUS AUCUNE QUESTION DANS TA RÉPONSE.
 """
+   
 
                   
                    
