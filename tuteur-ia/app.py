@@ -2300,7 +2300,7 @@ pas effectivement effectué.
                                     "✅ Vérification terminée."
                                 )
 
-                        else:
+                      else:
                             st.error("La vérification du sujet a échoué.")
 
                     else:
