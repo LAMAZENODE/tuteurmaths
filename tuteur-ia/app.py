@@ -534,9 +534,26 @@ def generer_pdf(texte_correction, enonce_exercice):
         texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
         texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
 
+      
+      
         # ============================================================
-        # ÉTAPE 1 : CONVERSION DES SYMBOLES MATHÉMATIQUES
+        # ÉTAPE 1 : NETTOYAGE DES COMMANDES LATEX INUTILES
         # ============================================================
+
+        # Supprimer \left et \right sans supprimer les expressions
+        texte = texte.replace(r'\left', '')
+        texte = texte.replace(r'\right', '')
+
+        # Corriger les symboles de comparaison
+        texte = texte.replace(r'\leqslant', '≤')
+        texte = texte.replace(r'\geqslant', '≥')
+        texte = texte.replace(r'\leq', '≤')
+        texte = texte.replace(r'\geq', '≥')
+
+        # ============================================================
+        # ÉTAPE 2 : CONVERSION DES SYMBOLES MATHÉMATIQUES
+        # ============================================================
+
         remplacements = {
             r'\mathbb{R}': 'ℝ',
             r'\mathbb{N}': 'ℕ',
@@ -545,18 +562,15 @@ def generer_pdf(texte_correction, enonce_exercice):
             r'\infty': '∞',
             r'\times': '×',
             r'\cdot': '·',
-            r'\leq': '≤',
-            r'\geq': '≥',
             r'\neq': '≠',
             r'\pi': 'π',
             r'\alpha': 'α',
             r'\beta': 'β',
             r'\Delta': 'Δ',
             r'\pm': '±',
-            r'\sqrt': '√',
             r'\forall': '∀',
-            r'\in': '∈',
             r'\notin': '∉',
+            r'\in': '∈',
         }
 
         for ancien, nouveau in remplacements.items():
@@ -569,21 +583,17 @@ def generer_pdf(texte_correction, enonce_exercice):
             texte
         )
 
-        # Indices
-        texte = texte.replace('_1', '₁')
-        texte = texte.replace('_2', '₂')
-        texte = texte.replace('_3', '₃')
+        # Racines carrées simples
+        texte = re.sub(
+            r'\\sqrt\{([^{}]+)\}',
+            r'√(\1)',
+            texte
+        )
 
-        # Puissances
+        # Puissances simples
         texte = texte.replace('^2', '²')
         texte = texte.replace('^3', '³')
-
-        # ============================================================
-        # ÉTAPE 2 : SUPPRESSION DES COMMANDES LATEX RÉSIDUELLES
-        # ============================================================
-        texte = re.sub(r'\\[a-zA-Z]+', '', texte)
-        texte = texte.replace('{', '').replace('}', '')
-
+  
         # ============================================================
         # ÉTAPE 3 : CORRECTION DES CARACTÈRES PARASITES
         # ============================================================
