@@ -534,9 +534,26 @@ def generer_pdf(texte_correction, enonce_exercice):
         texte = re.sub(r'\\\[(.*?)\\\]', r'\1', texte, flags=re.DOTALL)
         texte = re.sub(r'\\\((.*?)\\\)', r'\1', texte, flags=re.DOTALL)
 
+      
+      
         # ============================================================
-        # ÉTAPE 1 : CONVERSION DES SYMBOLES MATHÉMATIQUES
+        # ÉTAPE 1 : NETTOYAGE DES COMMANDES LATEX INUTILES
         # ============================================================
+
+        # Supprimer \left et \right sans supprimer les expressions
+        texte = texte.replace(r'\left', '')
+        texte = texte.replace(r'\right', '')
+
+        # Corriger les symboles de comparaison
+        texte = texte.replace(r'\leqslant', '≤')
+        texte = texte.replace(r'\geqslant', '≥')
+        texte = texte.replace(r'\leq', '≤')
+        texte = texte.replace(r'\geq', '≥')
+
+        # ============================================================
+        # ÉTAPE 2 : CONVERSION DES SYMBOLES MATHÉMATIQUES
+        # ============================================================
+
         remplacements = {
             r'\mathbb{R}': 'ℝ',
             r'\mathbb{N}': 'ℕ',
@@ -545,18 +562,15 @@ def generer_pdf(texte_correction, enonce_exercice):
             r'\infty': '∞',
             r'\times': '×',
             r'\cdot': '·',
-            r'\leq': '≤',
-            r'\geq': '≥',
             r'\neq': '≠',
             r'\pi': 'π',
             r'\alpha': 'α',
             r'\beta': 'β',
             r'\Delta': 'Δ',
             r'\pm': '±',
-            r'\sqrt': '√',
             r'\forall': '∀',
-            r'\in': '∈',
             r'\notin': '∉',
+            r'\in': '∈',
         }
 
         for ancien, nouveau in remplacements.items():
@@ -569,21 +583,17 @@ def generer_pdf(texte_correction, enonce_exercice):
             texte
         )
 
-        # Indices
-        texte = texte.replace('_1', '₁')
-        texte = texte.replace('_2', '₂')
-        texte = texte.replace('_3', '₃')
+        # Racines carrées simples
+        texte = re.sub(
+            r'\\sqrt\{([^{}]+)\}',
+            r'√(\1)',
+            texte
+        )
 
-        # Puissances
+        # Puissances simples
         texte = texte.replace('^2', '²')
         texte = texte.replace('^3', '³')
-
-        # ============================================================
-        # ÉTAPE 2 : SUPPRESSION DES COMMANDES LATEX RÉSIDUELLES
-        # ============================================================
-        texte = re.sub(r'\\[a-zA-Z]+', '', texte)
-        texte = texte.replace('{', '').replace('}', '')
-
+  
         # ============================================================
         # ÉTAPE 3 : CORRECTION DES CARACTÈRES PARASITES
         # ============================================================
@@ -2105,6 +2115,7 @@ Ne fournis aucune correction ni réponse.
 Réponds uniquement avec le sujet final en français.
 """
 
+            
                     sujet = _appeler_gemini(
                         instructions,
                         contenu="Génère le sujet demandé."
@@ -2113,63 +2124,411 @@ Réponds uniquement avec le sujet final en français.
                     if sujet and sujet.strip():
 
                         prompt_verification = f"""
-Tu es un inspecteur pédagogique et un professeur
-de mathématiques expérimenté.
+Tu es un inspecteur pédagogique expert en mathématiques,
+spécialisé dans les programmes officiels français du collège
+et du lycée.
 
-PARAMÈTRES OBLIGATOIRES :
-Niveau : {niveau}
-Chapitre : {chapitre}
-Type : {type_sujet}
-Difficulté : {difficulte}
-Durée : {duree}
+IMPORTANT :
+Effectue tous les calculs en interne pour vérifier le sujet.
+Ne révèle JAMAIS les solutions dans ton rapport.
+
+INFORMATIONS DU SUJET :
+NIVEAU : {niveau}
+CHAPITRE : {chapitre}
+TYPE : {type_sujet}
+DIFFICULTÉ : {difficulte}
+DURÉE : {duree}
 
 SUJET À VÉRIFIER :
 {sujet}
 
-Vérifie rigoureusement :
-1. Le niveau exact de chaque exercice.
-2. Le respect du chapitre demandé.
-3. La conformité au programme scolaire.
-4. Tous les calculs et raisonnements.
-5. Les figures et coordonnées.
-6. Les consignes et notations.
-7. Le barème total de 20 points.
-8. La cohérence de la durée.
+==================================================
+MISSION : VÉRIFICATION COMPLÈTE
+==================================================
 
-Si le niveau ou le chapitre ne correspondent pas,
-rejette le sujet et rédige un nouveau sujet complet.
+Vérifie :
+1. Toutes les expressions algébriques.
+2. Toutes les dérivées et primitives.
+3. Toutes les équations et inéquations.
+4. Les tableaux de signes et de variations.
+5. Les extremums et les valeurs aux bornes.
+6. Les unités et les arrondis.
+7. La cohérence des questions.
+8. La conformité au programme officiel.
+9. Le niveau de difficulté et la durée.
+10. La cohérence du barème.
 
-Retourne uniquement le sujet final corrigé en français.
-Ne fournis aucune correction.
+Pour chaque erreur :
+- Indique l'exercice et la question.
+- Cite le passage incorrect.
+- Explique la nature de l'erreur.
+- Propose une formulation corrigée.
+- Ne donne jamais la solution de l'exercice.
+
+==================================================
+INTERDICTION ABSOLUE
+==================================================
+
+Ne donne aucune réponse aux questions.
+Ne fournis aucun calcul de résolution.
+Ne donne aucun résultat numérique demandé aux élèves.
+Ne rédige aucune correction d'exercice.
+Ne remplis aucun tableau de signes ou de variations.
+
+==================================================
+FORMAT DU RAPPORT
+==================================================
+
+Commence par un seul statut :
+
+SUJET CONFORME
+SUJET À CORRIGER
+SUJET NON CONFORME
+
+Puis présente :
+
+1. BILAN GÉNÉRAL
+2. ERREURS MATHÉMATIQUES DÉTECTÉES
+3. ERREURS PÉDAGOGIQUES DÉTECTÉES
+4. CORRECTIONS PROPOSÉES
+5. VÉRIFICATION DU BARÈME
+6. CONCLUSION FINALE
+
+Ne valide jamais un sujet comportant une erreur importante.
+
+      
+                    
+MISSION 1 : VÉRIFICATION MATHÉMATIQUE APPROFONDIE
+==================================================
+
+Vérifie rigoureusement chaque question du sujet.
+
+Effectue mentalement ou en interne tous les calculs
+nécessaires, sans jamais afficher les réponses.
+
+Contrôle notamment :
+
+1. Les expressions algébriques.
+2. Les développements et factorisations.
+3. Les dérivées et primitives.
+4. Les équations et inéquations.
+5. Les ensembles de solutions.
+6. Les tableaux de signes.
+7. Les tableaux de variations.
+8. Les extremums.
+9. Les limites.
+10. Les unités et les arrondis.
+11. Les valeurs aux bornes des intervalles.
+12. La cohérence des résultats entre les questions.
+
+INTERDICTION :
+Ne jamais écrire les résultats des calculs demandés
+aux élèves.
+
+==================================================
+MISSION 2 : DÉTECTION DES CONTRADICTIONS
+==================================================
+
+Vérifie les données numériques, les indications,
+les hypothèses, les intervalles, les questions,
+les barèmes et les notations mathématiques.
+
+Vérifie également les questions qui dépendent
+d'une donnée ou d'un résultat précédent.
+
+Détecte les erreurs de notation pouvant modifier
+le sens mathématique d'une question.
+
+==================================================
+MISSION 3 : VÉRIFICATION DU PROGRAMME OFFICIEL
+==================================================
+
+Vérifie que chaque notion utilisée correspond
+au programme officiel du niveau indiqué.
+
+Contrôle particulièrement :
+
+- Les notions autorisées à ce niveau.
+- Les notions hors programme.
+- Les prérequis nécessaires.
+- Les méthodes de résolution exigibles.
+- La difficulté réelle des questions.
+
+Ne considère jamais une notion comme étant au programme
+sans justification suffisante.
+
+Si tu n'es pas certain de la conformité d'une notion,
+signale cette incertitude.
+
+==================================================
+MISSION 4 : VÉRIFICATION PÉDAGOGIQUE
+==================================================
+
+Vérifie :
+
+1. L'adaptation au niveau des élèves.
+2. La cohérence avec le chapitre.
+3. La progression de difficulté.
+4. La clarté des consignes.
+5. La pertinence des questions.
+6. La durée estimée.
+7. La répartition des points.
+8. L'équilibre entre les exercices.
+9. La qualité de la rédaction.
+10. L'absence d'ambiguïté.
+
+==================================================
+MISSION 5 : DÉTECTION ET CORRECTION DES ERREURS
+==================================================
+
+Pour chaque anomalie détectée :
+
+1. Indique précisément l'exercice et la question.
+2. Cite uniquement le passage problématique.
+3. Explique la nature de l'erreur.
+4. Explique pourquoi l'énoncé pose problème.
+5. Propose une formulation corrigée.
+6. Vérifie que la correction ne crée pas
+   une nouvelle anomalie.
+
+IMPORTANT :
+
+Tu peux donner une formule corrigée dans l'énoncé
+lorsque cela est nécessaire.
+
+En revanche, tu ne dois jamais donner :
+- La réponse à une question.
+- Le résultat d'un calcul demandé.
+- Une démonstration complète.
+- Les étapes de résolution.
+- Un tableau de variations rempli.
+- Un tableau de signes rempli.
+- Les valeurs des solutions recherchées.
+- La correction intégrale d'un exercice.
+
+==================================================
+MISSION 6 : VÉRIFICATION DU BARÈME
+==================================================
+
+Vérifie que :
+
+- Le total des points correspond au barème annoncé.
+
+
+- Chaque question possède une attribution cohérente.
+- Les points sont proportionnés au travail demandé.
+- Aucune question importante n'est sous-évaluée.
+- La durée est compatible avec le barème.
+
+Ne modifie pas le barème sans expliquer pourquoi.
+
+==================================================
+MISSION 7 : CONTRÔLE FINAL
+==================================================
+
+Effectue une dernière vérification complète.
+
+Ne déclare jamais un sujet conforme si une erreur
+mathématique importante subsiste.
+
+Si une anomalie est détectée, elle doit être signalée.
+
+Si tu n'es pas certain, indique-le clairement.
+
+N'invente jamais une validation.
+
+==================================================
+FORMAT DE RÉPONSE OBLIGATOIRE
+==================================================
+
+Commence par UN SEUL des trois statuts :
+
+SUJET CONFORME
+SUJET À CORRIGER
+SUJET NON CONFORME
+
+Puis présente :
+
+1. BILAN GÉNÉRAL
+2. ERREURS MATHÉMATIQUES DÉTECTÉES
+3. ERREURS PÉDAGOGIQUES DÉTECTÉES
+4. CORRECTIONS PROPOSÉES
+5. VÉRIFICATION DU BARÈME
+6. CONCLUSION FINALE
+
+Pour chaque anomalie, sois précis et concis.
+
+Si aucune erreur n'est détectée, indique-le clairement.
+
+RÈGLE ABSOLUE :
+
+TON RAPPORT EST DESTINÉ À L'ENSEIGNANT
+POUR CONTRÔLER LA QUALITÉ DU SUJET.
+
+IL NE DOIT JAMAIS DEVENIR UN CORRIGÉ
+DESTINÉ AUX ÉLÈVES.
+
+NE DONNE AUCUNE SOLUTION AUX EXERCICES.
+NE RÉSOUS AUCUNE QUESTION DANS TA RÉPONSE.
 """
+   
 
+                  
+                   
                         with st.spinner(
-                            "🔍 Vérification du niveau, du chapitre et des mathématiques..."
+                            "🔍 Première vérification mathématique et pédagogique..."
                         ):
-
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification,
-                                contenu=(
-                                    "Vérifie le niveau scolaire, le chapitre "
-                                    "et la qualité mathématique. Rejette et "
-                                    "recrée tout sujet non conforme."
-                                )
+                               
+                                contenu="""
+Tu dois obligatoirement effectuer deux opérations :
+
+1. ANALYSER :
+Résous toutes les questions et identifie toutes les erreurs
+mathématiques et pédagogiques.
+
+2. CORRIGER :
+Réécris intégralement le sujet en intégrant toutes les
+corrections nécessaires.                        
+                                
+
+RÈGLES :
+- Ne retourne pas un simple rapport.
+- Ne conserve aucune erreur détectée.
+- Vérifie les questions dépendantes.
+- Conserve les exercices et leur structure.
+- Vérifie que le barème total reste cohérent.
+- Si une question est impossible à corriger sans inventer
+  des données, signale-le.
+
+Retourne le sujet complet corrigé.
+"""
                             )
 
                         if sujet_verifie and sujet_verifie.strip():
 
-                            st.session_state.sujet_genere = sujet_verifie
-                            st.session_state.correction_sujet = ""
+                            # DEUXIÈME VÉRIFICATION INDÉPENDANTE
 
-                            st.success(
-                                "✅ Vérification pédagogique et mathématique terminée."
-                            )
+                            prompt_deuxieme_verification = f"""
+
+
+
+Tu es un deuxième inspecteur mathématique indépendant.
+
+NIVEAU : {niveau}
+CHAPITRE : {chapitre}
+TYPE : {type_sujet}
+DIFFICULTÉ : {difficulte}
+DURÉE : {duree}
+
+SUJET À CONTRÔLER :
+{sujet_verifie}
+
+MISSION :
+
+1. Vérifie indépendamment chaque question.
+2. Effectue tous les calculs en interne.
+3. Contrôle les dérivées, équations, inéquations,
+   tableaux, résultats et unités.
+4. Vérifie les données et les contradictions.
+5. Vérifie le niveau pédagogique et le barème.
+6. Vérifie les corrections apportées précédemment.
+7. Corrige les erreurs restantes dans les énoncés.
+8. Ne modifie pas inutilement les exercices.
+
+INTERDICTIONS ABSOLUES :
+
+- Ne donne aucune réponse aux exercices.
+- Ne montre aucun calcul de résolution.
+- Ne rédige aucun corrigé.
+- Ne donne aucun résultat recherché.
+- Ne remplis aucun tableau de variations.
+- Ne remplis aucun tableau de signes.
+
+FORMAT DE RÉPONSE OBLIGATOIRE :
+
+Si toutes les vérifications sont satisfaisantes,
+commence par :
+
+SUJET CONFORME
+
+Puis retourne uniquement le sujet complet corrigé,
+sans aucune solution ni correction.
+
+Si une erreur importante ne peut pas être corrigée
+ou si une vérification essentielle est impossible,
+commence par :
+
+SUJET NON VALIDÉ
+
+Explique brièvement le problème sans donner
+les réponses aux exercices.
+
+IMPORTANT :
+
+Le résultat final est exclusivement destiné
+à produire le sujet d'évaluation des élèves.
+
+Le corrigé enseignant sera généré séparément
+par une autre fonction de l'application.
+"""
+
+
+
+                            with st.spinner(
+                                "🔬 Deuxième vérification indépendante..."
+                            ):
+                                deuxieme_controle = _appeler_gemini(
+                                    prompt_deuxieme_verification,
+                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
+                                )
+
+                            if (
+                                deuxieme_controle
+                                and deuxieme_controle.strip()
+                            ):
+
+                                texte_final = deuxieme_controle.strip()
+
+                                if texte_final.startswith("SUJET CONFORME"):
+                                    st.session_state.sujet_genere = (
+                                        texte_final.replace(
+                                            "SUJET CONFORME", "", 1
+                                        ).strip()
+                                    )
+                                    st.session_state.correction_sujet = ""
+
+                                    st.success(
+                                        "✅ Sujet corrigé et doublement vérifié."
+                                    )
+
+                                else:
+                                    st.session_state.sujet_genere = ""
+                                    st.error(
+                                        "⚠️ Le sujet n'a pas obtenu "
+                                        "la validation finale."
+                                    )
+                                    st.warning(texte_final)
+
+                            else:
+                                st.error(
+                                    "❌ La deuxième vérification a échoué. "
+                                    "Le sujet ne peut pas être validé."
+                                )
 
                         else:
-                            st.error("La vérification du sujet a échoué.")
-
+                            st.error(
+                                "❌ La première vérification du sujet a échoué."
+                            )
+ 
                     else:
                         st.error("La génération du sujet a échoué.")
+    
+                        
+
+               
+                            
 
             except Exception as e:
                 st.error(f"Erreur de génération : {e}")
@@ -2545,4 +2904,3 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
-
