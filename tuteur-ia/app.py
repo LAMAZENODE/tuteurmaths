@@ -2109,11 +2109,11 @@ Réponds uniquement avec le sujet final en français.
                         instructions,
                         contenu="Génère le sujet demandé."
                     )
+                  
+                
                     if sujet and sujet.strip():
 
-                      prompt_verification = f"""              
-      
-                 
+                        prompt_verification = f"""
 Tu es un inspecteur pédagogique expert en mathématiques,
 spécialisé dans les programmes officiels français du collège
 et du lycée.
@@ -2137,11 +2137,9 @@ MISSION 1 : VÉRIFICATION MATHÉMATIQUE APPROFONDIE
 
 Tu dois résoudre toi-même chaque question du sujet.
 
-Ne te contente jamais de vérifier si les formules semblent
-correctes.
+Ne te contente jamais de vérifier si les formules semblent correctes.
 
 Pour chaque exercice :
-
 1. Refaire tous les calculs indépendamment.
 2. Vérifier toutes les expressions algébriques.
 3. Recalculer toutes les dérivées.
@@ -2153,86 +2151,49 @@ Pour chaque exercice :
 9. Vérifier les extremums et leurs valeurs exactes.
 10. Vérifier les limites lorsqu'elles sont demandées.
 11. Vérifier les unités et les arrondis.
-12. Vérifier la cohérence des résultats d'une question
-    avec les questions suivantes.
-
-IMPORTANT :
-Tu dois effectuer les calculs mathématiques réellement.
-Ne valide jamais une formule simplement parce qu'elle
-est accompagnée d'une indication dans l'énoncé.
+12. Vérifier la cohérence des résultats entre les questions.
 
 ==================================================
 MISSION 2 : DÉTECTION DES CONTRADICTIONS
 ==================================================
 
-Vérifie particulièrement :
+Vérifie les données numériques, les indications,
+les hypothèses, les intervalles, les questions,
+les barèmes et les notations mathématiques.
 
-- Les données numériques incohérentes.
-- Les résultats annoncés qui ne correspondent pas aux calculs.
-- Les indications qui conduisent à une réponse fausse.
-- Les hypothèses incompatibles avec les fonctions définies.
-- Les intervalles incorrects.
-- Les questions impossibles à résoudre.
-- Les questions dont plusieurs réponses sont possibles
-  alors qu'une seule est attendue.
-- Les erreurs dans les barèmes.
-- Les erreurs de notation mathématique.
-
-Si une erreur est détectée dans une question,
-vérifie également toutes les questions qui en dépendent.
+Si une erreur est détectée, vérifie également
+toutes les questions qui en dépendent.
 
 ==================================================
 MISSION 3 : VÉRIFICATION PÉDAGOGIQUE
 ==================================================
 
-Vérifie que :
-
-- Le contenu correspond au niveau demandé.
-- Les notions appartiennent au chapitre annoncé.
-- La difficulté est adaptée à la classe.
-- Les consignes sont compréhensibles.
-- La durée est réaliste.
-- Le barème correspond au total annoncé.
-- Les compétences évaluées sont pertinentes.
-
-Ne considère pas une notion comme hors programme
-sans avoir vérifié sa pertinence pour le niveau demandé.
+Vérifie le niveau, le chapitre, la difficulté,
+la clarté des consignes, la durée et le barème.
 
 ==================================================
 MISSION 4 : CORRECTION DES ERREURS
 ==================================================
 
-Pour chaque erreur détectée :
-
-1. Indique précisément la question concernée.
-2. Cite la formule ou l'affirmation incorrecte.
+Pour chaque erreur :
+1. Indique la question concernée.
+2. Cite l'erreur.
 3. Explique pourquoi elle est incorrecte.
-4. Donne le calcul mathématique correct.
-5. Propose une formulation corrigée de la question.
-6. Vérifie que la correction ne crée pas une nouvelle
-   incohérence dans le reste du sujet.
-
-Tu dois privilégier la correction de l'énoncé plutôt
-que de supprimer une question intéressante.
+4. Donne le calcul correct.
+5. Propose une formulation corrigée.
+6. Vérifie les conséquences de la correction.
 
 ==================================================
 MISSION 5 : CONTRÔLE FINAL
 ==================================================
 
-Avant de déclarer le sujet valide :
+Refais une dernière vérification de tous les calculs,
+de la cohérence des exercices et du total des points.
 
-- Refaire une dernière vérification de tous les calculs.
-- Vérifier la cohérence de tous les exercices.
-- Vérifier le total des points.
-- Vérifier que chaque question possède une réponse possible.
-- Vérifier que les corrections proposées sont exactes.
-
-RÈGLE ABSOLUE :
-
-Il est interdit de déclarer un sujet conforme si une erreur
+Ne déclare jamais un sujet conforme si une erreur
 mathématique importante subsiste.
 
-Si tu n'es pas certain d'un résultat, signale-le.
+Si tu n'es pas certain, signale-le.
 N'invente jamais une validation.
 
 ==================================================
@@ -2246,7 +2207,6 @@ SUJET À CORRIGER
 SUJET NON CONFORME
 
 Puis présente :
-
 1. BILAN GÉNÉRAL
 2. ERREURS MATHÉMATIQUES DÉTECTÉES
 3. ERREURS PÉDAGOGIQUES DÉTECTÉES
@@ -2254,22 +2214,13 @@ Puis présente :
 5. VÉRIFICATION DU BARÈME
 6. CONCLUSION FINALE
 
-Si aucune erreur n'est détectée, indique clairement
-qu'aucune erreur n'a été identifiée après vérification.
-
-Ne prétends jamais avoir vérifié un calcul que tu n'as
-pas effectivement effectué.
+Si aucune erreur n'est détectée, indique-le clairement.
+Ne prétends jamais avoir effectué un calcul non vérifié.
 """
- 
-  
 
-                     
-                 
-                
-  
-                         with st.spinner(
+                        with st.spinner(
                             "🔍 Vérification pédagogique et mathématique..."
-                         ):
+                        ):
                             sujet_verifie = _appeler_gemini(
                                 prompt_verification,
                                 contenu="Vérifie le sujet et retourne uniquement le sujet final."
@@ -2295,7 +2246,6 @@ pas effectivement effectué.
                                     "⚠️ Rapport de vérification détecté. "
                                     "Veuillez relancer la génération."
                                 )
-
                             else:
                                 st.session_state.sujet_genere = texte_sujet
                                 st.session_state.correction_sujet = ""
@@ -2309,8 +2259,7 @@ pas effectivement effectué.
 
                     else:
                         st.error("La génération du sujet a échoué.")
-                  
-                       
+    
                         
 
                
