@@ -2109,7 +2109,7 @@ Réponds uniquement avec le sujet final en français.
                         instructions,
                         contenu="Génère le sujet demandé."
                     )
- if sujet and sujet.strip():
+     if sujet and sujet.strip():
 
      prompt_verification = f"""              
       
