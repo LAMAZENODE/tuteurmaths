@@ -1993,12 +1993,13 @@ def generer_pdf_sujet(texte_sujet):
         if ligne.startswith(("- ", "* ", "• ")):
             ligne = "• " + ligne[2:]
 
-        # --------------------------------------------
+      
+           # --------------------------------------------
         # TEXTE ORDINAIRE
         # --------------------------------------------
 
-       contenu = convertir_latex_pdf(ligne)
-       contenu = escape(contenu)
+        contenu = convertir_latex_pdf(ligne)
+        contenu = escape(contenu)
 
         contenu = re.sub(
             r"\*\*(.+?)\*\*",
@@ -2011,7 +2012,7 @@ def generer_pdf_sujet(texte_sujet):
                 contenu,
                 style_normal
             )
-        )
+        ) 
 
     # ------------------------------------------------
     # GÉNÉRATION FINALE
