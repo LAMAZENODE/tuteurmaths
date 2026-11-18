@@ -2515,7 +2515,8 @@ par une autre fonction de l'application.
 
 
                            
-                            
+
+                       
                            with st.spinner(
                                "🔬 Deuxième vérification indépendante..."
                            ):
@@ -2548,7 +2549,7 @@ par une autre fonction de l'application.
                                        st.session_state.correction_sujet = ""
 
                                        st.error(
-                                           "⚠️ Le deuxième vérificateur n'a retourné aucun sujet."
+                                           "⚠️ Aucun sujet retourné."
                                        )
 
                                elif texte_final.startswith("SUJET NON VALIDÉ"):
@@ -2557,29 +2558,27 @@ par une autre fonction de l'application.
                                    st.session_state.correction_sujet = ""
 
                                    st.error(
-                                       "❌ Sujet non validé par le deuxième vérificateur."
+                                       "❌ Sujet non validé."
                                    )
-
                                    st.warning(texte_final)
 
                                else:
-
                                    st.session_state.sujet_genere = ""
                                    st.session_state.correction_sujet = ""
 
                                    st.error(
-                                       "⚠️ Réponse du deuxième vérificateur non conforme au format attendu."
+                                       "⚠️ Format de réponse incorrect."
                                    )
-
                                    st.warning(texte_final)
 
                            else:
-
                                st.session_state.sujet_genere = ""
                                st.session_state.correction_sujet = ""
 
                                st.error(
-                                   "❌ La deuxième vérification a échoué. "
+                                   "❌ La deuxième vérification a échoué."
+                               )
+ 
                                    "Le sujet ne peut pas être validé."
                                )
 
