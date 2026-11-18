@@ -2411,12 +2411,10 @@ Retourne le sujet complet corrigé.
                             # DEUXIÈME VÉRIFICATION INDÉPENDANTE
 
                             prompt_deuxieme_verification = f"""
+
+
+
 Tu es un deuxième inspecteur mathématique indépendant.
-
-Tu n'as pas participé à la première vérification.
-
-Ta mission est de contrôler intégralement le sujet corrigé
-ci-dessous, sans faire confiance aux conclusions précédentes.
 
 NIVEAU : {niveau}
 CHAPITRE : {chapitre}
@@ -2427,41 +2425,56 @@ DURÉE : {duree}
 SUJET À CONTRÔLER :
 {sujet_verifie}
 
-CONSIGNES OBLIGATOIRES :
+MISSION :
 
-1. Résous indépendamment chaque question.
-2. Refais tous les calculs.
-3. Vérifie les dérivées, équations, inéquations,
-   limites, tableaux et résultats.
-4. Vérifie les données et les éventuelles contradictions.
+1. Vérifie indépendamment chaque question.
+2. Effectue tous les calculs en interne.
+3. Contrôle les dérivées, équations, inéquations,
+   tableaux, résultats et unités.
+4. Vérifie les données et les contradictions.
 5. Vérifie le niveau pédagogique et le barème.
-6. Ne fais confiance à aucun résultat annoncé.
-7. Si une erreur subsiste, corrige-la.
-8. Vérifie toutes les questions dépendant de cette erreur.
-9. Si tu ne peux pas vérifier un résultat, signale-le.
-10. Ne prétends jamais qu'une vérification a été effectuée
-    si elle ne l'a pas été.
+6. Vérifie les corrections apportées précédemment.
+7. Corrige les erreurs restantes dans les énoncés.
+8. Ne modifie pas inutilement les exercices.
 
-RÈGLE FINALE :
+INTERDICTIONS ABSOLUES :
 
-Retourne le sujet complet, et non un rapport d'inspection.
+- Ne donne aucune réponse aux exercices.
+- Ne montre aucun calcul de résolution.
+- Ne rédige aucun corrigé.
+- Ne donne aucun résultat recherché.
+- Ne remplis aucun tableau de variations.
+- Ne remplis aucun tableau de signes.
 
-Si une erreur importante subsiste ou si une vérification
-essentielle est impossible, indique clairement :
+FORMAT DE RÉPONSE OBLIGATOIRE :
 
-SUJET NON VALIDÉ
-
-Dans ce cas, ne présente pas le sujet comme conforme.
-
-Si toutes les vérifications sont satisfaisantes, indique :
+Si toutes les vérifications sont satisfaisantes,
+commence par :
 
 SUJET CONFORME
 
-Puis retourne le sujet complet corrigé.
+Puis retourne uniquement le sujet complet corrigé,
+sans aucune solution ni correction.
 
-N'invente aucune donnée et ne modifie pas inutilement
-la structure des exercices.
+Si une erreur importante ne peut pas être corrigée
+ou si une vérification essentielle est impossible,
+commence par :
+
+SUJET NON VALIDÉ
+
+Explique brièvement le problème sans donner
+les réponses aux exercices.
+
+IMPORTANT :
+
+Le résultat final est exclusivement destiné
+à produire le sujet d'évaluation des élèves.
+
+Le corrigé enseignant sera généré séparément
+par une autre fonction de l'application.
 """
+
+
 
                             with st.spinner(
                                 "🔬 Deuxième vérification indépendante..."
