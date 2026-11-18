@@ -2110,16 +2110,11 @@ Réponds uniquement avec le sujet final en français.
                         contenu="Génère le sujet demandé."
                     )
 
-                    if sujet and sujet.strip():
+ if sujet and sujet.strip():
 
- 
-                      
-                      
-                       
-                      
-                      
-                       
-prompt_verification = f"""
+    prompt_verification = f"""              
+      
+                 
 Tu es un inspecteur pédagogique expert en mathématiques,
 spécialisé dans les programmes officiels français du collège
 et du lycée.
