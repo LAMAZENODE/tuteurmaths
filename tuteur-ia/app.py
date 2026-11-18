@@ -2195,7 +2195,7 @@ Puis présente :
 6. CONCLUSION FINALE
 
 Ne valide jamais un sujet comportant une erreur importante.
-"""
+
       
                     
 MISSION 1 : VÉRIFICATION MATHÉMATIQUE APPROFONDIE
