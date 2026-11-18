@@ -1136,6 +1136,28 @@ def generer_pdf_sujet(texte_sujet):
     )
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
+        # CONVERSION DES FORMULES MATHEMATIQUES POUR LE PDF
+
+    import re
+
+    def convertir_latex_pdf(texte):
+
+        texte = texte.replace(r"\sqrt{", "√(")
+        texte = texte.replace(r"\times", "×")
+        texte = texte.replace(r"\cdot", "·")
+        texte = texte.replace(r"\infty", "∞")
+        texte = texte.replace(r"\neq", "≠")
+        texte = texte.replace(r"\leq", "≤")
+        texte = texte.replace(r"\geq", "≥")
+        texte = texte.replace(r"\pi", "π")
+
+        texte = re.sub(
+            r"\^\{([^{}]+)\}",
+            r"^(\1)",
+            texte
+        )
+
+        return texte
 
 
     # ------------------------------------------------
@@ -1946,7 +1968,8 @@ def generer_pdf_sujet(texte_sujet):
             ligne,
             re.IGNORECASE
         ):
-            contenu = escape(ligne)
+            contenu = convertir_latex_pdf(ligne)
+            contenu = escape(contenu)
 
             # Conserver le gras Markdown
             contenu = re.sub(
@@ -1974,7 +1997,8 @@ def generer_pdf_sujet(texte_sujet):
         # TEXTE ORDINAIRE
         # --------------------------------------------
 
-        contenu = escape(ligne)
+       contenu = convertir_latex_pdf(ligne)
+       contenu = escape(contenu)
 
         contenu = re.sub(
             r"\*\*(.+?)\*\*",
