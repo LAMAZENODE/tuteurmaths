@@ -1693,6 +1693,7 @@ def generer_pdf_sujet(texte_sujet):
         r"\tan": "tan",
         r"\neq": "≠",
         r"\pm": "±"
+        r"\sqrt": "√",
     }
 
     for ancien, nouveau in remplacements.items():
