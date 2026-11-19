@@ -2138,15 +2138,18 @@ IMPORTANT — NOTATION MATHÉMATIQUE :
 Toutes les expressions mathématiques doivent être écrites
 en LaTeX et encadrées par $...$.
 
+
+
 Exemples :
-- $e^{3x-1}$
+- $e^{{3x-1}}$
 - $\\exp(x)$
-- $\\sqrt{4x}$
-- $\\frac{1}{4}$
-- $\\mathbb{R}$
-- $u_{n+1}$
-- $\\lim_{x\\to +\\infty}$
+- $\\sqrt{{4x}}$
+- $\\frac{{1}}{{4}}$
+- $\\mathbb{{R}}$
+- $u_{{n+1}}$
+- $\\lim_{{x\\to +\\infty}}$
 - $f'(x)$
+
 
 Ne remplace jamais les formules par des approximations
 en texte ordinaire.
