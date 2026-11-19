@@ -1692,8 +1692,8 @@ def generer_pdf_sujet(texte_sujet):
         r"\cos": "cos",
         r"\tan": "tan",
         r"\neq": "≠",
-        r"\pm": "±"
-        r"\sqrt": "√",
+        r"\pm": "±",
+        r"\sqrt": "√"
     }
 
     for ancien, nouveau in remplacements.items():
