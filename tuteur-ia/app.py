@@ -2114,6 +2114,7 @@ def afficher_generateur_sujet():
                 with st.spinner("⏳ Création de votre sujet..."):
 
                     instructions = f"""
+
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
@@ -2131,6 +2132,27 @@ Le barème total doit être exactement de 20 points.
 Présente un seul titre principal.
 Prévois une zone nom, prénom, classe et date.
 Indique le chapitre, le niveau, la durée et le barème.
+
+IMPORTANT — NOTATION MATHÉMATIQUE :
+
+Toutes les expressions mathématiques doivent être écrites
+en LaTeX et encadrées par $...$.
+
+Exemples :
+- $e^{3x-1}$
+- $\\exp(x)$
+- $\\sqrt{4x}$
+- $\\frac{1}{4}$
+- $\\mathbb{R}$
+- $u_{n+1}$
+- $\\lim_{x\\to +\\infty}$
+- $f'(x)$
+
+Ne remplace jamais les formules par des approximations
+en texte ordinaire.
+Conserve les fractions, racines, exposants et indices
+dans leur notation mathématique exacte.
+
 Organise les exercices du plus simple au plus difficile.
 Vérifie les calculs et la cohérence mathématique.
 N'utilise pas de figures ASCII.
@@ -2972,6 +2994,8 @@ else:
     if "etape_actuelle" not in st.session_state:
         exercice = st.text_area(
             t("textarea_label"),
+
+            
             height=150,
             key="premium_input"
         )
