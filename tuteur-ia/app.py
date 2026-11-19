@@ -573,8 +573,12 @@ def generer_pdf(texte_correction, enonce_exercice):
             r'\in': '∈',
         }
 
-        for ancien, nouveau in remplacements.items():
-            texte = texte.replace(ancien, nouveau)
+       for ancien, nouveau in sorted(
+           remplacements.items(),
+           key=lambda element: len(element[0]),
+           reverse=True
+       ):
+          texte = texte.replace(ancien, nouveau)
 
         # Fractions simples
         texte = re.sub(
