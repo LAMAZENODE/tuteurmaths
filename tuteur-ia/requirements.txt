@@ -5,3 +5,4 @@ reportlab
 extra-streamlit-components
 plotly
 numpy
+matplotlib
