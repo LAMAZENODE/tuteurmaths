@@ -1668,7 +1668,7 @@ def generer_pdf_sujet(texte_sujet):
  # DICTIONNAIRE COMPLET DES SYMBOLES MATHEMATIQUES
  # ==================================================
 
- remplacements = {
+  remplacements = {
 
      # --------------------------------------------
      # 1. ENSEMBLES DE NOMBRES
