@@ -1895,21 +1895,23 @@ remplacements = {
     r"\textdegree": "°",
 }
 
+  
+
     # --------------------------------------------
     # COMMANDES LATEX DE PRESENTATION
     # --------------------------------------------
 
-texte = re.sub(
+    texte = re.sub(
         r"\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}",
         r"\1",
         texte
     )
 
-     texte = re.sub(r"\\(?:left|right)", "", texte)
+    texte = re.sub(r"\\(?:left|right)", "", texte)
 
-     texte = re.sub(r"\\[()\[\]]", "", texte)
+    texte = re.sub(r"\\[()\[\]]", "", texte)
 
-     texte = texte.replace("$", "")
+    texte = texte.replace("$", "")
 
     # --------------------------------------------
     # PUISSANCES
@@ -1959,9 +1961,6 @@ texte = re.sub(
         texte
     )
 
-   
-       
-    
     # ------------------------------------------------
     # PIED DE PAGE ET NUMÉROTATION
     # ------------------------------------------------
@@ -2000,6 +1999,10 @@ texte = re.sub(
         )
 
         canvas.restoreState()
+
+    # ------------------------------------------------
+    # CONSTRUCTION DU PDF
+    # ------------------------------------------------
 
     # ------------------------------------------------
     # CONSTRUCTION DU PDF
