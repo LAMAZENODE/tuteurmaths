@@ -1901,7 +1901,7 @@ remplacements = {
     # COMMANDES LATEX DE PRESENTATION
     # --------------------------------------------
 
-    texte = re.sub(
+texte = re.sub(
         r"\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}",
         r"\1",
         texte
