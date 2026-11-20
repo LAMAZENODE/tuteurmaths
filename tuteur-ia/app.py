@@ -1907,11 +1907,11 @@ texte = re.sub(
         texte
     )
 
- texte = re.sub(r"\\(?:left|right)", "", texte)
+   texte = re.sub(r"\\(?:left|right)", "", texte)
 
- texte = re.sub(r"\\[()\[\]]", "", texte)
+   texte = re.sub(r"\\[()\[\]]", "", texte)
 
- texte = texte.replace("$", "")
+   texte = texte.replace("$", "")
 
     # --------------------------------------------
     # PUISSANCES
