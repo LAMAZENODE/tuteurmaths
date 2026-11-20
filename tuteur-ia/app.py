@@ -1664,168 +1664,168 @@ def generer_pdf_sujet(texte_sujet):
 
    
     
-# ==================================================
-# DICTIONNAIRE COMPLET DES SYMBOLES MATHEMATIQUES
-# ==================================================
+ # ==================================================
+ # DICTIONNAIRE COMPLET DES SYMBOLES MATHEMATIQUES
+ # ==================================================
 
-remplacements = {
+ remplacements = {
 
-    # --------------------------------------------
-    # 1. ENSEMBLES DE NOMBRES
-    # --------------------------------------------
-    r"\mathbb{N}": "ℕ",
-    r"\mathbb{Z}": "ℤ",
-    r"\mathbb{D}": "𝔻",
-    r"\mathbb{Q}": "ℚ",
-    r"\mathbb{R}": "ℝ",
-    r"\mathbb{C}": "ℂ",
+     # --------------------------------------------
+     # 1. ENSEMBLES DE NOMBRES
+     # --------------------------------------------
+     r"\mathbb{N}": "ℕ",
+     r"\mathbb{Z}": "ℤ",
+     r"\mathbb{D}": "𝔻",
+     r"\mathbb{Q}": "ℚ",
+     r"\mathbb{R}": "ℝ",
+     r"\mathbb{C}": "ℂ",
 
-    # --------------------------------------------
-    # 2. APPARTENANCE ET ENSEMBLES
-    # --------------------------------------------
-    r"\notin": "∉",
-    r"\in": "∈",
-    r"\subseteq": "⊆",
-    r"\subset": "⊂",
-    r"\supseteq": "⊇",
-    r"\supset": "⊃",
-    r"\cup": "∪",
-    r"\cap": "∩",
-    r"\emptyset": "∅",
-    r"\varnothing": "∅",
-    r"\setminus": "\\",
+     # --------------------------------------------
+     # 2. APPARTENANCE ET ENSEMBLES
+     # --------------------------------------------
+     r"\notin": "∉",
+     r"\in": "∈",
+     r"\subseteq": "⊆",
+     r"\subset": "⊂",
+     r"\supseteq": "⊇",
+     r"\supset": "⊃",
+     r"\cup": "∪",
+     r"\cap": "∩",
+     r"\emptyset": "∅",
+     r"\varnothing": "∅",
+     r"\setminus": "\\",
 
-    # --------------------------------------------
-    # 3. COMPARAISONS
-    # --------------------------------------------
-    r"\leq": "≤",
-    r"\le": "≤",
-    r"\geq": "≥",
-    r"\ge": "≥",
-    r"\neq": "≠",
-    r"\approx": "≈",
-    r"\equiv": "≡",
-    r"\sim": "∼",
-    r"\ll": "≪",
-    r"\gg": "≫",
-    r"\propto": "∝",
+     # --------------------------------------------
+     # 3. COMPARAISONS
+     # --------------------------------------------
+     r"\leq": "≤",
+     r"\le": "≤",
+     r"\geq": "≥",
+     r"\ge": "≥",
+     r"\neq": "≠",
+     r"\approx": "≈",
+     r"\equiv": "≡",
+     r"\sim": "∼",
+     r"\ll": "≪",
+     r"\gg": "≫",
+     r"\propto": "∝",
 
-    # --------------------------------------------
-    # 4. OPERATIONS
-    # --------------------------------------------
-    r"\times": "×",
-    r"\div": "÷",
-    r"\cdot": "·",
-    r"\pm": "±",
-    r"\mp": "∓",
-    r"\ast": "∗",
-    r"\star": "⋆",
+     # --------------------------------------------
+     # 4. OPERATIONS
+     # --------------------------------------------
+     r"\times": "×",
+     r"\div": "÷",
+     r"\cdot": "·",
+     r"\pm": "±",
+     r"\mp": "∓",
+     r"\ast": "∗",
+     r"\star": "⋆",
 
-    # --------------------------------------------
-    # 5. INFINI ET LIMITES
-    # --------------------------------------------
-    r"+\infty": "+∞",
-    r"-\infty": "−∞",
-    r"\infty": "∞",
-    r"\lim": "lim",
-    r"\to": "→",
-    r"\rightarrow": "→",
-    r"\leftarrow": "←",
-    r"\Rightarrow": "⇒",
-    r"\Leftarrow": "⇐",
-    r"\Leftrightarrow": "⇔",
+     # --------------------------------------------
+     # 5. INFINI ET LIMITES
+     # --------------------------------------------
+     r"+\infty": "+∞",
+     r"-\infty": "−∞",
+     r"\infty": "∞",
+     r"\lim": "lim",
+     r"\to": "→",
+     r"\rightarrow": "→",
+     r"\leftarrow": "←",
+     r"\Rightarrow": "⇒",
+     r"\Leftarrow": "⇐",
+     r"\Leftrightarrow": "⇔",
 
-    # --------------------------------------------
-    # 6. INTERVALLES ET CROCHETS
-    # --------------------------------------------
-    r"\left": "",
-    r"\right": "",
-    r"\lbrack": "[",
-    r"\rbrack": "]",
-    r"\{": "{",
-    r"\}": "}",
-    r"\lbrace": "{",
-    r"\rbrace": "}",
-    r"\langle": "⟨",
-    r"\rangle": "⟩",
+     # --------------------------------------------
+     # 6. INTERVALLES ET CROCHETS
+     # --------------------------------------------
+     r"\left": "",
+     r"\right": "",
+     r"\lbrack": "[",
+     r"\rbrack": "]",
+     r"\{": "{",
+     r"\}": "}",
+     r"\lbrace": "{",
+     r"\rbrace": "}",
+     r"\langle": "⟨",
+     r"\rangle": "⟩",
 
-    # --------------------------------------------
-    # 7. FRACTIONS ET RACINES
-    # --------------------------------------------
-    r"\sqrt": "√",
-    r"\surd": "√",
-    r"\dfrac": "",
-    r"\frac": "",
-    r"\tfrac": "",
-    r"\cfrac": "",
+     # --------------------------------------------
+     # 7. FRACTIONS ET RACINES
+     # --------------------------------------------
+     r"\sqrt": "√",
+     r"\surd": "√",
+     r"\dfrac": "",
+     r"\frac": "",
+     r"\tfrac": "",
+     r"\cfrac": "",
 
-    # --------------------------------------------
-    # 8. PUISSANCES ET INDICES
-    # --------------------------------------------
-    r"\^": "^",
-    r"\_": "_",
-    r"\prime": "′",
-    r"\doubleprime": "″",
+     # --------------------------------------------
+     # 8. PUISSANCES ET INDICES
+     # --------------------------------------------
+     r"\^": "^",
+     r"\_": "_",
+     r"\prime": "′",
+     r"\doubleprime": "″",
 
-    # --------------------------------------------
-    # 9. GEOMETRIE
-    # --------------------------------------------
-    r"\parallel": "∥",
-    r"\perp": "⊥",
-    r"\angle": "∠",
-    r"\triangle": "△",
-    r"\cong": "≅",
-    r"\simeq": "≃",
-    r"\overline": "¯",
-    r"\widehat": "^",
-    r"\vec": "",
-    r"\overrightarrow": "→",
-    r"\overleftarrow": "←",
-    r"\degree": "°",
-    r"\circ": "°",
+     # --------------------------------------------
+     # 9. GEOMETRIE
+     # --------------------------------------------
+     r"\parallel": "∥",
+     r"\perp": "⊥",
+     r"\angle": "∠",
+     r"\triangle": "△",
+     r"\cong": "≅",
+     r"\simeq": "≃",
+     r"\overline": "¯",
+     r"\widehat": "^",
+     r"\vec": "",
+     r"\overrightarrow": "→",
+     r"\overleftarrow": "←",
+     r"\degree": "°",
+     r"\circ": "°",
 
-    # --------------------------------------------
-    # 10. FONCTIONS ET ANALYSE
-    # --------------------------------------------
-    r"\sin": "sin",
-    r"\cos": "cos",
-    r"\tan": "tan",
-    r"\arcsin": "arcsin",
-    r"\arccos": "arccos",
-    r"\arctan": "arctan",
-    r"\ln": "ln",
-    r"\log": "log",
-    r"\exp": "exp",
-    r"\max": "max",
-    r"\min": "min",
-    r"\sup": "sup",
-    r"\inf": "inf",
+     # --------------------------------------------
+     # 10. FONCTIONS ET ANALYSE
+     # --------------------------------------------
+     r"\sin": "sin",
+     r"\cos": "cos",
+     r"\tan": "tan",
+     r"\arcsin": "arcsin",
+     r"\arccos": "arccos",
+     r"\arctan": "arctan",
+     r"\ln": "ln",
+     r"\log": "log",
+     r"\exp": "exp",
+     r"\max": "max",
+     r"\min": "min",
+     r"\sup": "sup",
+     r"\inf": "inf",
 
-    # --------------------------------------------
-    # 11. DERIVEES ET INTEGRALES
-    # --------------------------------------------
-    r"\partial": "∂",
-    r"\nabla": "∇",
-    r"\int": "∫",
-    r"\iint": "∬",
-    r"\iiint": "∭",
-    r"\oint": "∮",
-    r"\sum": "∑",
-    r"\prod": "∏",
-    r"\Delta": "Δ",
+     # --------------------------------------------
+     # 11. DERIVEES ET INTEGRALES
+     # --------------------------------------------
+     r"\partial": "∂",
+     r"\nabla": "∇",
+     r"\int": "∫",
+     r"\iint": "∬",
+     r"\iiint": "∭",
+     r"\oint": "∮",
+     r"\sum": "∑",
+     r"\prod": "∏",
+     r"\Delta": "Δ",
 
+     # --------------------------------------------
+     # 12. PROBABILITES ET LOGIQUE
     # --------------------------------------------
-    # 12. PROBABILITES ET LOGIQUE
-    # --------------------------------------------
-    r"\forall": "∀",
-    r"\exists": "∃",
-    r"\nexists": "∄",
-    r"\land": "∧",
-    r"\lor": "∨",
-    r"\neg": "¬",
-    r"\Rightarrow": "⇒",
-    r"\iff": "⇔",
-    r"\therefore": "∴",
+     r"\forall": "∀",
+     r"\exists": "∃",
+     r"\nexists": "∄",
+     r"\land": "∧",
+     r"\lor": "∨",
+     r"\neg": "¬",
+     r"\Rightarrow": "⇒",
+     r"\iff": "⇔",
+     r"\therefore": "∴",
 
     # --------------------------------------------
     # 13. LETTRES GRECQUES MINUSCULES
