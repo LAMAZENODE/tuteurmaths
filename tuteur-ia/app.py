@@ -2904,7 +2904,7 @@ par une autre fonction de l'application.
                                            "⚠️ Aucun sujet retourné."
                                        )
 
-                               elif texte_final.startswith("SUJET NON VALIDÉ"):
+                           elif texte_final.startswith("SUJET NON VALIDÉ"):
 
                                    st.session_state.sujet_genere = ""
                                    st.session_state.correction_sujet = ""
