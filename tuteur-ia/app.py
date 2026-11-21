@@ -2219,8 +2219,88 @@ def verifier_sympy_disponible():
     except Exception:
         return False
 
+def verifier_sympy_disponible():
+    """
+    Vérifie que SymPy est installé et effectue
+    un premier calcul mathématique exact.
+    """
+    try:
+        import sympy as sp
+
+        # Test de calcul avec des fractions exactes
+        resultat = sp.Rational(1, 2) + sp.Rational(1, 3)
+
+        if resultat != sp.Rational(5, 6):
+            return False
+
+        # Test de dérivation
+        x = sp.Symbol("x")
+        derivee = sp.diff(x**2 + 3*x, x)
+
+        if sp.simplify(derivee - (2*x + 3)) != 0:
+            return False
+
+        return True
+
+    except Exception:
+        return False
 
 
+def verifier_notation_maths(texte):
+    """
+    Vérifie la structure des formules LaTeX.
+    Ne prétend pas vérifier leur exactitude mathématique.
+    """
+    import re
+
+    erreurs = []
+
+    # Vérifier les délimiteurs $
+    if texte.count("$") % 2 != 0:
+        erreurs.append(
+            "Un délimiteur $ est manquant."
+        )
+
+    # Extraire les formules entre deux $
+    formules = re.findall(
+        r"\$(.*?)\$",
+        texte,
+        flags=re.DOTALL
+    )
+
+    for numero, formule in enumerate(formules, start=1):
+
+        if not formule.strip():
+            erreurs.append(
+                f"La formule numéro {numero} est vide."
+            )
+            continue
+
+        # Vérifier l'équilibre des accolades
+        niveau = 0
+
+        for caractere in formule:
+
+            if caractere == "{":
+                niveau += 1
+
+            elif caractere == "}":
+                niveau -= 1
+
+                if niveau < 0:
+                    erreurs.append(
+                        f"Accolade fermante incorrecte "
+                        f"dans la formule {numero}."
+                    )
+                    break
+
+        if niveau > 0:
+            erreurs.append(
+                f"Accolade ouvrante non fermée "
+                f"dans la formule {numero}."
+            )
+
+    return len(erreurs) == 0, erreurs
 
 
 def afficher_generateur_sujet():
@@ -2297,11 +2377,22 @@ def afficher_generateur_sujet():
     
     if generer:
 
-        if not chapitre.strip():
-            st.warning("Veuillez indiquer un chapitre ou un thème.")
+    # Vérification du moteur mathématique
+    if not verifier_sympy_disponible():
 
-        else:
-            try:
+        st.error(
+            "❌ Le moteur de vérification mathématique "
+            "n'est pas disponible. Impossible de générer le sujet."
+        )
+
+    elif not chapitre.strip():
+
+        st.warning(
+            "Veuillez indiquer un chapitre ou un thème."
+        )
+
+    else:
+        try:
                 with st.spinner("⏳ Création de votre sujet..."):
 
                     instructions = f"""
@@ -2776,14 +2867,34 @@ par une autre fonction de l'application.
                                        "SUJET CONFORME", "", 1
                                    ).strip()
 
-                                   if sujet_accepte:
+                                   
+                                   
+if sujet_accepte:
 
-                                       st.session_state.sujet_genere = sujet_accepte
-                                       st.session_state.correction_sujet = ""
+    notation_ok, erreurs_notation = verifier_notation_maths(
+        sujet_accepte
+    )
 
-                                       st.success(
-                                           "✅ Sujet corrigé et doublement vérifié."
-                                       )
+    if notation_ok:
+
+        st.session_state.sujet_genere = sujet_accepte
+        st.session_state.correction_sujet = ""
+
+        st.success(
+            "✅ Sujet contrôlé : structure des formules vérifiée."
+        )
+
+    else:
+
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error(
+            "❌ Sujet refusé : problème détecté dans les formules."
+        )
+
+        for erreur in erreurs_notation:
+            st.warning(erreur)
 
                                    else:
                                        st.session_state.sujet_genere = ""
