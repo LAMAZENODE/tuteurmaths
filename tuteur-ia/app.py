@@ -2308,7 +2308,7 @@ def verifier_notation_maths(texte):
             )
 
     return len(erreurs) == 0, erreurs
-   def verifier_derivee_sympy(fonction, derivee_annoncee):
+def verifier_derivee_sympy(fonction, derivee_annoncee):
     import sympy as sp
 
     x = sp.Symbol("x")
