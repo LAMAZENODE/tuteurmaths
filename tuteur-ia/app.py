@@ -2308,7 +2308,54 @@ def verifier_notation_maths(texte):
             )
 
     return len(erreurs) == 0, erreurs
-   
+   def verifier_derivee_sympy(fonction, derivee_annoncee):
+    import sympy as sp
+
+    x = sp.Symbol("x")
+
+    try:
+        fonction = sp.sympify(fonction)
+        derivee_annoncee = sp.sympify(derivee_annoncee)
+
+        derivee_reelle = sp.diff(fonction, x)
+
+        return sp.simplify(
+            derivee_reelle - derivee_annoncee
+        ) == 0
+
+    except Exception:
+        return False
+
+def verifier_derives_sujet_sympy(texte_sujet):
+    import re
+    import sympy as sp
+
+    erreurs = []
+
+    # Recherche des égalités de dérivées annoncées
+    motifs = [
+        r"f'\(x\)\s*=\s*([^$\n]+)",
+        r"f′\(x\)\s*=\s*([^$\n]+)",
+    ]
+
+    for motif in motifs:
+        correspondances = re.findall(motif, texte_sujet)
+
+        for expression in correspondances:
+            try:
+                derivee = sp.sympify(
+                    expression.strip()
+                )
+                if derivee.has(sp.nan, sp.zoo):
+                    erreurs.append(
+                        f"Dérivée suspecte : {expression}"
+                    )
+            except Exception:
+                erreurs.append(
+                    f"Dérivée impossible à analyser : {expression}"
+                )
+
+    return len(erreurs) == 0, erreurs
 
 
 def afficher_generateur_sujet():
