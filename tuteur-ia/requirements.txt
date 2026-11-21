@@ -6,3 +6,5 @@ extra-streamlit-components
 plotly
 numpy
 matplotlib
+sympy>=1.13
+pypdf>=5.0
