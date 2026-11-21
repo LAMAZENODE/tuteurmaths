@@ -1719,7 +1719,7 @@ def generer_pdf_sujet(texte_sujet):
         # INFINI ET LIMITES
         r"+\infty": "+∞",
         r"-\infty": "−∞",
-        r"\infty": "∞",
+        r"\infty": "infini",
         r"\lim": "lim",
         r"\to": "→",
         r"\rightarrow": "→",
