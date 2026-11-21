@@ -2204,6 +2204,21 @@ def generer_pdf_sujet(texte_sujet):
 
     return buffer
 
+def verifier_sympy_disponible():
+    """
+    Vérifie que SymPy est correctement installé
+    et capable d'effectuer un calcul exact.
+    """
+    try:
+        import sympy as sp
+
+        resultat = sp.Rational(1, 2) + sp.Rational(1, 3)
+
+        return resultat == sp.Rational(5, 6)
+
+    except Exception:
+        return False
+
 
 
 
