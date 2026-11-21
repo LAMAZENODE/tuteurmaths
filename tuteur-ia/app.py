@@ -2848,53 +2848,53 @@ par une autre fonction de l'application.
 
                            
 
-                       
+
+                         
                             with st.spinner(
-                               "🔬 Deuxième vérification indépendante..."
-                           ):
-                               deuxieme_controle = _appeler_gemini(
-                                   prompt_deuxieme_verification,
-                                   contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
-                               )
+                                "🔬 Deuxième vérification indépendante..."
+                            ):
+                                deuxieme_controle = _appeler_gemini(
+                                    prompt_deuxieme_verification,
+                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
+                                )
 
                             if deuxieme_controle and deuxieme_controle.strip():
 
-                               texte_final = deuxieme_controle.strip()
+                                texte_final = deuxieme_controle.strip()
 
-                               if texte_final.startswith("SUJET CONFORME"):
+                                if texte_final.startswith("SUJET CONFORME"):
 
-                                   sujet_accepte = texte_final.replace(
-                                       "SUJET CONFORME", "", 1
-                                   ).strip()
+                                    sujet_accepte = texte_final.replace(
+                                        "SUJET CONFORME", "", 1
+                                    ).strip()
 
-                                   
-                                   
-     if sujet_accepte:
+                            if sujet_accepte:
 
-    notation_ok, erreurs_notation = verifier_notation_maths(
-        sujet_accepte
-    )
+                                notation_ok, erreurs_notation = verifier_notation_maths(
+                                    sujet_accepte
+                                )
 
-    if notation_ok:
+                                if notation_ok:
 
-        st.session_state.sujet_genere = sujet_accepte
-        st.session_state.correction_sujet = ""
+                                    st.session_state.sujet_genere = sujet_accepte
+                                    st.session_state.correction_sujet = ""
 
-        st.success(
-            "✅ Sujet contrôlé : structure des formules vérifiée."
-        )
+                                    st.success(
+                                        "✅ Sujet contrôlé : structure des formules vérifiée."
+                                    )
 
-    else:
+                                else:
 
-        st.session_state.sujet_genere = ""
-        st.session_state.correction_sujet = ""
+                                    st.session_state.sujet_genere = ""
+                                    st.session_state.correction_sujet = ""
 
-        st.error(
-            "❌ Sujet refusé : problème détecté dans les formules."
-        )
+                                    st.error(
+                                        "❌ Sujet refusé : problème détecté dans les formules."
+                                    )
 
-        for erreur in erreurs_notation:
-            st.warning(erreur)
+                                    for erreur in erreurs_notation:
+                                        st.warning(erreur)
+   
 
                                    else:
                                        st.session_state.sujet_genere = ""
