@@ -2370,33 +2370,32 @@ def afficher_generateur_sujet():
             use_container_width=True
         )
 
-    # ------------------------------------------------
-    # GÉNÉRATION DU SUJET
-    # ------------------------------------------------
-
     
-    if generer:
+        # ------------------------------------------------
+        # GÉNÉRATION DU SUJET
+        # ------------------------------------------------
 
-    # Vérification du moteur mathématique
-    if not verifier_sympy_disponible():
+        if generer:
 
-        st.error(
-            "❌ Le moteur de vérification mathématique "
-            "n'est pas disponible. Impossible de générer le sujet."
-        )
+            # Vérification du moteur mathématique
+            if not verifier_sympy_disponible():
 
-    elif not chapitre.strip():
+                st.error(
+                    "❌ Le moteur de vérification mathématique "
+                    "n'est pas disponible. Impossible de générer le sujet."
+                )
 
-        st.warning(
-            "Veuillez indiquer un chapitre ou un thème."
-        )
+            elif not chapitre.strip():
 
-    else:
-        try:
-                with st.spinner("⏳ Création de votre sujet..."):
+                st.warning(
+                    "Veuillez indiquer un chapitre ou un thème."
+                )
 
-                    instructions = f"""
+            else:
+                try:
+                    with st.spinner("⏳ Création de votre sujet..."):
 
+                        instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
@@ -2406,6 +2405,7 @@ CHAPITRE : {chapitre}
 TYPE : {type_sujet}
 DIFFICULTÉ : {difficulte}
 DURÉE : {duree}
+
 
 Respecte impérativement le niveau et le chapitre demandés.
 Tous les exercices doivent être adaptés au niveau choisi.
