@@ -2246,6 +2246,8 @@ def verifier_sympy_disponible():
         return False
 
 
+
+     
 def verifier_notation_maths(texte):
     """
     Vérifie la structure des formules LaTeX.
@@ -2255,11 +2257,13 @@ def verifier_notation_maths(texte):
 
     erreurs = []
 
+    if not texte or not texte.strip():
+        return False, ["Le sujet est vide."]
+
     # Vérifier les délimiteurs $
     if texte.count("$") % 2 != 0:
-        erreurs.append(
-            "Un délimiteur $ est manquant."
-        )
+        erreurs.append("Un délimiteur $ est manquant.")
+        return False, erreurs
 
     # Extraire les formules entre deux $
     formules = re.findall(
@@ -2270,7 +2274,10 @@ def verifier_notation_maths(texte):
 
     for numero, formule in enumerate(formules, start=1):
 
-        if not formule.strip():
+        formule = formule.strip()
+
+        # Vérifier si la formule est réellement vide
+        if not formule:
             erreurs.append(
                 f"La formule numéro {numero} est vide."
             )
@@ -2301,6 +2308,7 @@ def verifier_notation_maths(texte):
             )
 
     return len(erreurs) == 0, erreurs
+   
 
 
 def afficher_generateur_sujet():
