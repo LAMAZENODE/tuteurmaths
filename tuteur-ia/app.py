@@ -2869,7 +2869,7 @@ par une autre fonction de l'application.
 
                                    
                                    
-if sujet_accepte:
+    if sujet_accepte:
 
     notation_ok, erreurs_notation = verifier_notation_maths(
         sujet_accepte
