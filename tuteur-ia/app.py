@@ -2849,7 +2849,6 @@ par une autre fonction de l'application.
                            
 
 
-                         
                             with st.spinner(
                                 "🔬 Deuxième vérification indépendante..."
                             ):
@@ -2868,90 +2867,82 @@ par une autre fonction de l'application.
                                         "SUJET CONFORME", "", 1
                                     ).strip()
 
-                            if sujet_accepte:
+                                    if sujet_accepte:
 
-                                notation_ok, erreurs_notation = verifier_notation_maths(
-                                    sujet_accepte
-                                )
+                                        notation_ok, erreurs_notation = verifier_notation_maths(
+                                            sujet_accepte
+                                        )
 
-                                if notation_ok:
+                                        if notation_ok:
 
-                                    st.session_state.sujet_genere = sujet_accepte
-                                    st.session_state.correction_sujet = ""
+                                            st.session_state.sujet_genere = sujet_accepte
+                                            st.session_state.correction_sujet = ""
 
-                                    st.success(
-                                        "✅ Sujet contrôlé : structure des formules vérifiée."
-                                    )
+                                            st.success(
+                                                "✅ Sujet contrôlé : structure des formules vérifiée."
+                                            )
 
-                                else:
+                                        else:
+
+                                            st.session_state.sujet_genere = ""
+                                            st.session_state.correction_sujet = ""
+
+                                            st.error(
+                                                "❌ Sujet refusé : problème détecté dans les formules."
+                                            )
+
+                                            for erreur in erreurs_notation:
+                                                st.warning(erreur)
+
+                                    else:
+                                        st.session_state.sujet_genere = ""
+                                        st.session_state.correction_sujet = ""
+
+                                        st.error(
+                                            "⚠️ Aucun sujet retourné."
+                                        )
+
+                                elif texte_final.startswith("SUJET NON VALIDÉ"):
 
                                     st.session_state.sujet_genere = ""
                                     st.session_state.correction_sujet = ""
 
                                     st.error(
-                                        "❌ Sujet refusé : problème détecté dans les formules."
+                                        "❌ Sujet non validé."
                                     )
+                                    st.warning(texte_final)
 
-                                    for erreur in erreurs_notation:
-                                        st.warning(erreur)
-   
+                                else:
+                                    st.session_state.sujet_genere = ""
+                                    st.session_state.correction_sujet = ""
 
-                            else:
-                                       st.session_state.sujet_genere = ""
-                                       st.session_state.correction_sujet = ""
-
-                                       st.error(
-                                           "⚠️ Aucun sujet retourné."
-                                       )
-
-                               elif texte_final.startswith("SUJET NON VALIDÉ"):
-
-                                   st.session_state.sujet_genere = ""
-                                   st.session_state.correction_sujet = ""
-
-                                   st.error(
-                                       "❌ Sujet non validé."
-                                   )
-                                   st.warning(texte_final)
-
-                               else:
-                                   st.session_state.sujet_genere = ""
-                                   st.session_state.correction_sujet = ""
-
-                                   st.error(
-                                       "⚠️ Format de réponse incorrect."
-                                   )
-                                   st.warning(texte_final)
+                                    st.error(
+                                        "⚠️ Format de réponse incorrect."
+                                    )
+                                    st.warning(texte_final)
 
                             else:
-                               st.session_state.sujet_genere = ""
-                               st.session_state.correction_sujet = ""
+                                st.session_state.sujet_genere = ""
+                                st.session_state.correction_sujet = ""
 
-                               st.error(
-                                   "❌ La deuxième vérification a échoué."
-                               )
- 
-                                    
-                                
-
+                                st.error(
+                                    "❌ La deuxième vérification a échoué."
+                                )
 
                         else:
                             st.error(
                                 "❌ La première vérification du sujet a échoué."
                             )
- 
+
                     else:
                         st.error("La génération du sujet a échoué.")
-    
-                        
-
-               
-                            
 
             except Exception as e:
                 st.error(f"Erreur de génération : {e}")
 
-                    
+                         
+                           
+                            
 
     # ------------------------------------------------
     # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
