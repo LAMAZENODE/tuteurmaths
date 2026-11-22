@@ -2224,13 +2224,15 @@ def verifier_sympy_disponible():
 
 
 
+
 def verifier_notation_maths(texte):
     """
-    Vérifie :
-    1. Les délimiteurs LaTeX.
-    2. L'équilibre des accolades.
-    3. La présence de formules mathématiques
-       non encadrées par des délimiteurs LaTeX.
+    Contrôle strict de la notation mathématique.
+
+    1. Vérifie les délimiteurs $...$.
+    2. Refuse les délimiteurs alternatifs.
+    3. Vérifie les accolades.
+    4. Détecte les expressions mathématiques hors LaTeX.
     """
 
     import re
@@ -2240,119 +2242,89 @@ def verifier_notation_maths(texte):
     if not texte or not texte.strip():
         return False, ["Le sujet est vide."]
 
-    motif = re.compile(
-        r"(?<!\\)(\$\$|\$)|\\\[|\\\]|\\\(|\\\)"
-    )
+    # ------------------------------------------------
+    # 1. REFUSER LES AUTRES DÉLIMITEURS LATEX
+    # ------------------------------------------------
 
-    paires = {
-        "$": "$",
-        "$$": "$$",
-        r"\(": r"\)",
-        r"\[": r"\]"
-    }
+    if re.search(r"(?<!\\)\$\$|\\[\[\]()]", texte):
+        erreurs.append(
+            "Délimiteur interdit : seules les formules "
+            "encadrées par $...$ sont autorisées."
+        )
 
-    ouvertures = {"$", "$$", r"\(", r"\["}
-    fermetures = {r"\)", r"\]"}
+    # ------------------------------------------------
+    # 2. IDENTIFIER LES FORMULES ENCADRÉES PAR $...$
+    # ------------------------------------------------
 
+    segments_math = []
     ouverture = None
     debut = None
-    segments_math = []
-    position_precedente = 0
-    numero = 0
 
-    for match in motif.finditer(texte):
+    for i, caractere in enumerate(texte):
 
-        delimiteur = match.group()
-
-        if ouverture is None:
-
-            if delimiteur in fermetures:
-                erreurs.append(
-                    f"Délimiteur fermant sans ouverture : {delimiteur}."
-                )
-                continue
-
-            ouverture = delimiteur
-            debut = match.start()
+        if caractere != "$":
             continue
 
-        fermeture_attendue = paires[ouverture]
+        # Ignorer les dollars échappés
+        nb_antislash = 0
+        j = i - 1
 
-        if delimiteur == fermeture_attendue:
+        while j >= 0 and texte[j] == "\\":
+            nb_antislash += 1
+            j -= 1
 
-            numero += 1
+        if nb_antislash % 2 == 1:
+            continue
 
-            formule = texte[
-                match.start() if False else debut + len(ouverture):
-                match.start()
-            ].strip()
+        # Refuser les doubles dollars
+        if (i > 0 and texte[i - 1] == "$") or (
+            i + 1 < len(texte) and texte[i + 1] == "$"
+        ):
+            continue
+
+        if ouverture is None:
+            ouverture = True
+            debut = i
+
+        else:
+            formule = texte[debut + 1:i].strip()
 
             if not formule:
+                erreurs.append("Une formule LaTeX est vide.")
+
+            # Vérification des accolades
+            niveau = 0
+
+            for caractere_formule in formule:
+
+                if caractere_formule == "{":
+                    niveau += 1
+
+                elif caractere_formule == "}":
+                    niveau -= 1
+
+                    if niveau < 0:
+                        break
+
+            if niveau != 0:
                 erreurs.append(
-                    f"La formule numéro {numero} est vide."
+                    "Accolades incorrectes dans une formule LaTeX."
                 )
-            else:
-                niveau = 0
 
-                for i, caractere in enumerate(formule):
-
-                    if caractere not in "{}":
-                        continue
-
-                    nb_antislash = 0
-                    j = i - 1
-
-                    while j >= 0 and formule[j] == "\\":
-                        nb_antislash += 1
-                        j -= 1
-
-                    if nb_antislash % 2 == 1:
-                        continue
-
-                    if caractere == "{":
-                        niveau += 1
-                    else:
-                        niveau -= 1
-
-                        if niveau < 0:
-                            erreurs.append(
-                                f"Accolade fermante incorrecte "
-                                f"dans la formule {numero}."
-                            )
-                            break
-
-                if niveau > 0:
-                    erreurs.append(
-                        f"Accolade ouvrante non fermée "
-                        f"dans la formule {numero}."
-                    )
-
-            segments_math.append((debut, match.end()))
+            segments_math.append((debut, i + 1))
 
             ouverture = None
             debut = None
 
-        elif delimiteur in ouvertures:
-
-            erreurs.append(
-                f"Délimiteur inattendu {delimiteur} : "
-                f"fermeture attendue {fermeture_attendue}."
-            )
-
-        else:
-
-            erreurs.append(
-                f"Fermeture incorrecte : {delimiteur}. "
-                f"Fermeture attendue : {fermeture_attendue}."
-            )
-
     if ouverture is not None:
         erreurs.append(
-            f"Délimiteur non fermé : {ouverture}."
+            "Une formule contient un délimiteur $ non fermé."
         )
 
-    # Retirer les formules correctement encadrées
-    # afin de contrôler uniquement le texte restant.
+    # ------------------------------------------------
+    # 3. EXTRAIRE LE TEXTE HORS LATEX
+    # ------------------------------------------------
+
     texte_hors_latex = []
     position = 0
 
@@ -2368,25 +2340,37 @@ def verifier_notation_maths(texte):
 
     texte_hors_latex = " ".join(texte_hors_latex)
 
-    # Détecter les expressions mathématiques courantes
-    # qui ne sont pas encadrées en LaTeX.
+    # ------------------------------------------------
+    # 4. DÉTECTER LES FORMULES NON ENCADRÉES
+    # ------------------------------------------------
+
     motifs_formules = [
+
+        # Fonctions logarithmiques et autres fonctions
         r"\b(?:ln|log|exp|sqrt)\s*\(",
+
+        # Fonction suivie d'une égalité
         r"\b[A-Za-z]\w*\s*\([^()\n]*\)\s*=",
+
+        # Expressions algébriques comme x - 1 ou x + 2
+        r"\b[A-Za-z]\s*[+\-*/^=<>]\s*(?:\d|[A-Za-z(])",
+
+        # Exposants Unicode
         r"\b[A-Za-z]\w*\s*[²³⁴⁵⁶⁷⁸⁹]",
+
+        # Ensembles numériques
         r"[ℝℕℤℚ]",
-        r"[≤≥≠∈∉]",
-        r"\b[A-Za-z0-9)]\s*(?:\^|=|<|>)\s*[A-Za-z0-9(+-]",
+
+        # Symboles mathématiques
+        r"[≤≥≠∈∉∞]",
+
+        # Commandes LaTeX non encadrées
+        r"\\(?:frac|sqrt|lim|mathbb|cdot|times)\b"
     ]
 
     for motif_formule in motifs_formules:
 
-        correspondances = re.findall(
-            motif_formule,
-            texte_hors_latex
-        )
-
-        if correspondances:
+        if re.search(motif_formule, texte_hors_latex):
 
             erreurs.append(
                 "Expression mathématique détectée hors "
@@ -2396,7 +2380,12 @@ def verifier_notation_maths(texte):
 
             break
 
+    # ------------------------------------------------
+    # 5. VALIDATION FINALE
+    # ------------------------------------------------
+
     return len(erreurs) == 0, erreurs
+
 
 
      
@@ -2420,37 +2409,97 @@ def verifier_derivee_sympy(fonction, derivee_annoncee):
     except Exception:
         return False
 
+
+
 def verifier_derives_sujet_sympy(texte_sujet):
     import re
     import sympy as sp
 
     erreurs = []
 
-    # Recherche des égalités de dérivées annoncées
-    motifs = [
-        r"f'\(x\)\s*=\s*([^$\n]+)",
-        r"f′\(x\)\s*=\s*([^$\n]+)",
-    ]
+    if not texte_sujet or not texte_sujet.strip():
+        return False, ["Le sujet est vide."]
 
-    for motif in motifs:
-        correspondances = re.findall(motif, texte_sujet)
+    # Recherche des fonctions et de leurs dérivées annoncées
+    motif_fonction = re.compile(
+        r"\b([fgh])\(x\)\s*=\s*\$?([^$\n]+)\$?",
+        re.IGNORECASE
+    )
 
-        for expression in correspondances:
-            try:
-                derivee = sp.sympify(
-                    expression.strip()
-                )
-                if derivee.has(sp.nan, sp.zoo):
-                    erreurs.append(
-                        f"Dérivée suspecte : {expression}"
-                    )
-            except Exception:
-                erreurs.append(
-                    f"Dérivée impossible à analyser : {expression}"
-                )
+    motif_derivee = re.compile(
+        r"\b([fgh])['′]\(x\)\s*=\s*\$?([^$\n]+)\$?",
+        re.IGNORECASE
+    )
+
+    fonctions = {}
+    derivees = {}
+
+    def convertir_expression(expression):
+        expression = expression.strip()
+
+        # Conversions mathématiques simples
+        expression = expression.replace("^", "**")
+        expression = expression.replace(r"\ln", "log")
+        expression = expression.replace("ln", "log")
+        expression = expression.replace(r"\sqrt", "sqrt")
+        expression = expression.replace(r"\exp", "exp")
+
+        return sp.sympify(
+            expression,
+            locals={
+                "x": sp.Symbol("x"),
+                "log": sp.log,
+                "sqrt": sp.sqrt,
+                "exp": sp.exp
+            }
+        )
+
+    for nom, expression in motif_fonction.findall(texte_sujet):
+        try:
+            fonctions[nom.lower()] = convertir_expression(expression)
+        except Exception:
+            erreurs.append(
+                f"Fonction {nom}(x) impossible à analyser : "
+                f"{expression.strip()}"
+            )
+
+    for nom, expression in motif_derivee.findall(texte_sujet):
+        try:
+            derivees[nom.lower()] = convertir_expression(expression)
+        except Exception:
+            erreurs.append(
+                f"Dérivée de {nom}(x) impossible à analyser : "
+                f"{expression.strip()}"
+            )
+
+    # Comparaison entre la dérivée annoncée et la dérivée réelle
+    for nom, derivee_annoncee in derivees.items():
+
+        if nom not in fonctions:
+            erreurs.append(
+                f"Impossible de vérifier la dérivée de {nom}(x) : "
+                "fonction de départ introuvable."
+            )
+            continue
+
+        derivee_reelle = sp.diff(
+            fonctions[nom],
+            sp.Symbol("x")
+        )
+
+        difference = sp.simplify(
+            derivee_reelle - derivee_annoncee
+        )
+
+        if difference != 0:
+            erreurs.append(
+                f"Dérivée incorrecte pour {nom}(x). "
+                f"Dérivée annoncée : {derivee_annoncee}. "
+                f"La comparaison avec la fonction de départ "
+                "n'est pas satisfaisante."
+            )
 
     return len(erreurs) == 0, erreurs
-
 
 def afficher_generateur_sujet():
 
