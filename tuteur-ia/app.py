@@ -3411,7 +3411,8 @@ par une autre fonction de l'application.
                                     contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                                 )
 
-if deuxieme_controle and deuxieme_controle.strip():
+
+                            if deuxieme_controle and deuxieme_controle.strip():
 
     texte_final = deuxieme_controle.strip()
 
