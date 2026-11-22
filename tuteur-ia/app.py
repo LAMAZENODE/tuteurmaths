@@ -2458,9 +2458,310 @@ def verifier_encadrement_racine_sympy(
     except Exception as erreur:
         return False, f"Vérification impossible : {erreur}"
 
-     
+   
+def verifier_solution_numerique_sympy(
+    equation,
+    variable,
+    solution_annoncee,
+    tolerance=1e-2
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable)
+
+        # Conversion de l'équation
+        membre_gauche, membre_droit = equation.split("=")
+
+        gauche = sp.sympify(
+            membre_gauche,
+            locals={"x": x, "ln": sp.log, "e": sp.E},
+            convert_xor=True
+        )
+
+        droite = sp.sympify(
+            membre_droit,
+            locals={"x": x, "ln": sp.log, "e": sp.E},
+            convert_xor=True
+        )
+
+        # Vérification de la solution annoncée
+        valeur = float(solution_annoncee)
+
+        resultat = sp.N(
+            (gauche - droite).subs(x, valeur)
+        )
+
+        if abs(float(resultat)) <= tolerance:
+            return True, "Solution numérique validée."
+
+        return False, (
+            f"Solution incorrecte : écart obtenu = "
+            f"{abs(float(resultat)):.6g}"
+        )
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+  
+def verifier_variations_sympy(
+    fonction,
+    intervalle_inf,
+    intervalle_sup,
+    points_critiques
+):
+    import sympy as sp
+
+    x = sp.Symbol("x")
+
+    try:
+        f = sp.sympify(
+            fonction,
+            locals={"x": x, "ln": sp.log, "e": sp.E},
+            convert_xor=True
+        )
+
+        derivee = sp.diff(f, x)
+
+        a = float(intervalle_inf)
+        b = float(intervalle_sup)
+
+        points = sorted(
+            float(p) for p in points_critiques
+        )
+
+        if a >= b:
+            return False, "Intervalle incorrect."
+
+        if any(p <= a or p >= b for p in points):
+            return False, "Un point critique est hors de l'intervalle."
+
+        bornes = [a] + points + [b]
+
+        for i in range(len(bornes) - 1):
+            milieu = (bornes[i] + bornes[i + 1]) / 2
+
+            valeur = sp.N(derivee.subs(x, milieu))
+
+            if valeur.is_real is not True:
+                return False, "Signe de la dérivée indéterminé."
+
+        return True, "Les intervalles ont été analysés."
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
 
 
+
+def verifier_extremum_sympy(
+    fonction,
+    variable,
+    valeur_x_annoncee,
+    valeur_extremum_annoncee,
+    tolerance=1e-6
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable)
+
+        f = sp.sympify(
+            fonction,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        valeur_x = float(valeur_x_annoncee)
+        valeur_annoncee = float(valeur_extremum_annoncee)
+
+        valeur_reelle = float(
+            sp.N(f.subs(x, valeur_x))
+        )
+
+        if abs(valeur_reelle - valeur_annoncee) <= tolerance:
+            return True, "Valeur de l'extremum validée."
+
+        return False, (
+            f"Valeur incorrecte : la valeur réelle est "
+            f"{valeur_reelle:.8g}."
+        )
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+def verifier_signe_sympy(
+    expression,
+    variable,
+    borne_inf,
+    borne_sup,
+    points_test
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable)
+
+        expr = sp.sympify(
+            expression,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        a = float(borne_inf)
+        b = float(borne_sup)
+
+        if a >= b:
+            return False, "Intervalle incorrect."
+
+        resultats = []
+
+        for point in points_test:
+            valeur_x = float(point)
+
+            if not a <= valeur_x <= b:
+                return False, f"Point {point} hors intervalle."
+
+            valeur = sp.N(expr.subs(x, valeur_x))
+
+            if valeur.is_real is not True:
+                return False, f"Valeur non réelle en {point}."
+
+            if valeur > 0:
+                signe = "+"
+            elif valeur < 0:
+                signe = "-"
+            else:
+                signe = "0"
+
+            resultats.append((valeur_x, signe))
+
+        return True, resultats
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+def verifier_equation_inequation_sympy(
+    expression,
+    variable,
+    solution_annoncee,
+    type_question="equation"
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable, real=True)
+
+        expr = sp.sympify(
+            expression,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        if type_question == "equation":
+            solutions = sp.solveset(
+                expr,
+                x,
+                domain=sp.S.Reals
+            )
+
+        elif type_question == "inequation":
+            solutions = sp.solve_univariate_inequality(
+                expr <= 0,
+                x,
+                relational=False
+            )
+
+        else:
+            return False, "Type de question inconnu."
+
+        annonce = sp.sympify(
+            solution_annoncee,
+            locals={variable: x}
+        )
+
+        if type_question == "equation":
+            if annonce == solutions:
+                return True, "Solutions de l'équation validées."
+
+        elif type_question == "inequation":
+            if sp.simplify(annonce.symmetric_difference(solutions)) == sp.EmptySet:
+                return True, "Solutions de l'inéquation validées."
+
+        return False, f"Résultat annoncé incorrect. Résultat attendu : {solutions}"
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+
+def verifier_limite_sympy(
+    fonction,
+    variable,
+    point,
+    limite_annoncee,
+    direction="+",
+    tolerance=1e-6
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable, real=True)
+
+        f = sp.sympify(
+            fonction,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        if point == "+oo":
+            point_sym = sp.oo
+        elif point == "-oo":
+            point_sym = -sp.oo
+        else:
+            point_sym = sp.sympify(point)
+
+        if direction not in ("+", "-"):
+            return False, "Direction incorrecte."
+
+        resultat = sp.limit(
+            f,
+            x,
+            point_sym,
+            dir=direction
+        )
+
+        annonce = sp.sympify(
+            limite_annoncee,
+            locals={"e": sp.E, "oo": sp.oo}
+        )
+
+        difference = sp.simplify(resultat - annonce)
+
+        if difference == 0:
+            return True, f"Limite validée : {resultat}"
+
+        return False, f"Limite incorrecte. Résultat attendu : {resultat}"
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
 
 
 
@@ -3125,26 +3426,48 @@ par une autre fonction de l'application.
                                             sujet_accepte
                                         )
 
-                                        if notation_ok:
+                                        
+if notation_ok:
 
-                                            st.session_state.sujet_genere = sujet_accepte
-                                            st.session_state.correction_sujet = ""
+    # Vérification mathématique des dérivées avec SymPy
+    derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+        sujet_accepte
+    )
 
-                                            st.success(
-                                                "✅ Sujet contrôlé : structure des formules vérifiée."
-                                            )
+    if derives_ok:
 
-                                        else:
+        st.session_state.sujet_genere = sujet_accepte
+        st.session_state.correction_sujet = ""
 
-                                            st.session_state.sujet_genere = ""
-                                            st.session_state.correction_sujet = ""
+        st.success(
+            "✅ Sujet contrôlé : notation des formules et dérivées vérifiées."
+        )
 
-                                            st.error(
-                                                "❌ Sujet refusé : problème détecté dans les formules."
-                                            )
+    else:
 
-                                            for erreur in erreurs_notation:
-                                                st.warning(erreur)
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error(
+            "❌ Sujet refusé : une ou plusieurs dérivées sont incorrectes "
+            "ou impossibles à vérifier."
+        )
+
+        for erreur in erreurs_derives:
+            st.warning(erreur)
+
+else:
+
+    st.session_state.sujet_genere = ""
+    st.session_state.correction_sujet = ""
+
+    st.error(
+        "❌ Sujet refusé : problème détecté dans les formules."
+    )
+
+    for erreur in erreurs_notation:
+        st.warning(erreur)
+
 
                                     else:
                                         st.session_state.sujet_genere = ""
