@@ -2999,9 +2999,7 @@ Ne fournis aucune correction ni réponse.
 
 Réponds uniquement avec le sujet final en français.
 """
-
-            
-                   sujet = _appeler_gemini(
+                    sujet = _appeler_gemini(
                         instructions,
                         contenu="Génère le sujet demandé."
                     )
@@ -3009,6 +3007,9 @@ Réponds uniquement avec le sujet final en français.
                     if sujet and sujet.strip():
 
                         prompt_verification = f"""
+
+                        
+                    
 Tu es un inspecteur pédagogique expert en mathématiques,
 spécialisé dans les programmes officiels français du collège
 et du lycée.
