@@ -2246,13 +2246,19 @@ def verifier_sympy_disponible():
         return False
 
 
-
-     
 def verifier_notation_maths(texte):
     """
-    Vérifie la structure des formules LaTeX.
-    Ne prétend pas vérifier leur exactitude mathématique.
+    Vérifie les délimiteurs LaTeX sans confondre
+    les formules simples ($...$) et les formules
+    affichées ($$...$$).
+
+    Détecte :
+    - Les formules réellement vides.
+    - Les délimiteurs manquants.
+    - Les accolades incorrectes.
+    - Les formules mal structurées.
     """
+
     import re
 
     erreurs = []
@@ -2260,54 +2266,139 @@ def verifier_notation_maths(texte):
     if not texte or not texte.strip():
         return False, ["Le sujet est vide."]
 
-    # Vérifier les délimiteurs $
-    if texte.count("$") % 2 != 0:
-        erreurs.append("Un délimiteur $ est manquant.")
-        return False, erreurs
-
-    # Extraire les formules entre deux $
-    formules = re.findall(
-        r"\$(.*?)\$",
-        texte,
-        flags=re.DOTALL
+    # Reconnaître les différents délimiteurs LaTeX.
+    motifs = re.compile(
+        r"(?<!\\)\$\$|(?<!\\)\$|\\\[|\\\]|\\\(|\\\)"
     )
 
-    for numero, formule in enumerate(formules, start=1):
+    correspondances = list(motifs.finditer(texte))
 
-        formule = formule.strip()
+    # Correspondances entre ouverture et fermeture.
+    paires = {
+        "$": "$",
+        "$$": "$$",
+        r"\(": r"\)",
+        r"\[": r"\]"
+    }
 
-        # Vérifier si la formule est réellement vide
-        if not formule:
-            erreurs.append(
-                f"La formule numéro {numero} est vide."
-            )
-            continue
+    fermetures = {
+        "$",
+        "$$",
+        r"\)",
+        r"\]"
+    }
 
-        # Vérifier l'équilibre des accolades
-        niveau = 0
+    ouverture = None
+    debut_formule = None
+    numero_formule = 0
 
-        for caractere in formule:
+    for correspondance in correspondances:
 
-            if caractere == "{":
-                niveau += 1
+        delimiteur = correspondance.group()
 
-            elif caractere == "}":
-                niveau -= 1
+        if ouverture is None:
 
-                if niveau < 0:
+            if delimiteur in fermetures:
+                erreurs.append(
+                    f"Délimiteur fermant sans ouverture : {delimiteur}"
+                )
+                continue
+
+            ouverture = delimiteur
+            debut_formule = correspondance.end()
+
+        else:
+
+            fermeture_attendue = paires[ouverture]
+
+            if delimiteur == fermeture_attendue:
+
+                numero_formule += 1
+
+                formule = texte[
+                    debut_formule:correspondance.start()
+                ].strip()
+
+                # Détecter uniquement les formules réellement vides.
+                if not formule:
                     erreurs.append(
-                        f"Accolade fermante incorrecte "
-                        f"dans la formule {numero}."
+                        f"La formule numéro {numero_formule} est vide."
                     )
-                    break
 
-        if niveau > 0:
-            erreurs.append(
-                f"Accolade ouvrante non fermée "
-                f"dans la formule {numero}."
-            )
+                else:
+
+                    # Vérifier les accolades.
+                    niveau = 0
+
+                    for i, caractere in enumerate(formule):
+
+                        # Ignorer les accolades échappées.
+                        if caractere in "{}":
+
+                            nb_antislash = 0
+                            j = i - 1
+
+                            while j >= 0 and formule[j] == "\\":
+                                nb_antislash += 1
+                                j -= 1
+
+                            if nb_antislash % 2 == 1:
+                                continue
+
+                            if caractere == "{":
+                                niveau += 1
+
+                            else:
+                                niveau -= 1
+
+                                if niveau < 0:
+                                    erreurs.append(
+                                        f"Accolade fermante incorrecte "
+                                        f"dans la formule {numero_formule}."
+                                    )
+                                    break
+
+                    if niveau > 0:
+                        erreurs.append(
+                            f"Accolade ouvrante non fermée "
+                            f"dans la formule {numero_formule}."
+                        )
+
+                ouverture = None
+                debut_formule = None
+
+            else:
+
+                if delimiteur in fermetures:
+                    erreurs.append(
+                        f"Délimiteur incorrect : {delimiteur}. "
+                        f"Fermeture attendue : {fermeture_attendue}."
+                    )
+
+                    ouverture = None
+                    debut_formule = None
+
+                else:
+                    erreurs.append(
+                        f"Délimiteur {ouverture} non fermé "
+                        f"avant une nouvelle ouverture {delimiteur}."
+                    )
+
+                    ouverture = delimiteur
+                    debut_formule = correspondance.end()
+
+    # Vérifier qu'aucune formule ne reste ouverte.
+    if ouverture is not None:
+        erreurs.append(
+            f"Délimiteur non fermé : {ouverture}"
+        )
 
     return len(erreurs) == 0, erreurs
+
+
+     
+
+        
 def verifier_derivee_sympy(fonction, derivee_annoncee):
     import sympy as sp
 
