@@ -2222,14 +2222,15 @@ def verifier_sympy_disponible():
 
 
 
+
+
 def verifier_notation_maths(texte):
     """
-    Vérifie les délimiteurs LaTeX et l'équilibre des accolades.
-    Accepte :
-    $...$, $$...$$, \( ... \) et \[ ... \].
-    
-    Cette fonction vérifie la structure de notation,
-    pas l'exactitude mathématique des formules.
+    Vérifie :
+    1. Les délimiteurs LaTeX.
+    2. L'équilibre des accolades.
+    3. La présence de formules mathématiques
+       non encadrées par des délimiteurs LaTeX.
     """
 
     import re
@@ -2255,111 +2256,148 @@ def verifier_notation_maths(texte):
 
     ouverture = None
     debut = None
+    segments_math = []
+    position_precedente = 0
     numero = 0
-
-    def verifier_accolades(formule, numero):
-        niveau = 0
-
-        for i, caractere in enumerate(formule):
-
-            if caractere not in "{}":
-                continue
-
-            # Vérifier si l'accolade est échappée.
-            nb_antislash = 0
-            j = i - 1
-
-            while j >= 0 and formule[j] == "\\":
-                nb_antislash += 1
-                j -= 1
-
-            if nb_antislash % 2 == 1:
-                continue
-
-            if caractere == "{":
-                niveau += 1
-
-            else:
-                niveau -= 1
-
-                if niveau < 0:
-                    erreurs.append(
-                        f"Accolade fermante incorrecte "
-                        f"dans la formule {numero}."
-                    )
-                    return
-
-        if niveau > 0:
-            erreurs.append(
-                f"Accolade ouvrante non fermée "
-                f"dans la formule {numero}."
-            )
 
     for match in motif.finditer(texte):
 
         delimiteur = match.group()
 
-        # Aucune formule n'est actuellement ouverte.
         if ouverture is None:
 
             if delimiteur in fermetures:
                 erreurs.append(
-                    f"Délimiteur fermant sans ouverture : "
-                    f"{delimiteur}."
+                    f"Délimiteur fermant sans ouverture : {delimiteur}."
                 )
                 continue
 
             ouverture = delimiteur
-            debut = match.end()
+            debut = match.start()
             continue
 
         fermeture_attendue = paires[ouverture]
 
-        # La fermeture correspond à l'ouverture.
         if delimiteur == fermeture_attendue:
 
             numero += 1
 
-            formule = texte[debut:match.start()].strip()
+            formule = texte[
+                match.start() if False else debut + len(ouverture):
+                match.start()
+            ].strip()
 
             if not formule:
                 erreurs.append(
                     f"La formule numéro {numero} est vide."
                 )
             else:
-                verifier_accolades(formule, numero)
+                niveau = 0
+
+                for i, caractere in enumerate(formule):
+
+                    if caractere not in "{}":
+                        continue
+
+                    nb_antislash = 0
+                    j = i - 1
+
+                    while j >= 0 and formule[j] == "\\":
+                        nb_antislash += 1
+                        j -= 1
+
+                    if nb_antislash % 2 == 1:
+                        continue
+
+                    if caractere == "{":
+                        niveau += 1
+                    else:
+                        niveau -= 1
+
+                        if niveau < 0:
+                            erreurs.append(
+                                f"Accolade fermante incorrecte "
+                                f"dans la formule {numero}."
+                            )
+                            break
+
+                if niveau > 0:
+                    erreurs.append(
+                        f"Accolade ouvrante non fermée "
+                        f"dans la formule {numero}."
+                    )
+
+            segments_math.append((debut, match.end()))
 
             ouverture = None
             debut = None
-            continue
 
-        # Une nouvelle ouverture apparaît avant la fermeture.
-        if delimiteur in ouvertures:
+        elif delimiteur in ouvertures:
 
             erreurs.append(
-                f"Délimiteur inattendu {delimiteur} "
-                f"alors que {fermeture_attendue} était attendu."
+                f"Délimiteur inattendu {delimiteur} : "
+                f"fermeture attendue {fermeture_attendue}."
             )
 
-            # On conserve l'ouverture initiale pour éviter
-            # de perdre le suivi de la formule en cours.
-            continue
-
-        # Mauvaise fermeture.
-        if delimiteur in fermetures:
+        else:
 
             erreurs.append(
                 f"Fermeture incorrecte : {delimiteur}. "
                 f"Fermeture attendue : {fermeture_attendue}."
             )
 
-    # Une formule est restée ouverte.
     if ouverture is not None:
         erreurs.append(
             f"Délimiteur non fermé : {ouverture}."
         )
 
+    # Retirer les formules correctement encadrées
+    # afin de contrôler uniquement le texte restant.
+    texte_hors_latex = []
+    position = 0
+
+    for debut_segment, fin_segment in segments_math:
+
+        texte_hors_latex.append(
+            texte[position:debut_segment]
+        )
+
+        position = fin_segment
+
+    texte_hors_latex.append(texte[position:])
+
+    texte_hors_latex = " ".join(texte_hors_latex)
+
+    # Détecter les expressions mathématiques courantes
+    # qui ne sont pas encadrées en LaTeX.
+    motifs_formules = [
+        r"\b(?:ln|log|exp|sqrt)\s*\(",
+        r"\b[A-Za-z]\w*\s*\([^()\n]*\)\s*=",
+        r"\b[A-Za-z]\w*\s*[²³⁴⁵⁶⁷⁸⁹]",
+        r"[ℝℕℤℚ]",
+        r"[≤≥≠∈∉]",
+        r"\b[A-Za-z0-9)]\s*(?:\^|=|<|>)\s*[A-Za-z0-9(+-]",
+    ]
+
+    for motif_formule in motifs_formules:
+
+        correspondances = re.findall(
+            motif_formule,
+            texte_hors_latex
+        )
+
+        if correspondances:
+
+            erreurs.append(
+                "Expression mathématique détectée hors "
+                "des délimiteurs LaTeX. Toutes les formules "
+                "doivent être encadrées par $...$."
+            )
+
+            break
+
     return len(erreurs) == 0, erreurs
+
 
      
 
