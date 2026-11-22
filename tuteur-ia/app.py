@@ -2388,9 +2388,6 @@ def verifier_notation_maths(texte):
 
 
 
-     
-
-        
 def verifier_derivee_sympy(fonction, derivee_annoncee):
     import sympy as sp
 
@@ -2408,6 +2405,63 @@ def verifier_derivee_sympy(fonction, derivee_annoncee):
 
     except Exception:
         return False
+
+
+# ==================================================
+# VÉRIFICATION DES ENCADREMENTS DE RACINES
+# ==================================================
+
+def verifier_encadrement_racine_sympy(
+    fonction,
+    borne_inf,
+    borne_sup
+):
+    import sympy as sp
+
+    x = sp.Symbol("x")
+
+    try:
+        f = sp.sympify(
+            fonction,
+            locals={
+                "x": x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        a = float(borne_inf)
+        b = float(borne_sup)
+
+        if a >= b:
+            return False, "Les bornes sont incorrectes."
+
+        valeur_a = sp.N(f.subs(x, a))
+        valeur_b = sp.N(f.subs(x, b))
+
+        if valeur_a.is_real is not True or valeur_b.is_real is not True:
+            return False, "La fonction n'est pas définie aux deux bornes."
+
+        if valeur_a == 0 or valeur_b == 0:
+            return True, "Une borne est une racine."
+
+        if valeur_a * valeur_b < 0:
+            return True, "L'encadrement est cohérent : changement de signe."
+
+        return False, (
+            "Encadrement incorrect : il n'y a pas de changement "
+            "de signe entre les deux bornes."
+        )
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+     
+
+
+
 
 
 
