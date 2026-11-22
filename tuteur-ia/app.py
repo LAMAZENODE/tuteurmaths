@@ -3427,7 +3427,7 @@ par une autre fonction de l'application.
                                         )
 
                                         
-if notation_ok:
+        if notation_ok:
 
     # Vérification mathématique des dérivées avec SymPy
     derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
