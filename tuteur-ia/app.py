@@ -2219,44 +2219,12 @@ def verifier_sympy_disponible():
     except Exception:
         return False
 
-def verifier_sympy_disponible():
-    """
-    Vérifie que SymPy est installé et effectue
-    un premier calcul mathématique exact.
-    """
-    try:
-        import sympy as sp
-
-        # Test de calcul avec des fractions exactes
-        resultat = sp.Rational(1, 2) + sp.Rational(1, 3)
-
-        if resultat != sp.Rational(5, 6):
-            return False
-
-        # Test de dérivation
-        x = sp.Symbol("x")
-        derivee = sp.diff(x**2 + 3*x, x)
-
-        if sp.simplify(derivee - (2*x + 3)) != 0:
-            return False
-
-        return True
-
-    except Exception:
-        return False
-
 
 def verifier_notation_maths(texte):
     """
-    Vérifie les délimiteurs LaTeX sans confondre
-    les formules simples ($...$) et les formules
-    affichées ($$...$$).
-
-    Détecte :
-    - Les formules réellement vides.
-    - Les délimiteurs manquants.
-    - Les accolades incorrectes.
-    - Les formules mal structurées.
+    Vérifie les délimiteurs LaTeX et les accolades.
+    Accepte les formules en $...$, $$...$$,
+    \(...\) et \[...\].
     """
 
     import re
@@ -2266,14 +2234,15 @@ def verifier_notation_maths(texte):
     if not texte or not texte.strip():
         return False, ["Le sujet est vide."]
 
-    # Reconnaître les différents délimiteurs LaTeX.
-    motifs = re.compile(
-        r"(?<!\\)\$\$|(?<!\\)\$|\\\[|\\\]|\\\(|\\\)"
+    # Détecter les délimiteurs LaTeX.
+    motif = re.compile(
+        r"(?<!\\)(\$\$|\$)|\\\[|\\\]|\\\(|\\\)"
     )
 
-    correspondances = list(motifs.finditer(texte))
+    ouverture = None
+    debut = None
+    numero = 0
 
-    # Correspondances entre ouverture et fermeture.
     paires = {
         "$": "$",
         "$$": "$$",
@@ -2281,21 +2250,17 @@ def verifier_notation_maths(texte):
         r"\[": r"\]"
     }
 
-    fermetures = {
-        "$",
-        "$$",
-        r"\)",
-        r"\]"
-    }
+    ouvertures = {"$", "$$", r"\(", r"\["}
+    fermetures = {r"\)", r"\]"}
 
-    ouverture = None
-    debut_formule = None
-    numero_formule = 0
+    correspondances = list(motif.finditer(texte))
 
-    for correspondance in correspondances:
+    for match in correspondances:
 
-        delimiteur = correspondance.group()
+        delimiteur = match.group()
 
+        # Aucune formule ouverte :
+        # on attend un délimiteur d'ouverture.
         if ouverture is None:
 
             if delimiteur in fermetures:
@@ -2305,95 +2270,101 @@ def verifier_notation_maths(texte):
                 continue
 
             ouverture = delimiteur
-            debut_formule = correspondance.end()
+            debut = match.end()
 
         else:
 
             fermeture_attendue = paires[ouverture]
 
+            # Le délimiteur correspond à la fermeture attendue.
             if delimiteur == fermeture_attendue:
 
-                numero_formule += 1
+                numero += 1
 
                 formule = texte[
-                    debut_formule:correspondance.start()
+                    debut:match.start()
                 ].strip()
 
-                # Détecter uniquement les formules réellement vides.
                 if not formule:
                     erreurs.append(
-                        f"La formule numéro {numero_formule} est vide."
+                        f"La formule numéro {numero} est vide."
                     )
 
                 else:
 
-                    # Vérifier les accolades.
+                    # Vérification des accolades.
                     niveau = 0
 
                     for i, caractere in enumerate(formule):
 
+                        if caractere not in "{}":
+                            continue
+
                         # Ignorer les accolades échappées.
-                        if caractere in "{}":
+                        nb_antislash = 0
+                        j = i - 1
 
-                            nb_antislash = 0
-                            j = i - 1
+                        while j >= 0 and formule[j] == "\\":
+                            nb_antislash += 1
+                            j -= 1
 
-                            while j >= 0 and formule[j] == "\\":
-                                nb_antislash += 1
-                                j -= 1
+                        if nb_antislash % 2 == 1:
+                            continue
 
-                            if nb_antislash % 2 == 1:
-                                continue
+                        if caractere == "{":
+                            niveau += 1
 
-                            if caractere == "{":
-                                niveau += 1
+                        else:
+                            niveau -= 1
 
-                            else:
-                                niveau -= 1
-
-                                if niveau < 0:
-                                    erreurs.append(
-                                        f"Accolade fermante incorrecte "
-                                        f"dans la formule {numero_formule}."
-                                    )
-                                    break
+                            if niveau < 0:
+                                erreurs.append(
+                                    f"Accolade fermante incorrecte "
+                                    f"dans la formule {numero}."
+                                )
+                                break
 
                     if niveau > 0:
                         erreurs.append(
                             f"Accolade ouvrante non fermée "
-                            f"dans la formule {numero_formule}."
+                            f"dans la formule {numero}."
                         )
 
                 ouverture = None
-                debut_formule = None
+                debut = None
 
             else:
 
-                if delimiteur in fermetures:
+                # Une nouvelle ouverture apparaît avant
+                # la fermeture de la formule précédente.
+                if delimiteur in ouvertures:
+
                     erreurs.append(
-                        f"Délimiteur incorrect : {delimiteur}. "
+                        f"Délimiteurs incompatibles : "
+                        f"{ouverture} et {delimiteur}."
+                    )
+
+                    ouverture = delimiteur
+                    debut = match.end()
+
+                else:
+
+                    erreurs.append(
+                        f"Fermeture incorrecte : {delimiteur}. "
                         f"Fermeture attendue : {fermeture_attendue}."
                     )
 
                     ouverture = None
-                    debut_formule = None
+                    debut = None
 
-                else:
-                    erreurs.append(
-                        f"Délimiteur {ouverture} non fermé "
-                        f"avant une nouvelle ouverture {delimiteur}."
-                    )
-
-                    ouverture = delimiteur
-                    debut_formule = correspondance.end()
-
-    # Vérifier qu'aucune formule ne reste ouverte.
+    # Vérifier les formules restées ouvertes.
     if ouverture is not None:
         erreurs.append(
-            f"Délimiteur non fermé : {ouverture}"
+            f"Délimiteur non fermé : {ouverture}."
         )
 
     return len(erreurs) == 0, erreurs
+
 
 
      
