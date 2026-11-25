@@ -573,8 +573,12 @@ def generer_pdf(texte_correction, enonce_exercice):
             r'\in': '∈',
         }
 
-        for ancien, nouveau in remplacements.items():
-            texte = texte.replace(ancien, nouveau)
+        for ancien, nouveau in sorted(
+           remplacements.items(),
+           key=lambda element: len(element[0]),
+           reverse=True
+       ):
+          texte = texte.replace(ancien, nouveau)
 
         # Fractions simples
         texte = re.sub(
@@ -1136,6 +1140,28 @@ def generer_pdf_sujet(texte_sujet):
     )
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
+        # CONVERSION DES FORMULES MATHEMATIQUES POUR LE PDF
+
+    import re
+
+    def convertir_latex_pdf(texte):
+
+        texte = texte.replace(r"\sqrt{", "√(")
+        texte = texte.replace(r"\times", "×")
+        texte = texte.replace(r"\cdot", "·")
+        texte = texte.replace(r"\infty", "∞")
+        texte = texte.replace(r"\neq", "≠")
+        texte = texte.replace(r"\leq", "≤")
+        texte = texte.replace(r"\geq", "≥")
+        texte = texte.replace(r"\pi", "π")
+
+        texte = re.sub(
+            r"\^\{([^{}]+)\}",
+            r"^(\1)",
+            texte
+        )
+
+        return texte
 
 
     # ------------------------------------------------
@@ -1636,41 +1662,206 @@ def generer_pdf_sujet(texte_sujet):
         texte
     )
 
-    # --------------------------------------------
-    # SYMBOLes MATHEMATIQUES
-    # --------------------------------------------
+   
+    
+ # ==================================================
+ 
+
+    # ==================================================
+    # DICTIONNAIRE COMPLET DES SYMBOLES MATHEMATIQUES
+    # ==================================================
 
     remplacements = {
-        r"\in": "∈",
+
+        # ENSEMBLES DE NOMBRES
+        r"\mathbb{N}": "ℕ",
+        r"\mathbb{Z}": "ℤ",
+        r"\mathbb{D}": "𝔻",
+        r"\mathbb{Q}": "ℚ",
+        r"\mathbb{R}": "ℝ",
+        r"\mathbb{C}": "ℂ",
+
+        # APPARTENANCE ET ENSEMBLES
         r"\notin": "∉",
+        r"\in": "∈",
+        r"\subseteq": "⊆",
+        r"\subset": "⊂",
+        r"\supseteq": "⊇",
+        r"\supset": "⊃",
+        r"\cup": "∪",
+        r"\cap": "∩",
+        r"\emptyset": "∅",
+        r"\varnothing": "∅",
+        r"\setminus": "\\",
+
+        # COMPARAISONS
         r"\leq": "≤",
         r"\le": "≤",
         r"\geq": "≥",
         r"\ge": "≥",
         r"\neq": "≠",
+        r"\approx": "≈",
+        r"\equiv": "≡",
+        r"\sim": "∼",
+        r"\ll": "≪",
+        r"\gg": "≫",
+        r"\propto": "∝",
+
+        # OPERATIONS
         r"\times": "×",
         r"\div": "÷",
         r"\cdot": "·",
-        r"\approx": "≈",
+        r"\pm": "±",
+        r"\mp": "∓",
+        r"\ast": "∗",
+        r"\star": "⋆",
+
+        # INFINI ET LIMITES
+        r"+\infty": "+∞",
+        r"-\infty": "−∞",
+        r"\infty": "infini",
+        r"\lim": "lim",
+        r"\to": "→",
+        r"\rightarrow": "→",
+        r"\leftarrow": "←",
+        r"\Rightarrow": "⇒",
+        r"\Leftarrow": "⇐",
+        r"\Leftrightarrow": "⇔",
+
+        # INTERVALLES ET CROCHETS
+        r"\left": "",
+        r"\right": "",
+        r"\lbrack": "[",
+        r"\rbrack": "]",
+        r"\{": "{",
+        r"\}": "}",
+        r"\lbrace": "{",
+        r"\rbrace": "}",
+        r"\langle": "⟨",
+        r"\rangle": "⟩",
+
+        # FRACTIONS ET RACINES
+        r"\sqrt": "√",
+        r"\surd": "√",
+        r"\dfrac": "",
+        r"\frac": "",
+        r"\tfrac": "",
+        r"\cfrac": "",
+
+        # PUISSANCES ET INDICES
+        r"\prime": "′",
+        r"\doubleprime": "″",
+
+        # GEOMETRIE
         r"\parallel": "∥",
         r"\perp": "⊥",
-        r"\pi": "π",
-        r"\infty": "∞",
-        r"\alpha": "α",
-        r"\beta": "β",
-        r"\theta": "θ",
-        r"\Delta": "Δ",
-        r"\Rightarrow": "⇒",
-        r"\rightarrow": "→",
+        r"\angle": "∠",
+        r"\triangle": "△",
+        r"\cong": "≅",
+        r"\simeq": "≃",
+        r"\overline": "¯",
+        r"\widehat": "^",
+        r"\vec": "",
+        r"\overrightarrow": "→",
+        r"\overleftarrow": "←",
+        r"\degree": "°",
+        r"\circ": "°",
+
+        # FONCTIONS ET ANALYSE
         r"\sin": "sin",
         r"\cos": "cos",
         r"\tan": "tan",
-        r"\neq": "≠",
-        r"\pm": "±"
-    }
+        r"\arcsin": "arcsin",
+        r"\arccos": "arccos",
+        r"\arctan": "arctan",
+        r"\ln": "ln",
+        r"\log": "log",
+        r"\exp": "exp",
+        r"\max": "max",
+        r"\min": "min",
+        r"\sup": "sup",
+        r"\inf": "inf",
 
-    for ancien, nouveau in remplacements.items():
-        texte = texte.replace(ancien, nouveau)
+        # DERIVEES ET INTEGRALES
+        r"\partial": "∂",
+        r"\nabla": "∇",
+        r"\int": "∫",
+        r"\iint": "∬",
+        r"\iiint": "∭",
+        r"\oint": "∮",
+        r"\sum": "∑",
+        r"\prod": "∏",
+        r"\Delta": "Δ",
+
+        # PROBABILITES ET LOGIQUE
+        r"\forall": "∀",
+        r"\exists": "∃",
+        r"\nexists": "∄",
+        r"\land": "∧",
+        r"\lor": "∨",
+        r"\neg": "¬",
+        r"\iff": "⇔",
+        r"\therefore": "∴",
+
+        # LETTRES GRECQUES MINUSCULES
+        r"\alpha": "α",
+        r"\beta": "β",
+        r"\gamma": "γ",
+        r"\delta": "δ",
+        r"\epsilon": "ε",
+        r"\varepsilon": "ε",
+        r"\zeta": "ζ",
+        r"\eta": "η",
+        r"\theta": "θ",
+        r"\vartheta": "ϑ",
+        r"\iota": "ι",
+        r"\kappa": "κ",
+        r"\lambda": "λ",
+        r"\mu": "μ",
+        r"\nu": "ν",
+        r"\xi": "ξ",
+        r"\pi": "π",
+        r"\rho": "ρ",
+        r"\sigma": "σ",
+        r"\tau": "τ",
+        r"\upsilon": "υ",
+        r"\phi": "φ",
+        r"\varphi": "φ",
+        r"\chi": "χ",
+        r"\psi": "ψ",
+        r"\omega": "ω",
+
+        # LETTRES GRECQUES MAJUSCULES
+        r"\Gamma": "Γ",
+        r"\Lambda": "Λ",
+        r"\Xi": "Ξ",
+        r"\Pi": "Π",
+        r"\Sigma": "Σ",
+        r"\Upsilon": "Υ",
+        r"\Phi": "Φ",
+        r"\Psi": "Ψ",
+        r"\Omega": "Ω",
+
+        # MATRICES ET VECTEURS
+        r"\matrix": "",
+        r"\pmatrix": "",
+        r"\det": "det",
+        r"\ker": "ker",
+        r"\Im": "Im",
+        r"\Re": "Re",
+
+        # SYMBOLES DIVERS
+        r"\ldots": "…",
+        r"\cdots": "⋯",
+        r"\dots": "…",
+        r"\vdots": "⋮",
+        r"\ddots": "⋱",
+        r"\%": "%",
+        r"\#": "#",
+        r"\&": "&",
+        r"\$": "$",
+        r"\textdegree": "°",
+    }
 
     # --------------------------------------------
     # COMMANDES LATEX DE PRESENTATION
@@ -1683,10 +1874,15 @@ def generer_pdf_sujet(texte_sujet):
     )
 
     texte = re.sub(r"\\(?:left|right)", "", texte)
-
     texte = re.sub(r"\\[()\[\]]", "", texte)
-
     texte = texte.replace("$", "")
+
+    # --------------------------------------------
+    # REMPLACEMENT DES SYMBOLES
+    # --------------------------------------------
+
+    for ancien, nouveau in remplacements.items():
+        texte = texte.replace(ancien, nouveau)
 
     # --------------------------------------------
     # PUISSANCES
@@ -1736,9 +1932,7 @@ def generer_pdf_sujet(texte_sujet):
         texte
     )
 
-   
-       
-    
+
     # ------------------------------------------------
     # PIED DE PAGE ET NUMÉROTATION
     # ------------------------------------------------
@@ -1777,6 +1971,10 @@ def generer_pdf_sujet(texte_sujet):
         )
 
         canvas.restoreState()
+
+    # ------------------------------------------------
+    # CONSTRUCTION DU PDF
+    # ------------------------------------------------
 
     # ------------------------------------------------
     # CONSTRUCTION DU PDF
@@ -1946,7 +2144,8 @@ def generer_pdf_sujet(texte_sujet):
             ligne,
             re.IGNORECASE
         ):
-            contenu = escape(ligne)
+            contenu = convertir_latex_pdf(ligne)
+            contenu = escape(contenu)
 
             # Conserver le gras Markdown
             contenu = re.sub(
@@ -1970,11 +2169,13 @@ def generer_pdf_sujet(texte_sujet):
         if ligne.startswith(("- ", "* ", "• ")):
             ligne = "• " + ligne[2:]
 
-        # --------------------------------------------
+      
+           # --------------------------------------------
         # TEXTE ORDINAIRE
         # --------------------------------------------
 
-        contenu = escape(ligne)
+        contenu = convertir_latex_pdf(ligne)
+        contenu = escape(contenu)
 
         contenu = re.sub(
             r"\*\*(.+?)\*\*",
@@ -1987,7 +2188,7 @@ def generer_pdf_sujet(texte_sujet):
                 contenu,
                 style_normal
             )
-        )
+        ) 
 
     # ------------------------------------------------
     # GÉNÉRATION FINALE
@@ -2003,9 +2204,657 @@ def generer_pdf_sujet(texte_sujet):
 
     return buffer
 
+def verifier_sympy_disponible():
+    """
+    Vérifie que SymPy est correctement installé
+    et capable d'effectuer un calcul exact.
+    """
+    try:
+        import sympy as sp
+
+        resultat = sp.Rational(1, 2) + sp.Rational(1, 3)
+
+        return resultat == sp.Rational(5, 6)
+
+    except Exception:
+        return False
 
 
 
+
+
+
+
+def verifier_notation_maths(texte):
+    """
+    Contrôle strict de la notation mathématique.
+
+    1. Vérifie les délimiteurs $...$.
+    2. Refuse les délimiteurs alternatifs.
+    3. Vérifie les accolades.
+    4. Détecte les expressions mathématiques hors LaTeX.
+    """
+
+    import re
+
+    erreurs = []
+
+    if not texte or not texte.strip():
+        return False, ["Le sujet est vide."]
+
+    # ------------------------------------------------
+    # 1. REFUSER LES AUTRES DÉLIMITEURS LATEX
+    # ------------------------------------------------
+
+    if re.search(r"(?<!\\)\$\$|\\[\[\]()]", texte):
+        erreurs.append(
+            "Délimiteur interdit : seules les formules "
+            "encadrées par $...$ sont autorisées."
+        )
+
+    # ------------------------------------------------
+    # 2. IDENTIFIER LES FORMULES ENCADRÉES PAR $...$
+    # ------------------------------------------------
+
+    segments_math = []
+    ouverture = None
+    debut = None
+
+    for i, caractere in enumerate(texte):
+
+        if caractere != "$":
+            continue
+
+        # Ignorer les dollars échappés
+        nb_antislash = 0
+        j = i - 1
+
+        while j >= 0 and texte[j] == "\\":
+            nb_antislash += 1
+            j -= 1
+
+        if nb_antislash % 2 == 1:
+            continue
+
+        # Refuser les doubles dollars
+        if (i > 0 and texte[i - 1] == "$") or (
+            i + 1 < len(texte) and texte[i + 1] == "$"
+        ):
+            continue
+
+        if ouverture is None:
+            ouverture = True
+            debut = i
+
+        else:
+            formule = texte[debut + 1:i].strip()
+
+            if not formule:
+                erreurs.append("Une formule LaTeX est vide.")
+
+            # Vérification des accolades
+            niveau = 0
+
+            for caractere_formule in formule:
+
+                if caractere_formule == "{":
+                    niveau += 1
+
+                elif caractere_formule == "}":
+                    niveau -= 1
+
+                    if niveau < 0:
+                        break
+
+            if niveau != 0:
+                erreurs.append(
+                    "Accolades incorrectes dans une formule LaTeX."
+                )
+
+            segments_math.append((debut, i + 1))
+
+            ouverture = None
+            debut = None
+
+    if ouverture is not None:
+        erreurs.append(
+            "Une formule contient un délimiteur $ non fermé."
+        )
+
+    # ------------------------------------------------
+    # 3. EXTRAIRE LE TEXTE HORS LATEX
+    # ------------------------------------------------
+
+    texte_hors_latex = []
+    position = 0
+
+    for debut_segment, fin_segment in segments_math:
+
+        texte_hors_latex.append(
+            texte[position:debut_segment]
+        )
+
+        position = fin_segment
+
+    texte_hors_latex.append(texte[position:])
+
+    texte_hors_latex = " ".join(texte_hors_latex)
+
+    # ------------------------------------------------
+    # 4. DÉTECTER LES FORMULES NON ENCADRÉES
+    # ------------------------------------------------
+
+    motifs_formules = [
+
+        # Fonctions logarithmiques et autres fonctions
+        r"\b(?:ln|log|exp|sqrt)\s*\(",
+
+        # Fonction suivie d'une égalité
+        r"\b[A-Za-z]\w*\s*\([^()\n]*\)\s*=",
+
+        # Expressions algébriques comme x - 1 ou x + 2
+        r"\b[A-Za-z]\s*[+\-*/^=<>]\s*(?:\d|[A-Za-z(])",
+
+        # Exposants Unicode
+        r"\b[A-Za-z]\w*\s*[²³⁴⁵⁶⁷⁸⁹]",
+
+        # Ensembles numériques
+        r"[ℝℕℤℚ]",
+
+        # Symboles mathématiques
+        r"[≤≥≠∈∉∞]",
+
+        # Commandes LaTeX non encadrées
+        r"\\(?:frac|sqrt|lim|mathbb|cdot|times)\b"
+    ]
+
+    for motif_formule in motifs_formules:
+
+        if re.search(motif_formule, texte_hors_latex):
+
+            erreurs.append(
+                "Expression mathématique détectée hors "
+                "des délimiteurs LaTeX. Toutes les formules "
+                "doivent être encadrées par $...$."
+            )
+
+            break
+
+    # ------------------------------------------------
+    # 5. VALIDATION FINALE
+    # ------------------------------------------------
+
+    return len(erreurs) == 0, erreurs
+
+
+
+def verifier_derivee_sympy(fonction, derivee_annoncee):
+    import sympy as sp
+
+    x = sp.Symbol("x")
+
+    try:
+        fonction = sp.sympify(fonction)
+        derivee_annoncee = sp.sympify(derivee_annoncee)
+
+        derivee_reelle = sp.diff(fonction, x)
+
+        return sp.simplify(
+            derivee_reelle - derivee_annoncee
+        ) == 0
+
+    except Exception:
+        return False
+
+
+# ==================================================
+# VÉRIFICATION DES ENCADREMENTS DE RACINES
+# ==================================================
+
+def verifier_encadrement_racine_sympy(
+    fonction,
+    borne_inf,
+    borne_sup
+):
+    import sympy as sp
+
+    x = sp.Symbol("x")
+
+    try:
+        f = sp.sympify(
+            fonction,
+            locals={
+                "x": x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        a = float(borne_inf)
+        b = float(borne_sup)
+
+        if a >= b:
+            return False, "Les bornes sont incorrectes."
+
+        valeur_a = sp.N(f.subs(x, a))
+        valeur_b = sp.N(f.subs(x, b))
+
+        if valeur_a.is_real is not True or valeur_b.is_real is not True:
+            return False, "La fonction n'est pas définie aux deux bornes."
+
+        if valeur_a == 0 or valeur_b == 0:
+            return True, "Une borne est une racine."
+
+        if valeur_a * valeur_b < 0:
+            return True, "L'encadrement est cohérent : changement de signe."
+
+        return False, (
+            "Encadrement incorrect : il n'y a pas de changement "
+            "de signe entre les deux bornes."
+        )
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+   
+def verifier_solution_numerique_sympy(
+    equation,
+    variable,
+    solution_annoncee,
+    tolerance=1e-2
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable)
+
+        # Conversion de l'équation
+        membre_gauche, membre_droit = equation.split("=")
+
+        gauche = sp.sympify(
+            membre_gauche,
+            locals={"x": x, "ln": sp.log, "e": sp.E},
+            convert_xor=True
+        )
+
+        droite = sp.sympify(
+            membre_droit,
+            locals={"x": x, "ln": sp.log, "e": sp.E},
+            convert_xor=True
+        )
+
+        # Vérification de la solution annoncée
+        valeur = float(solution_annoncee)
+
+        resultat = sp.N(
+            (gauche - droite).subs(x, valeur)
+        )
+
+        if abs(float(resultat)) <= tolerance:
+            return True, "Solution numérique validée."
+
+        return False, (
+            f"Solution incorrecte : écart obtenu = "
+            f"{abs(float(resultat)):.6g}"
+        )
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+  
+def verifier_variations_sympy(
+    fonction,
+    intervalle_inf,
+    intervalle_sup,
+    points_critiques
+):
+    import sympy as sp
+
+    x = sp.Symbol("x")
+
+    try:
+        f = sp.sympify(
+            fonction,
+            locals={"x": x, "ln": sp.log, "e": sp.E},
+            convert_xor=True
+        )
+
+        derivee = sp.diff(f, x)
+
+        a = float(intervalle_inf)
+        b = float(intervalle_sup)
+
+        points = sorted(
+            float(p) for p in points_critiques
+        )
+
+        if a >= b:
+            return False, "Intervalle incorrect."
+
+        if any(p <= a or p >= b for p in points):
+            return False, "Un point critique est hors de l'intervalle."
+
+        bornes = [a] + points + [b]
+
+        for i in range(len(bornes) - 1):
+            milieu = (bornes[i] + bornes[i + 1]) / 2
+
+            valeur = sp.N(derivee.subs(x, milieu))
+
+            if valeur.is_real is not True:
+                return False, "Signe de la dérivée indéterminé."
+
+        return True, "Les intervalles ont été analysés."
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+
+
+def verifier_extremum_sympy(
+    fonction,
+    variable,
+    valeur_x_annoncee,
+    valeur_extremum_annoncee,
+    tolerance=1e-6
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable)
+
+        f = sp.sympify(
+            fonction,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        valeur_x = float(valeur_x_annoncee)
+        valeur_annoncee = float(valeur_extremum_annoncee)
+
+        valeur_reelle = float(
+            sp.N(f.subs(x, valeur_x))
+        )
+
+        if abs(valeur_reelle - valeur_annoncee) <= tolerance:
+            return True, "Valeur de l'extremum validée."
+
+        return False, (
+            f"Valeur incorrecte : la valeur réelle est "
+            f"{valeur_reelle:.8g}."
+        )
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+def verifier_signe_sympy(
+    expression,
+    variable,
+    borne_inf,
+    borne_sup,
+    points_test
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable)
+
+        expr = sp.sympify(
+            expression,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        a = float(borne_inf)
+        b = float(borne_sup)
+
+        if a >= b:
+            return False, "Intervalle incorrect."
+
+        resultats = []
+
+        for point in points_test:
+            valeur_x = float(point)
+
+            if not a <= valeur_x <= b:
+                return False, f"Point {point} hors intervalle."
+
+            valeur = sp.N(expr.subs(x, valeur_x))
+
+            if valeur.is_real is not True:
+                return False, f"Valeur non réelle en {point}."
+
+            if valeur > 0:
+                signe = "+"
+            elif valeur < 0:
+                signe = "-"
+            else:
+                signe = "0"
+
+            resultats.append((valeur_x, signe))
+
+        return True, resultats
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+def verifier_equation_inequation_sympy(
+    expression,
+    variable,
+    solution_annoncee,
+    type_question="equation"
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable, real=True)
+
+        expr = sp.sympify(
+            expression,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        if type_question == "equation":
+            solutions = sp.solveset(
+                expr,
+                x,
+                domain=sp.S.Reals
+            )
+
+        elif type_question == "inequation":
+            solutions = sp.solve_univariate_inequality(
+                expr <= 0,
+                x,
+                relational=False
+            )
+
+        else:
+            return False, "Type de question inconnu."
+
+        annonce = sp.sympify(
+            solution_annoncee,
+            locals={variable: x}
+        )
+
+        if type_question == "equation":
+            if annonce == solutions:
+                return True, "Solutions de l'équation validées."
+
+        elif type_question == "inequation":
+            if sp.simplify(annonce.symmetric_difference(solutions)) == sp.EmptySet:
+                return True, "Solutions de l'inéquation validées."
+
+        return False, f"Résultat annoncé incorrect. Résultat attendu : {solutions}"
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+
+def verifier_limite_sympy(
+    fonction,
+    variable,
+    point,
+    limite_annoncee,
+    direction="+",
+    tolerance=1e-6
+):
+    import sympy as sp
+
+    try:
+        x = sp.Symbol(variable, real=True)
+
+        f = sp.sympify(
+            fonction,
+            locals={
+                variable: x,
+                "ln": sp.log,
+                "log": sp.log,
+                "e": sp.E
+            },
+            convert_xor=True
+        )
+
+        if point == "+oo":
+            point_sym = sp.oo
+        elif point == "-oo":
+            point_sym = -sp.oo
+        else:
+            point_sym = sp.sympify(point)
+
+        if direction not in ("+", "-"):
+            return False, "Direction incorrecte."
+
+        resultat = sp.limit(
+            f,
+            x,
+            point_sym,
+            dir=direction
+        )
+
+        annonce = sp.sympify(
+            limite_annoncee,
+            locals={"e": sp.E, "oo": sp.oo}
+        )
+
+        difference = sp.simplify(resultat - annonce)
+
+        if difference == 0:
+            return True, f"Limite validée : {resultat}"
+
+        return False, f"Limite incorrecte. Résultat attendu : {resultat}"
+
+    except Exception as erreur:
+        return False, f"Vérification impossible : {erreur}"
+
+
+
+
+def verifier_derives_sujet_sympy(texte_sujet):
+    import re
+    import sympy as sp
+
+    erreurs = []
+
+    if not texte_sujet or not texte_sujet.strip():
+        return False, ["Le sujet est vide."]
+
+    # Recherche des fonctions et de leurs dérivées annoncées
+    motif_fonction = re.compile(
+        r"\b([fgh])\(x\)\s*=\s*\$?([^$\n]+)\$?",
+        re.IGNORECASE
+    )
+
+    motif_derivee = re.compile(
+        r"\b([fgh])['′]\(x\)\s*=\s*\$?([^$\n]+)\$?",
+        re.IGNORECASE
+    )
+
+    fonctions = {}
+    derivees = {}
+
+    def convertir_expression(expression):
+        expression = expression.strip()
+
+        # Conversions mathématiques simples
+        expression = expression.replace("^", "**")
+        expression = expression.replace(r"\ln", "log")
+        expression = expression.replace("ln", "log")
+        expression = expression.replace(r"\sqrt", "sqrt")
+        expression = expression.replace(r"\exp", "exp")
+
+        return sp.sympify(
+            expression,
+            locals={
+                "x": sp.Symbol("x"),
+                "log": sp.log,
+                "sqrt": sp.sqrt,
+                "exp": sp.exp
+            }
+        )
+
+    for nom, expression in motif_fonction.findall(texte_sujet):
+        try:
+            fonctions[nom.lower()] = convertir_expression(expression)
+        except Exception:
+            erreurs.append(
+                f"Fonction {nom}(x) impossible à analyser : "
+                f"{expression.strip()}"
+            )
+
+    for nom, expression in motif_derivee.findall(texte_sujet):
+        try:
+            derivees[nom.lower()] = convertir_expression(expression)
+        except Exception:
+            erreurs.append(
+                f"Dérivée de {nom}(x) impossible à analyser : "
+                f"{expression.strip()}"
+            )
+
+    # Comparaison entre la dérivée annoncée et la dérivée réelle
+    for nom, derivee_annoncee in derivees.items():
+
+        if nom not in fonctions:
+            erreurs.append(
+                f"Impossible de vérifier la dérivée de {nom}(x) : "
+                "fonction de départ introuvable."
+            )
+            continue
+
+        derivee_reelle = sp.diff(
+            fonctions[nom],
+            sp.Symbol("x")
+        )
+
+        difference = sp.simplify(
+            derivee_reelle - derivee_annoncee
+        )
+
+        if difference != 0:
+            erreurs.append(
+                f"Dérivée incorrecte pour {nom}(x). "
+                f"Dérivée annoncée : {derivee_annoncee}. "
+                f"La comparaison avec la fonction de départ "
+                "n'est pas satisfaisante."
+            )
+
+    return len(erreurs) == 0, erreurs
 
 def afficher_generateur_sujet():
 
@@ -2074,21 +2923,32 @@ def afficher_generateur_sujet():
             use_container_width=True
         )
 
-    # ------------------------------------------------
-    # GÉNÉRATION DU SUJET
-    # ------------------------------------------------
-
     
-    if generer:
+        # ------------------------------------------------
+        # GÉNÉRATION DU SUJET
+        # ------------------------------------------------
 
-        if not chapitre.strip():
-            st.warning("Veuillez indiquer un chapitre ou un thème.")
+        if generer:
 
-        else:
-            try:
-                with st.spinner("⏳ Création de votre sujet..."):
+            # Vérification du moteur mathématique
+            if not verifier_sympy_disponible():
 
-                    instructions = f"""
+                st.error(
+                    "❌ Le moteur de vérification mathématique "
+                    "n'est pas disponible. Impossible de générer le sujet."
+                )
+
+            elif not chapitre.strip():
+
+                st.warning(
+                    "Veuillez indiquer un chapitre ou un thème."
+                )
+
+            else:
+                try:
+                    with st.spinner("⏳ Création de votre sujet..."):
+
+                        instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
 et de concours scolaires.
@@ -2099,6 +2959,7 @@ TYPE : {type_sujet}
 DIFFICULTÉ : {difficulte}
 DURÉE : {duree}
 
+
 Respecte impérativement le niveau et le chapitre demandés.
 Tous les exercices doivent être adaptés au niveau choisi.
 Le barème total doit être exactement de 20 points.
@@ -2106,6 +2967,30 @@ Le barème total doit être exactement de 20 points.
 Présente un seul titre principal.
 Prévois une zone nom, prénom, classe et date.
 Indique le chapitre, le niveau, la durée et le barème.
+
+IMPORTANT — NOTATION MATHÉMATIQUE :
+
+Toutes les expressions mathématiques doivent être écrites
+en LaTeX et encadrées par $...$.
+
+
+
+Exemples :
+- $e^{{3x-1}}$
+- $\\exp(x)$
+- $\\sqrt{{4x}}$
+- $\\frac{{1}}{{4}}$
+- $\\mathbb{{R}}$
+- $u_{{n+1}}$
+- $\\lim_{{x\\to +\\infty}}$
+- $f'(x)$
+
+
+Ne remplace jamais les formules par des approximations
+en texte ordinaire.
+Conserve les fractions, racines, exposants et indices
+dans leur notation mathématique exacte.
+
 Organise les exercices du plus simple au plus difficile.
 Vérifie les calculs et la cohérence mathématique.
 N'utilise pas de figures ASCII.
@@ -2114,8 +2999,6 @@ Ne fournis aucune correction ni réponse.
 
 Réponds uniquement avec le sujet final en français.
 """
-
-            
                     sujet = _appeler_gemini(
                         instructions,
                         contenu="Génère le sujet demandé."
@@ -2124,6 +3007,9 @@ Réponds uniquement avec le sujet final en français.
                     if sujet and sujet.strip():
 
                         prompt_verification = f"""
+
+                        
+                    
 Tu es un inspecteur pédagogique expert en mathématiques,
 spécialisé dans les programmes officiels français du collège
 et du lycée.
@@ -2413,8 +3299,8 @@ Retourne le sujet complet corrigé.
                             prompt_deuxieme_verification = f"""
 
 
-
-Tu es un deuxième inspecteur mathématique indépendant.
+Tu es un deuxième inspecteur mathématique indépendant,
+expert en mathématiques et en pédagogie du système scolaire français.
 
 NIVEAU : {niveau}
 CHAPITRE : {chapitre}
@@ -2428,14 +3314,27 @@ SUJET À CONTRÔLER :
 MISSION :
 
 1. Vérifie indépendamment chaque question.
-2. Effectue tous les calculs en interne.
+2. Effectue tous les calculs nécessaires en interne.
 3. Contrôle les dérivées, équations, inéquations,
-   tableaux, résultats et unités.
-4. Vérifie les données et les contradictions.
-5. Vérifie le niveau pédagogique et le barème.
-6. Vérifie les corrections apportées précédemment.
-7. Corrige les erreurs restantes dans les énoncés.
-8. Ne modifie pas inutilement les exercices.
+   tableaux de signes, tableaux de variations et résultats.
+4. Vérifie la cohérence des données numériques,
+   des unités et des hypothèses.
+5. Vérifie l'absence de contradiction dans les énoncés.
+6. Vérifie l'adaptation au niveau scolaire demandé.
+7. Vérifie la cohérence du barème et le total des points.
+8. Vérifie les corrections apportées par le premier inspecteur.
+9. Détecte les erreurs mathématiques restantes.
+10. Corrige uniquement les erreurs réellement détectées.
+
+RÈGLES DE MODIFICATION :
+
+- Conserve les exercices et leur structure initiale.
+- Ne change pas inutilement les nombres et les données.
+- Ne supprime aucune question.
+- N'ajoute aucun exercice.
+- Ne modifie pas le niveau de difficulté sans nécessité.
+- Ne modifie pas le barème sauf en cas d'erreur.
+- Ne transforme jamais une question en question de corrigé.
 
 INTERDICTIONS ABSOLUES :
 
@@ -2445,25 +3344,51 @@ INTERDICTIONS ABSOLUES :
 - Ne donne aucun résultat recherché.
 - Ne remplis aucun tableau de variations.
 - Ne remplis aucun tableau de signes.
+- Ne révèle aucune réponse destinée aux élèves.
 
 FORMAT DE RÉPONSE OBLIGATOIRE :
 
-Si toutes les vérifications sont satisfaisantes,
-commence par :
+CAS 1 : TOUTES LES VÉRIFICATIONS SONT SATISFAISANTES.
+
+Commence impérativement par :
 
 SUJET CONFORME
 
-Puis retourne uniquement le sujet complet corrigé,
-sans aucune solution ni correction.
+Puis retourne uniquement le sujet complet,
+avec les éventuelles corrections nécessaires.
 
-Si une erreur importante ne peut pas être corrigée
-ou si une vérification essentielle est impossible,
-commence par :
+Ne donne aucune explication supplémentaire.
+Ne donne aucune solution.
+
+CAS 2 : UNE ERREUR IMPORTANTE SUBSISTE.
+
+Commence impérativement par :
 
 SUJET NON VALIDÉ
 
-Explique brièvement le problème sans donner
-les réponses aux exercices.
+Explique brièvement les problèmes détectés,
+sans révéler les réponses aux exercices.
+
+Si une erreur peut être corrigée sans modifier
+la nature de l'exercice, propose une correction.
+
+CAS 3 : UNE VÉRIFICATION ESSENTIELLE EST IMPOSSIBLE.
+
+Commence impérativement par :
+
+SUJET NON VALIDÉ
+
+Indique précisément quelle vérification est impossible.
+Ne prétends jamais avoir vérifié ce qui ne l'a pas été.
+
+CONTRÔLE FINAL :
+
+Avant de rendre le résultat, vérifie une dernière fois :
+- L'absence de solutions dans le texte.
+- L'absence de résultats attendus.
+- La cohérence mathématique du sujet.
+- Le respect du niveau demandé.
+- Le total du barème.
 
 IMPORTANT :
 
@@ -2475,6 +3400,8 @@ par une autre fonction de l'application.
 """
 
 
+                           
+
 
                             with st.spinner(
                                 "🔬 Deuxième vérification indépendante..."
@@ -2484,56 +3411,114 @@ par une autre fonction de l'application.
                                     contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                                 )
 
-                            if (
-                                deuxieme_controle
-                                and deuxieme_controle.strip()
-                            ):
+                            if deuxieme_controle and deuxieme_controle.strip():
 
                                 texte_final = deuxieme_controle.strip()
 
                                 if texte_final.startswith("SUJET CONFORME"):
-                                    st.session_state.sujet_genere = (
-                                        texte_final.replace(
-                                            "SUJET CONFORME", "", 1
-                                        ).strip()
-                                    )
-                                    st.session_state.correction_sujet = ""
 
-                                    st.success(
-                                        "✅ Sujet corrigé et doublement vérifié."
-                                    )
+                                    sujet_accepte = texte_final.replace(
+                                        "SUJET CONFORME", "", 1
+                                    ).strip()
+                           
+                            
 
-                                else:
-                                    st.session_state.sujet_genere = ""
-                                    st.error(
-                                        "⚠️ Le sujet n'a pas obtenu "
-                                        "la validation finale."
-                                    )
-                                    st.warning(texte_final)
+        if sujet_accepte:
 
-                            else:
-                                st.error(
-                                    "❌ La deuxième vérification a échoué. "
-                                    "Le sujet ne peut pas être validé."
-                                )
+            # 1. Vérification de la notation mathématique
+            notation_ok, erreurs_notation = verifier_notation_maths(
+                sujet_accepte
+            )
+
+            if notation_ok:
+
+                # 2. Vérification des dérivées avec SymPy
+                derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+                    sujet_accepte
+                )
+
+                if derives_ok:
+
+                    st.session_state.sujet_genere = sujet_accepte
+                    st.session_state.correction_sujet = ""
+
+                    st.success(
+                        "✅ Sujet contrôlé : notation des formules "
+                        "et dérivées vérifiées."
+                    )
+
+                else:
+
+                    st.session_state.sujet_genere = ""
+                    st.session_state.correction_sujet = ""
+
+                    st.error(
+                        "❌ Sujet refusé : une ou plusieurs dérivées "
+                        "sont incorrectes ou impossibles à vérifier."
+                    )
+
+                    for erreur in erreurs_derives:
+                        st.warning(erreur)
+
+            else:
+
+                st.session_state.sujet_genere = ""
+                st.session_state.correction_sujet = ""
+
+                st.error(
+                    "❌ Sujet refusé : problème détecté dans les formules."
+                )
+
+                for erreur in erreurs_notation:
+                    st.warning(erreur)
+
+        else:
+
+            st.session_state.sujet_genere = ""
+            st.session_state.correction_sujet = ""
+
+            st.error("⚠️ Aucun sujet retourné.")
+
+    elif texte_final.startswith("SUJET NON VALIDÉ"):
+
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error("❌ Sujet non validé.")
+        st.warning(texte_final)
+
+    else:
+
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error("⚠️ Format de réponse incorrect.")
+        st.warning(texte_final)
+
+else:
+
+    st.session_state.sujet_genere = ""
+    st.session_state.correction_sujet = ""
+
+    st.error("❌ La deuxième vérification a échoué.")
+
+
+                            
 
                         else:
                             st.error(
                                 "❌ La première vérification du sujet a échoué."
                             )
- 
+
                     else:
                         st.error("La génération du sujet a échoué.")
-    
-                        
 
-               
+                except Exception as e:
+                  st.error(f"Erreur de génération : {e}")
+
+                         
+                           
                             
-
-            except Exception as e:
-                st.error(f"Erreur de génération : {e}")
-
-                    
 
     # ------------------------------------------------
     # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
@@ -2881,6 +3866,8 @@ else:
     if "etape_actuelle" not in st.session_state:
         exercice = st.text_area(
             t("textarea_label"),
+
+            
             height=150,
             key="premium_input"
         )
@@ -2904,3 +3891,4 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
+
