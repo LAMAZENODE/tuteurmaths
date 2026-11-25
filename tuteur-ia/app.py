@@ -3295,7 +3295,7 @@ Retourne le sujet complet corrigé.
                                 )                          
                         
 
-                            if sujet_verifie and sujet_verifie.strip():
+                    if sujet_verifie and sujet_verifie.strip():
 
                                 # DEUXIÈME VÉRIFICATION INDÉPENDANTE
 
