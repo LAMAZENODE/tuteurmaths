@@ -3407,25 +3407,25 @@ par une autre fonction de l'application.
                                 prompt_deuxieme_verification,
                                 contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                             )
-                
-                    
+
                         if deuxieme_controle and deuxieme_controle.strip():
 
-                           texte_final = deuxieme_controle.strip()
+                            texte_final = deuxieme_controle.strip()
 
-                           if texte_final.startswith("SUJET CONFORME"):
+                            if texte_final.startswith("SUJET CONFORME"):
 
-                              sujet_accepte = texte_final.replace(
-                              "SUJET CONFORME", "", 1
-                          ).strip()
+                                sujet_accepte = texte_final.replace(
+                                    "SUJET CONFORME", "", 1
+                                ).strip()
 
-      except Exception as erreur:
-                st.error(
-                    f"❌ Erreur pendant la génération du sujet : {erreur}"
-                )
+        except Exception as erreur:
+            st.error(
+                f"❌ Erreur pendant la génération du sujet : {erreur}"
+            )
 
-            if sujet_accepte:
-
+        if sujet_accepte:                                        
+                        
+                        
                 # 1. Vérification de la notation mathématique
                 notation_ok, erreurs_notation = verifier_notation_maths(
                     sujet_accepte
