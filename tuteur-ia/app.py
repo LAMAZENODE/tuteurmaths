@@ -3508,7 +3508,6 @@ par une autre fonction de l'application.
           st.error("⚠️ Format de réponse incorrect.")
           st.warning(texte_final)
 
-  
    else:
 
       st.session_state.sujet_genere = ""
