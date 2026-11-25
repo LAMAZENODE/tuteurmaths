@@ -3483,53 +3483,49 @@ par une autre fonction de l'application.
                         for erreur in erreurs_notation:
                             st.warning(erreur)
 
+               
+                             else:
+
+                            st.session_state.sujet_genere = ""
+                            st.session_state.correction_sujet = ""
+
+                            st.error(
+                                "❌ Sujet non validé par la deuxième vérification Gemini."
+                            )
+
+                elif texte_final.startswith("SUJET NON VALIDÉ"):
+
+                    st.session_state.sujet_genere = ""
+                    st.session_state.correction_sujet = ""
+
+                    st.error("❌ Sujet non validé.")
+                    st.warning(texte_final)
+
                 else:
 
                     st.session_state.sujet_genere = ""
                     st.session_state.correction_sujet = ""
 
-                    st.error(
-                        "❌ Sujet non validé par la deuxième vérification Gemini."
-                    )                   
+                    st.error("⚠️ Format de réponse incorrect.")
+                    st.warning(texte_final)
 
-        elif texte_final.startswith("SUJET NON VALIDÉ"):
+            else:
 
-           st.session_state.sujet_genere = ""
-           st.session_state.correction_sujet = ""
+                st.session_state.sujet_genere = ""
+                st.session_state.correction_sujet = ""
 
-           st.error("❌ Sujet non validé.")
-           st.warning(texte_final)
+                st.error("❌ La deuxième vérification a échoué.")
 
         else:
+            st.error(
+                "❌ La première vérification du sujet a échoué."
+            )
 
-          st.session_state.sujet_genere = ""
-          st.session_state.correction_sujet = ""
+    else:
+        st.error("La génération du sujet a échoué.")
 
-          st.error("⚠️ Format de réponse incorrect.")
-          st.warning(texte_final)
-
-   else:
-
-      st.session_state.sujet_genere = ""
-      st.session_state.correction_sujet = ""
-
-      st.error("❌ La deuxième vérification a échoué.")
-
-                            
-
-                  else:
-                      st.error(
-                            "❌ La première vérification du sujet a échoué."
-                       )
-
-             else:
-                 st.error("La génération du sujet a échoué.")
-
-         except Exception as e:
-             st.error(f"Erreur de génération : {e}")
-
-                         
-                           
+except Exception as e:
+    st.error(f"Erreur de génération : {e}")           
                             
 
     # ------------------------------------------------
