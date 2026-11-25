@@ -3411,7 +3411,7 @@ par une autre fonction de l'application.
                            
 
 
-                                 with st.spinner(
+                     with st.spinner(
                                 "🔬 Deuxième vérification indépendante..."
                             ):
                                 deuxieme_controle = _appeler_gemini(
