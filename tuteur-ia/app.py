@@ -3265,7 +3265,7 @@ DESTINÉ AUX ÉLÈVES.
 NE DONNE AUCUNE SOLUTION AUX EXERCICES.
 NE RÉSOUS AUCUNE QUESTION DANS TA RÉPONSE.
 """
-                          with st.spinner(
+                    with st.spinner(
                                 "🔍 Première vérification mathématique et pédagogique..."
                             ):
                                 sujet_verifie = _appeler_gemini(
