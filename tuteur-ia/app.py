@@ -3411,7 +3411,8 @@ par une autre fonction de l'application.
                                     contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                                 )
 
-                            if deuxieme_controle and deuxieme_controle.strip():
+                           
+                                                 if deuxieme_controle and deuxieme_controle.strip():
 
                                 texte_final = deuxieme_controle.strip()
 
@@ -3420,22 +3421,29 @@ par une autre fonction de l'application.
                                     sujet_accepte = texte_final.replace(
                                         "SUJET CONFORME", "", 1
                                     ).strip()
-                           
-                            
 
-        if sujet_accepte:
+                    except Exception as erreur:
+                        st.error(
+                            f"❌ Erreur pendant la génération du sujet : {erreur}"
+                        )
 
-            # 1. Vérification de la notation mathématique
-            notation_ok, erreurs_notation = verifier_notation_maths(
-                sujet_accepte
-            )
+                if sujet_accepte:
 
-            if notation_ok:
+                    # 1. Vérification de la notation mathématique
+                    notation_ok, erreurs_notation = verifier_notation_maths(
+                        sujet_accepte
+                    )
 
-                # 2. Vérification des dérivées avec SymPy
-                derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
-                    sujet_accepte
-                )
+                    if notation_ok:
+
+                        # 2. Vérification des dérivées avec SymPy
+                        derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+                            sujet_accepte
+                        )
+
+                        if derives_ok:
+                            # Conserver ici la suite de ton code
+                            pass       
 
                 if derives_ok:
 
