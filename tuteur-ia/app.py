@@ -2923,7 +2923,7 @@ def afficher_generateur_sujet():
             use_container_width=True
         )
 
-    
+   
         # ------------------------------------------------
         # GÉNÉRATION DU SUJET
         # ------------------------------------------------
@@ -2943,17 +2943,19 @@ def afficher_generateur_sujet():
                 st.warning(
                     "Veuillez indiquer un chapitre ou un thème."
                 )
-else: 
-    sujet_accepte = ""
-    derives_ok = False
-    notation_ok = False
-    erreurs_derives = []
-    erreurs_notation = []
 
-    try:
-        with st.spinner("⏳ Création de votre sujet..."):         
-          
-            
+            else:
+
+                sujet_accepte = ""
+                derives_ok = False
+                notation_ok = False
+                erreurs_derives = []
+                erreurs_notation = []
+
+                try:
+
+                    with st.spinner("⏳ Création de votre sujet..."):
+
                         instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
@@ -2979,8 +2981,6 @@ IMPORTANT — NOTATION MATHÉMATIQUE :
 Toutes les expressions mathématiques doivent être écrites
 en LaTeX et encadrées par $...$.
 
-
-
 Exemples :
 - $e^{{3x-1}}$
 - $\\exp(x)$
@@ -2990,7 +2990,6 @@ Exemples :
 - $u_{{n+1}}$
 - $\\lim_{{x\\to +\\infty}}$
 - $f'(x)$
-
 
 Ne remplace jamais les formules par des approximations
 en texte ordinaire.
@@ -3005,6 +3004,9 @@ Ne fournis aucune correction ni réponse.
 
 Réponds uniquement avec le sujet final en français.
 """
+ 
+        
+
                     sujet = _appeler_gemini(
                         instructions,
                         contenu="Génère le sujet demandé."
