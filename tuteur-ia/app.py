@@ -3493,7 +3493,7 @@ par une autre fonction de l'application.
                             "❌ Sujet non validé par la deuxième vérification Gemini."
                         )
 
-                            elif texte_final.startswith("SUJET NON VALIDÉ"):
+                 elif texte_final.startswith("SUJET NON VALIDÉ"):
 
                     st.session_state.sujet_genere = ""
                     st.session_state.correction_sujet = ""
