@@ -2944,7 +2944,7 @@ def afficher_generateur_sujet():
                     "Veuillez indiquer un chapitre ou un thème."
                 )
 
-  else:
+ else: 
     sujet_accepte = ""
     derives_ok = False
     notation_ok = False
