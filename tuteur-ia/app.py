@@ -3434,45 +3434,30 @@ par une autre fonction de l'application.
                         f"❌ Erreur pendant la génération du sujet : {erreur}"
                     )
 
-            if sujet_accepte:
-                                                            
-                        
-                        
+          
+             if sujet_accepte:
+
                 # 1. Vérification de la notation mathématique
                 notation_ok, erreurs_notation = verifier_notation_maths(
                     sujet_accepte
-                )            
+                )
 
-                
                 if notation_ok:
 
-                        # 2. Vérification des dérivées avec SymPy
-                        derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
-                            sujet_accepte
+                    # 2. Vérification des dérivées avec SymPy
+                    derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+                        sujet_accepte
+                    )
+
+                    if derives_ok:
+
+                        st.session_state.sujet_genere = sujet_accepte
+                        st.session_state.correction_sujet = ""
+
+                        st.success(
+                            "✅ Sujet contrôlé : notation des formules "
+                            "et dérivées vérifiées."
                         )
-
-                        if derives_ok:
-
-                            st.session_state.sujet_genere = sujet_accepte
-                            st.session_state.correction_sujet = ""
-
-                            st.success(
-                                "✅ Sujet contrôlé : notation des formules "
-                                "et dérivées vérifiées."
-                            )
-
-                        else:
-
-                            st.session_state.sujet_genere = ""
-                            st.session_state.correction_sujet = ""
-
-                            st.error(
-                                "❌ Sujet refusé : une ou plusieurs dérivées "
-                                "sont incorrectes ou impossibles à vérifier."
-                            )
-
-                            for erreur in erreurs_derives:
-                                st.warning(erreur)
 
                     else:
 
@@ -3480,11 +3465,24 @@ par une autre fonction de l'application.
                         st.session_state.correction_sujet = ""
 
                         st.error(
-                            "❌ Sujet refusé : problème détecté dans les formules."
+                            "❌ Sujet refusé : une ou plusieurs dérivées "
+                            "sont incorrectes ou impossibles à vérifier."
                         )
 
-                        for erreur in erreurs_notation:
+                        for erreur in erreurs_derives:
                             st.warning(erreur)
+
+                else:
+
+                    st.session_state.sujet_genere = ""
+                    st.session_state.correction_sujet = ""
+
+                    st.error(
+                        "❌ Sujet refusé : problème détecté dans les formules."
+                    )
+
+                    for erreur in erreurs_notation:
+                        st.warning(erreur)           
 
                     else:
 
