@@ -2943,8 +2943,7 @@ def afficher_generateur_sujet():
                 st.warning(
                     "Veuillez indiquer un chapitre ou un thème."
                 )
-
- else: 
+else: 
     sujet_accepte = ""
     derives_ok = False
     notation_ok = False
