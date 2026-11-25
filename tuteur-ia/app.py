@@ -3418,12 +3418,12 @@ par une autre fonction de l'application.
                                     "SUJET CONFORME", "", 1
                                 ).strip()
 
-               except Exception as erreur:
-            st.error(
-                f"❌ Erreur pendant la génération du sujet : {erreur}"
-            )
+             except Exception as erreur:
+                st.error(
+                    f"❌ Erreur pendant la génération du sujet : {erreur}"
+               )
 
-        if sujet_accepte:                                        
+           if sujet_accepte:                                        
                         
                         
                 # 1. Vérification de la notation mathématique
