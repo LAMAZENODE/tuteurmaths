@@ -2944,8 +2944,7 @@ def afficher_generateur_sujet():
                     "Veuillez indiquer un chapitre ou un thème."
                 )
 
-           
-            else:
+  else:
     sujet_accepte = ""
     derives_ok = False
     notation_ok = False
@@ -2953,8 +2952,9 @@ def afficher_generateur_sujet():
     erreurs_notation = []
 
     try:
-        with st.spinner("⏳ Création de votre sujet..."):
-
+        with st.spinner("⏳ Création de votre sujet..."):         
+          
+            
                         instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
 spécialisé dans la création de sujets d'évaluation
