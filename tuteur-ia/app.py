@@ -3497,8 +3497,8 @@ par une autre fonction de l'application.
            st.session_state.sujet_genere = ""
            st.session_state.correction_sujet = ""
 
-          st.error("❌ Sujet non validé.")
-          st.warning(texte_final)
+           st.error("❌ Sujet non validé.")
+           st.warning(texte_final)
 
     else:
 
