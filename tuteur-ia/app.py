@@ -3269,7 +3269,7 @@ NE RÉSOUS AUCUNE QUESTION DANS TA RÉPONSE.
 
                   
                    
-                        with st.spinner(
+                         with st.spinner(
                             "🔍 Première vérification mathématique et pédagogique..."
                         ):
                             sujet_verifie = _appeler_gemini(
