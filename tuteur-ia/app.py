@@ -3292,7 +3292,8 @@ RÈGLES :
 
 Retourne le sujet complet corrigé.
 """
-                                )
+                                )                          
+                        
 
                             if sujet_verifie and sujet_verifie.strip():
 
