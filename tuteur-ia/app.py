@@ -3409,13 +3409,13 @@ par une autre fonction de l'application.
                             )
                 
                     
-                if deuxieme_controle and deuxieme_controle.strip():
+                      if deuxieme_controle and deuxieme_controle.strip():
 
-                    texte_final = deuxieme_controle.strip()
+                         texte_final = deuxieme_controle.strip()
 
-                    if texte_final.startswith("SUJET CONFORME"):
+                         if texte_final.startswith("SUJET CONFORME"):
 
-                        sujet_accepte = texte_final.replace(
+                            sujet_accepte = texte_final.replace(
                             "SUJET CONFORME", "", 1
                         ).strip()
 
