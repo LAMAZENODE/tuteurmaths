@@ -3429,7 +3429,7 @@ par une autre fonction de l'application.
                                         "SUJET CONFORME", "", 1
                                     ).strip()
 
-                    except Exception as erreur:
+                except Exception as erreur:
                         st.error(
                             f"❌ Erreur pendant la génération du sujet : {erreur}"
                         )
