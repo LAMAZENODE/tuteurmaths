@@ -3403,7 +3403,7 @@ par une autre fonction de l'application.
                            
 
 
-                           with st.spinner(
+                        with st.spinner(
                                 "🔬 Deuxième vérification indépendante..."
                             ):
                                 deuxieme_controle = _appeler_gemini(
@@ -3412,7 +3412,7 @@ par une autre fonction de l'application.
                                 )
 
                            
-                          if deuxieme_controle and deuxieme_controle.strip():
+                      if deuxieme_controle and deuxieme_controle.strip():
 
                                 texte_final = deuxieme_controle.strip()
 
