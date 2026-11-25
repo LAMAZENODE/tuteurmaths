@@ -3435,7 +3435,7 @@ par une autre fonction de l'application.
                     )
 
           
-             if sujet_accepte:
+           if sujet_accepte:
 
                 # 1. Vérification de la notation mathématique
                 notation_ok, erreurs_notation = verifier_notation_maths(
