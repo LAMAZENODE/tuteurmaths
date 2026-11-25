@@ -3265,17 +3265,12 @@ DESTINÉ AUX ÉLÈVES.
 NE DONNE AUCUNE SOLUTION AUX EXERCICES.
 NE RÉSOUS AUCUNE QUESTION DANS TA RÉPONSE.
 """
-   
-
-                  
-                   
-                         with st.spinner(
-                            "🔍 Première vérification mathématique et pédagogique..."
-                        ):
-                            sujet_verifie = _appeler_gemini(
-                                prompt_verification,
-                               
-                                contenu="""
+                            with st.spinner(
+                                "🔍 Première vérification mathématique et pédagogique..."
+                            ):
+                                sujet_verifie = _appeler_gemini(
+                                    prompt_verification,
+                                    contenu="""
 Tu dois obligatoirement effectuer deux opérations :
 
 1. ANALYSER :
@@ -3284,8 +3279,7 @@ mathématiques et pédagogiques.
 
 2. CORRIGER :
 Réécris intégralement le sujet en intégrant toutes les
-corrections nécessaires.                        
-                                
+corrections nécessaires.
 
 RÈGLES :
 - Ne retourne pas un simple rapport.
@@ -3298,13 +3292,18 @@ RÈGLES :
 
 Retourne le sujet complet corrigé.
 """
-                            )
+                                )
 
-                        if sujet_verifie and sujet_verifie.strip():
+                            if sujet_verifie and sujet_verifie.strip():
 
-                            # DEUXIÈME VÉRIFICATION INDÉPENDANTE
+                                # DEUXIÈME VÉRIFICATION INDÉPENDANTE
 
-                            prompt_deuxieme_verification = f"""
+                                prompt_deuxieme_verification = f"""   
+
+                         
+                       
+                   
+                
 
 
 Tu es un deuxième inspecteur mathématique indépendant,
