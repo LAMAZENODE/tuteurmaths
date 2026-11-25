@@ -3407,7 +3407,6 @@ par une autre fonction de l'application.
                                 prompt_deuxieme_verification,
                                 contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                             )
-
                         if deuxieme_controle and deuxieme_controle.strip():
 
                             texte_final = deuxieme_controle.strip()
@@ -3418,12 +3417,25 @@ par une autre fonction de l'application.
                                     "SUJET CONFORME", "", 1
                                 ).strip()
 
-             except Exception as erreur:
-                st.error(
-                    f"❌ Erreur pendant la génération du sujet : {erreur}"
-               )
+                            else:
+                                st.error(
+                                    "❌ Le sujet n'a pas été validé "
+                                    "par la deuxième vérification."
+                                )
 
-           if sujet_accepte:                                        
+                        else:
+                            st.error(
+                                "❌ La deuxième vérification n'a retourné "
+                                "aucun résultat."
+                            )
+
+                except Exception as erreur:
+                    st.error(
+                        f"❌ Erreur pendant la génération du sujet : {erreur}"
+                    )
+
+            if sujet_accepte:
+                                                            
                         
                         
                 # 1. Vérification de la notation mathématique
