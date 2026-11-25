@@ -2944,9 +2944,16 @@ def afficher_generateur_sujet():
                     "Veuillez indiquer un chapitre ou un thème."
                 )
 
+           
             else:
-                try:
-                    with st.spinner("⏳ Création de votre sujet..."):
+    sujet_accepte = ""
+    derives_ok = False
+    notation_ok = False
+    erreurs_derives = []
+    erreurs_notation = []
+
+    try:
+        with st.spinner("⏳ Création de votre sujet..."):
 
                         instructions = f"""
 Tu es un professeur de mathématiques expérimenté,
@@ -3403,7 +3410,7 @@ par une autre fonction de l'application.
                            
 
 
-                        with st.spinner(
+                                 with st.spinner(
                                 "🔬 Deuxième vérification indépendante..."
                             ):
                                 deuxieme_controle = _appeler_gemini(
@@ -3411,8 +3418,7 @@ par une autre fonction de l'application.
                                     contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                                 )
 
-                           
-                       if deuxieme_controle and deuxieme_controle.strip():
+                            if deuxieme_controle and deuxieme_controle.strip():
 
                                 texte_final = deuxieme_controle.strip()
 
@@ -3442,18 +3448,39 @@ par une autre fonction de l'application.
                         )
 
                         if derives_ok:
-                            # Conserver ici la suite de ton code
-                            pass       
 
-                if derives_ok:
+                            st.session_state.sujet_genere = sujet_accepte
+                            st.session_state.correction_sujet = ""
 
-                    st.session_state.sujet_genere = sujet_accepte
-                    st.session_state.correction_sujet = ""
+                            st.success(
+                                "✅ Sujet contrôlé : notation des formules "
+                                "et dérivées vérifiées."
+                            )
 
-                    st.success(
-                        "✅ Sujet contrôlé : notation des formules "
-                        "et dérivées vérifiées."
-                    )
+                        else:
+
+                            st.session_state.sujet_genere = ""
+                            st.session_state.correction_sujet = ""
+
+                            st.error(
+                                "❌ Sujet refusé : une ou plusieurs dérivées "
+                                "sont incorrectes ou impossibles à vérifier."
+                            )
+
+                            for erreur in erreurs_derives:
+                                st.warning(erreur)
+
+                    else:
+
+                        st.session_state.sujet_genere = ""
+                        st.session_state.correction_sujet = ""
+
+                        st.error(
+                            "❌ Sujet refusé : problème détecté dans les formules."
+                        )
+
+                        for erreur in erreurs_notation:
+                            st.warning(erreur)
 
                 else:
 
@@ -3461,31 +3488,8 @@ par une autre fonction de l'application.
                     st.session_state.correction_sujet = ""
 
                     st.error(
-                        "❌ Sujet refusé : une ou plusieurs dérivées "
-                        "sont incorrectes ou impossibles à vérifier."
-                    )
-
-                    for erreur in erreurs_derives:
-                        st.warning(erreur)
-
-            else:
-
-                st.session_state.sujet_genere = ""
-                st.session_state.correction_sujet = ""
-
-                st.error(
-                    "❌ Sujet refusé : problème détecté dans les formules."
-                )
-
-                for erreur in erreurs_notation:
-                    st.warning(erreur)
-
-        else:
-
-            st.session_state.sujet_genere = ""
-            st.session_state.correction_sujet = ""
-
-            st.error("⚠️ Aucun sujet retourné.")
+                        "❌ Sujet non validé par la deuxième vérification Gemini."
+                    )                   
 
     elif texte_final.startswith("SUJET NON VALIDÉ"):
 
