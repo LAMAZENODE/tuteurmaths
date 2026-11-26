@@ -2872,12 +2872,12 @@ def verifier_derives_sujet_sympy(texte_sujet):
         expression = expression.replace(r"\sqrt", "sqrt")
         expression = expression.replace("^", "**")
         # Reconnaître les exponentielles écrites e**x
-# Reconnaître les exponentielles écrites e**x
-expression = re.sub(
-    r"e\*\*([A-Za-z0-9]+)",
-    r"exp(\1)",
-    expression
-)
+        # Reconnaître les exponentielles écrites e**x
+        expression = re.sub(
+            r"e\*\*([A-Za-z0-9]+)",
+            r"exp(\1)",
+           expression
+      )
 
 
         return sp.sympify(
