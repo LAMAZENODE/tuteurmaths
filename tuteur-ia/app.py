@@ -2419,13 +2419,7 @@ def verifier_notation_maths(texte):
     # 6. VALIDATION FINALE
     # ------------------------------------------------
 
-    if erreurs:
-        st.warning("🔎 Diagnostic de la notation mathématique")
-
-        st.code(
-            texte,
-            language="text"
-        )
+    
 
     return len(erreurs) == 0, erreurs
 
