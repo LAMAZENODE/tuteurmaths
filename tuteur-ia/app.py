@@ -2790,6 +2790,7 @@ def verifier_derives_sujet_sympy(texte_sujet):
     fonctions = {}
     derivees = {}
 
+   
     def convertir_expression(expression):
         expression = expression.strip()
 
@@ -2800,22 +2801,22 @@ def verifier_derives_sujet_sympy(texte_sujet):
         expression = expression.replace(r"\sqrt", "sqrt")
         expression = expression.replace(r"\exp", "exp")
 
-return parse_expr(
-    expression,
-    local_dict={
-        "x": sp.Symbol("x"),
-        "log": sp.log,
-        "sqrt": sp.sqrt,
-        "exp": sp.exp,
-        "e": sp.E
-    },
-    transformations=standard_transformations + (
-        implicit_multiplication_application,
-        convert_xor
-    )
-)        
-        
+        return parse_expr(
+            expression,
+            local_dict={
+                "x": sp.Symbol("x"),
+                "log": sp.log,
+                "sqrt": sp.sqrt,
+                "exp": sp.exp,
+                "e": sp.E
+            },
+            transformations=standard_transformations + (
+                implicit_multiplication_application,
+                convert_xor
+            )
+        )
 
+    
     for nom, expression in motif_fonction.findall(texte_sujet):
         try:
             fonctions[nom.lower()] = convertir_expression(expression)
