@@ -3399,7 +3399,7 @@ Le résultat final est exclusivement destiné
 Le corrigé enseignant sera généré séparément
 par une autre fonction de l'application.
 """
-
+  
                         with st.spinner(
                             "🔬 Deuxième vérification indépendante..."
                         ):
@@ -3407,6 +3407,7 @@ par une autre fonction de l'application.
                                 prompt_deuxieme_verification,
                                 contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                             )
+
                         if deuxieme_controle and deuxieme_controle.strip():
 
                             texte_final = deuxieme_controle.strip()
@@ -3416,6 +3417,15 @@ par une autre fonction de l'application.
                                 sujet_accepte = texte_final.replace(
                                     "SUJET CONFORME", "", 1
                                 ).strip()
+
+                            elif texte_final.startswith("SUJET NON VALIDÉ"):
+
+                                sujet_accepte = ""
+
+                                st.error(
+                                    "❌ Le sujet n'a pas été validé "
+                                    "par la deuxième vérification."
+                                )
 
                             else:
                                 st.error(
@@ -3434,7 +3444,7 @@ par une autre fonction de l'application.
                         f"❌ Erreur pendant la génération du sujet : {erreur}"
                     )
 
-          
+
             if sujet_accepte:
 
                 # 1. Vérification de la notation mathématique
@@ -3482,16 +3492,17 @@ par une autre fonction de l'application.
                     )
 
                     for erreur in erreurs_notation:
-                        st.warning(erreur)           
+                        st.warning(erreur)
 
-                    else:
+            else:
 
-                        st.session_state.sujet_genere = ""
-                        st.session_state.correction_sujet = ""
+                st.session_state.sujet_genere = ""
+                st.session_state.correction_sujet = ""
 
-                        st.error(
-                            "❌ Sujet non validé par la deuxième vérification Gemini."
-                        )
+                st.error(
+                    "❌ Sujet non validé par la deuxième vérification Gemini."
+                )
+                      
 
                             elif texte_final.startswith("SUJET NON VALIDÉ"):
 
