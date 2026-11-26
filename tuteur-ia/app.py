@@ -2833,21 +2833,41 @@ def verifier_derives_sujet_sympy(texte_sujet):
     fonctions = {}
     derivees = {}
 
-   
+
+    
     def convertir_expression(expression):
         expression = expression.strip()
 
-        # Conversions mathématiques simples
-        expression = expression.replace("^", "**")
+        # Retirer les délimiteurs éventuels
+        expression = expression.replace("$", "")
+
+        # Convertir les exposants LaTeX
+        expression = re.sub(
+            r"\^\{([^{}]+)\}",
+            r"**(\1)",
+            expression
+        )
+
+        # Convertir les puissances simples
+        expression = re.sub(
+            r"\^([A-Za-z0-9]+)",
+            r"**\1",
+            expression
+        )
+
+        # Convertir les fonctions LaTeX
         expression = expression.replace(r"\ln", "log")
-        expression = expression.replace("ln", "log")
-        expression = expression.replace(r"\sqrt", "sqrt")
         expression = expression.replace(r"\exp", "exp")
+        expression = expression.replace(r"\sqrt", "sqrt")
+
+        # Supprimer les espaces
+        expression = expression.replace(" ", "")
 
         return parse_expr(
             expression,
             local_dict={
                 "x": sp.Symbol("x"),
+                "k": sp.Symbol("k"),
                 "log": sp.log,
                 "sqrt": sp.sqrt,
                 "exp": sp.exp,
