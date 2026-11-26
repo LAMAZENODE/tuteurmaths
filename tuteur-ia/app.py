@@ -2923,7 +2923,7 @@ def afficher_generateur_sujet():
             use_container_width=True
         )
 
-   
+    
         # ------------------------------------------------
         # GÉNÉRATION DU SUJET
         # ------------------------------------------------
@@ -2945,15 +2945,7 @@ def afficher_generateur_sujet():
                 )
 
             else:
-
-                sujet_accepte = ""
-                derives_ok = False
-                notation_ok = False
-                erreurs_derives = []
-                erreurs_notation = []
-
                 try:
-
                     with st.spinner("⏳ Création de votre sujet..."):
 
                         instructions = f"""
@@ -2981,6 +2973,8 @@ IMPORTANT — NOTATION MATHÉMATIQUE :
 Toutes les expressions mathématiques doivent être écrites
 en LaTeX et encadrées par $...$.
 
+
+
 Exemples :
 - $e^{{3x-1}}$
 - $\\exp(x)$
@@ -2990,6 +2984,7 @@ Exemples :
 - $u_{{n+1}}$
 - $\\lim_{{x\\to +\\infty}}$
 - $f'(x)$
+
 
 Ne remplace jamais les formules par des approximations
 en texte ordinaire.
@@ -3004,9 +2999,6 @@ Ne fournis aucune correction ni réponse.
 
 Réponds uniquement avec le sujet final en français.
 """
- 
-        
-
                     sujet = _appeler_gemini(
                         instructions,
                         contenu="Génère le sujet demandé."
@@ -3265,12 +3257,17 @@ DESTINÉ AUX ÉLÈVES.
 NE DONNE AUCUNE SOLUTION AUX EXERCICES.
 NE RÉSOUS AUCUNE QUESTION DANS TA RÉPONSE.
 """
-                    with st.spinner(
-                        "🔍 Première vérification mathématique et pédagogique..."
-                    ):
-                        sujet_verifie = _appeler_gemini(
-                            prompt_verification,
-                            contenu="""
+   
+
+                  
+                   
+                        with st.spinner(
+                            "🔍 Première vérification mathématique et pédagogique..."
+                        ):
+                            sujet_verifie = _appeler_gemini(
+                                prompt_verification,
+                               
+                                contenu="""
 Tu dois obligatoirement effectuer deux opérations :
 
 1. ANALYSER :
@@ -3279,7 +3276,8 @@ mathématiques et pédagogiques.
 
 2. CORRIGER :
 Réécris intégralement le sujet en intégrant toutes les
-corrections nécessaires.
+corrections nécessaires.                        
+                                
 
 RÈGLES :
 - Ne retourne pas un simple rapport.
@@ -3292,13 +3290,14 @@ RÈGLES :
 
 Retourne le sujet complet corrigé.
 """
-                        )
+                            )
 
-                    if sujet_verifie and sujet_verifie.strip():
+                        if sujet_verifie and sujet_verifie.strip():
 
-                        # DEUXIÈME VÉRIFICATION INDÉPENDANTE
+                            # DEUXIÈME VÉRIFICATION INDÉPENDANTE
 
-                        prompt_deuxieme_verification = f"""
+                            prompt_deuxieme_verification = f"""
+
 
 Tu es un deuxième inspecteur mathématique indépendant,
 expert en mathématiques et en pédagogie du système scolaire français.
@@ -3399,88 +3398,54 @@ Le résultat final est exclusivement destiné
 Le corrigé enseignant sera généré séparément
 par une autre fonction de l'application.
 """
-  
-                        with st.spinner(
-                            "🔬 Deuxième vérification indépendante..."
-                        ):
-                            deuxieme_controle = _appeler_gemini(
-                                prompt_deuxieme_verification,
-                                contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
-                            )
 
-                        if deuxieme_controle and deuxieme_controle.strip():
 
-                            texte_final = deuxieme_controle.strip()
+                           
 
-                            if texte_final.startswith("SUJET CONFORME"):
 
-                                sujet_accepte = texte_final.replace(
-                                    "SUJET CONFORME", "", 1
-                                ).strip()
-
-                            elif texte_final.startswith("SUJET NON VALIDÉ"):
-
-                                sujet_accepte = ""
-
-                                st.error(
-                                    "❌ Le sujet n'a pas été validé "
-                                    "par la deuxième vérification."
+                            with st.spinner(
+                                "🔬 Deuxième vérification indépendante..."
+                            ):
+                                deuxieme_controle = _appeler_gemini(
+                                    prompt_deuxieme_verification,
+                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                                 )
 
-                            else:
-                                st.error(
-                                    "❌ Le sujet n'a pas été validé "
-                                    "par la deuxième vérification."
-                                )
+                            if deuxieme_controle and deuxieme_controle.strip():
 
-                        else:
-                            st.error(
-                                "❌ La deuxième vérification n'a retourné "
-                                "aucun résultat."
-                            )
+                                texte_final = deuxieme_controle.strip()
 
-                except Exception as erreur:
-                    st.error(
-                        f"❌ Erreur pendant la génération du sujet : {erreur}"
-                    )
+                                if texte_final.startswith("SUJET CONFORME"):
 
+                                    sujet_accepte = texte_final.replace(
+                                        "SUJET CONFORME", "", 1
+                                    ).strip()
+                           
+                            
 
-            if sujet_accepte:
+        if sujet_accepte:
 
-                # 1. Vérification de la notation mathématique
-                notation_ok, erreurs_notation = verifier_notation_maths(
+            # 1. Vérification de la notation mathématique
+            notation_ok, erreurs_notation = verifier_notation_maths(
+                sujet_accepte
+            )
+
+            if notation_ok:
+
+                # 2. Vérification des dérivées avec SymPy
+                derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
                     sujet_accepte
                 )
 
-                if notation_ok:
+                if derives_ok:
 
-                    # 2. Vérification des dérivées avec SymPy
-                    derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
-                        sujet_accepte
+                    st.session_state.sujet_genere = sujet_accepte
+                    st.session_state.correction_sujet = ""
+
+                    st.success(
+                        "✅ Sujet contrôlé : notation des formules "
+                        "et dérivées vérifiées."
                     )
-
-                    if derives_ok:
-
-                        st.session_state.sujet_genere = sujet_accepte
-                        st.session_state.correction_sujet = ""
-
-                        st.success(
-                            "✅ Sujet contrôlé : notation des formules "
-                            "et dérivées vérifiées."
-                        )
-
-                    else:
-
-                        st.session_state.sujet_genere = ""
-                        st.session_state.correction_sujet = ""
-
-                        st.error(
-                            "❌ Sujet refusé : une ou plusieurs dérivées "
-                            "sont incorrectes ou impossibles à vérifier."
-                        )
-
-                        for erreur in erreurs_derives:
-                            st.warning(erreur)
 
                 else:
 
@@ -3488,10 +3453,11 @@ par une autre fonction de l'application.
                     st.session_state.correction_sujet = ""
 
                     st.error(
-                        "❌ Sujet refusé : problème détecté dans les formules."
+                        "❌ Sujet refusé : une ou plusieurs dérivées "
+                        "sont incorrectes ou impossibles à vérifier."
                     )
 
-                    for erreur in erreurs_notation:
+                    for erreur in erreurs_derives:
                         st.warning(erreur)
 
             else:
@@ -3500,38 +3466,60 @@ par une autre fonction de l'application.
                 st.session_state.correction_sujet = ""
 
                 st.error(
-                    "❌ Sujet non validé par la deuxième vérification Gemini."
+                    "❌ Sujet refusé : problème détecté dans les formules."
                 )
-                      
 
-                           
-
-                
-
-                  
-                
-            else:
-
-                st.session_state.sujet_genere = ""
-                st.session_state.correction_sujet = ""
-
-                st.error("❌ La deuxième vérification a échoué.")
+                for erreur in erreurs_notation:
+                    st.warning(erreur)
 
         else:
-            st.error(
-                "❌ La première vérification du sujet a échoué."
-            )
+
+            st.session_state.sujet_genere = ""
+            st.session_state.correction_sujet = ""
+
+            st.error("⚠️ Aucun sujet retourné.")
+
+    elif texte_final.startswith("SUJET NON VALIDÉ"):
+
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error("❌ Sujet non validé.")
+        st.warning(texte_final)
 
     else:
-        st.error("La génération du sujet a échoué.")
 
-except Exception as e:
-    st.error(f"Erreur de génération : {e}")
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error("⚠️ Format de réponse incorrect.")
+        st.warning(texte_final)
+
+else:
+
+    st.session_state.sujet_genere = ""
+    st.session_state.correction_sujet = ""
+
+    st.error("❌ La deuxième vérification a échoué.")
+
+
+                            
+
+                        else:
+                            st.error(
+                                "❌ La première vérification du sujet a échoué."
+                            )
+
+                    else:
+                        st.error("La génération du sujet a échoué.")
+
+                except Exception as e:
+                  st.error(f"Erreur de génération : {e}")
+
+                         
                            
+                            
 
-
-                   
-                    
     # ------------------------------------------------
     # AFFICHAGE ET TÉLÉCHARGEMENT DU SUJET
     # ------------------------------------------------
@@ -3903,4 +3891,5 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
+
 
