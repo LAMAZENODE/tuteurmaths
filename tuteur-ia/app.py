@@ -2247,7 +2247,7 @@ def verifier_notation_maths(texte):
     # ------------------------------------------------
 
    
-   if re.search(r"(?<!\\)\$\$|\\\[|\\\]|\\\(|\\\)", texte): 
+    if re.search(r"(?<!\\)\$\$|\\\[|\\\]|\\\(|\\\)", texte): 
         erreurs.append(
             "Délimiteur interdit : seules les formules "
             "encadrées par $...$ sont autorisées."
