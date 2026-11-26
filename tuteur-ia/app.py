@@ -2225,6 +2225,7 @@ def verifier_sympy_disponible():
 
 
 
+
 def verifier_notation_maths(texte):
     """
     Contrôle strict de la notation mathématique.
@@ -2246,15 +2247,17 @@ def verifier_notation_maths(texte):
     # 1. REFUSER LES AUTRES DÉLIMITEURS LATEX
     # ------------------------------------------------
 
-   
-    if re.search(r"(?<!\\)\$\$|\\\[|\\\]|\\\(|\\\)", texte): 
+    if re.search(
+        r"(?<!\\)\$\$|\\\[|\\\]|\\\(|\\\)",
+        texte
+    ):
         erreurs.append(
             "Délimiteur interdit : seules les formules "
             "encadrées par $...$ sont autorisées."
         )
 
     # ------------------------------------------------
-    # 2. IDENTIFIER LES FORMULES ENCADRÉES PAR $...$
+    # 2. IDENTIFIER LES FORMULES $...$
     # ------------------------------------------------
 
     segments_math = []
@@ -2278,25 +2281,44 @@ def verifier_notation_maths(texte):
             continue
 
         # Refuser les doubles dollars
-        if (i > 0 and texte[i - 1] == "$") or (
-            i + 1 < len(texte) and texte[i + 1] == "$"
+        if (
+            (i > 0 and texte[i - 1] == "$")
+            or
+            (i + 1 < len(texte) and texte[i + 1] == "$")
         ):
             continue
 
         if ouverture is None:
+
             ouverture = True
             debut = i
 
         else:
+
             formule = texte[debut + 1:i].strip()
 
             if not formule:
-                erreurs.append("Une formule LaTeX est vide.")
+                erreurs.append(
+                    "Une formule LaTeX est vide."
+                )
 
-            # Vérification des accolades
+            # Vérifier les accolades non échappées
             niveau = 0
 
-            for caractere_formule in formule:
+            for k, caractere_formule in enumerate(formule):
+
+                if caractere_formule not in "{}":
+                    continue
+
+                nb_slash = 0
+                j = k - 1
+
+                while j >= 0 and formule[j] == "\\":
+                    nb_slash += 1
+                    j -= 1
+
+                if nb_slash % 2 == 1:
+                    continue
 
                 if caractere_formule == "{":
                     niveau += 1
@@ -2317,13 +2339,24 @@ def verifier_notation_maths(texte):
             ouverture = None
             debut = None
 
+    # ------------------------------------------------
+    # 3. GÉRER LES DÉLIMITEURS NON FERMÉS
+    # ------------------------------------------------
+
     if ouverture is not None:
+
         erreurs.append(
             "Une formule contient un délimiteur $ non fermé."
         )
 
+        # Ne pas analyser le contenu de cette formule
+        # une deuxième fois comme du texte ordinaire.
+        fin_texte = len(texte)
+
+        segments_math.append((debut, fin_texte))
+
     # ------------------------------------------------
-    # 3. EXTRAIRE LE TEXTE HORS LATEX
+    # 4. EXTRAIRE LE TEXTE HORS LATEX
     # ------------------------------------------------
 
     texte_hors_latex = []
@@ -2342,18 +2375,18 @@ def verifier_notation_maths(texte):
     texte_hors_latex = " ".join(texte_hors_latex)
 
     # ------------------------------------------------
-    # 4. DÉTECTER LES FORMULES NON ENCADRÉES
+    # 5. DÉTECTER LES FORMULES HORS LATEX
     # ------------------------------------------------
 
     motifs_formules = [
 
-        # Fonctions logarithmiques et autres fonctions
+        # Fonctions mathématiques
         r"\b(?:ln|log|exp|sqrt)\s*\(",
 
-        # Fonction suivie d'une égalité
+        # Fonction définie par une égalité
         r"\b[A-Za-z]\w*\s*\([^()\n]*\)\s*=",
 
-        # Expressions algébriques comme x - 1 ou x + 2
+        # Expressions algébriques
         r"\b[A-Za-z]\s*[+\-*/^=<>]\s*(?:\d|[A-Za-z(])",
 
         # Exposants Unicode
@@ -2365,7 +2398,7 @@ def verifier_notation_maths(texte):
         # Symboles mathématiques
         r"[≤≥≠∈∉∞]",
 
-        # Commandes LaTeX non encadrées
+        # Commandes LaTeX hors délimiteurs
         r"\\(?:frac|sqrt|lim|mathbb|cdot|times)\b"
     ]
 
@@ -2382,10 +2415,11 @@ def verifier_notation_maths(texte):
             break
 
     # ------------------------------------------------
-    # 5. VALIDATION FINALE
+    # 6. VALIDATION FINALE
     # ------------------------------------------------
 
     return len(erreurs) == 0, erreurs
+
 
 
 
