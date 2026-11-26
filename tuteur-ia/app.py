@@ -2840,7 +2840,7 @@ def verifier_derives_sujet_sympy(texte_sujet):
 
     fonctions = {}
     derivees = {}
-
+    
     def convertir_expression(expression):
         expression = expression.strip()
         expression = expression.replace("$", "")
@@ -2848,6 +2848,9 @@ def verifier_derives_sujet_sympy(texte_sujet):
 
         expression = expression.replace(r"\left", "")
         expression = expression.replace(r"\right", "")
+
+        expression = expression.replace(r"\cdot", "*")
+        expression = expression.replace(r"\times", "*")
 
         expression = re.sub(
             r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
@@ -2870,27 +2873,32 @@ def verifier_derives_sujet_sympy(texte_sujet):
         expression = expression.replace(r"\ln", "log")
         expression = expression.replace(r"\exp", "exp")
         expression = expression.replace(r"\sqrt", "sqrt")
-        expression = expression.replace("^", "**")
-        # Reconnaître les exponentielles écrites e**x
-        # Reconnaître les exponentielles écrites e**x
-        expression = re.sub(
-            r"e\*\*([A-Za-z0-9]+)",
-            r"exp(\1)",
-           expression
-      )
 
+        from sympy.parsing.sympy_parser import (
+            parse_expr,
+            standard_transformations,
+            implicit_multiplication_application,
+            convert_xor
+        )
 
-        return sp.sympify(
+        transformations = standard_transformations + (
+            implicit_multiplication_application,
+            convert_xor
+        )
+
+        return parse_expr(
             expression,
-            locals={
+            local_dict={
                 "x": x,
                 "e": sp.E,
                 "exp": sp.exp,
                 "log": sp.log,
                 "sqrt": sp.sqrt
             },
+            transformations=transformations,
             evaluate=True
         )
+
 
     for nom, expression in motif_fonction.findall(texte_sujet):
         try:
