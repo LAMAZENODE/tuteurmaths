@@ -2816,7 +2816,7 @@ return parse_expr(
 )        
         
 
-    for nom, expression in motif_fonction.findall(texte_sujet):
+     for nom, expression in motif_fonction.findall(texte_sujet):
         try:
             fonctions[nom.lower()] = convertir_expression(expression)
         except Exception:
