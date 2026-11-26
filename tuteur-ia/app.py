@@ -4,6 +4,14 @@ from google import genai
 from google.genai import types
 import json
 import re
+
+from sympy.parsing.sympy_parser import (
+    parse_expr,
+    standard_transformations,
+    implicit_multiplication_application,
+    convert_xor
+)
+
 import stripe
 
 import io
@@ -11,14 +19,17 @@ import os
 import time
 import random
 import datetime
+
 if "sujet_genere" not in st.session_state:
     st.session_state.sujet_genere = ""
+
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+
 
 # Cookie manager (optionnel)
 try:
