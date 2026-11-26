@@ -2834,43 +2834,46 @@ def verifier_derives_sujet_sympy(texte_sujet):
     derivees = {}
 
 
-    
+
     def convertir_expression(expression):
         expression = expression.strip()
 
-        # Retirer les délimiteurs éventuels
+        # Retirer les dollars LaTeX
         expression = expression.replace("$", "")
 
-        # Convertir les exposants LaTeX
+        # Supprimer les espaces
+        expression = expression.replace(" ", "")
+
+        # Convertir les puissances LaTeX : e^{kx}, e^{-x}
         expression = re.sub(
-            r"\^\{([^{}]+)\}",
-            r"**(\1)",
+            r"e\^\{([^{}]+)\}",
+            r"exp(\1)",
             expression
         )
 
-        # Convertir les puissances simples
+        # Convertir les puissances simples : e^x
         expression = re.sub(
-            r"\^([A-Za-z0-9]+)",
-            r"**\1",
+            r"e\^([A-Za-z0-9]+)",
+            r"exp(\1)",
             expression
         )
 
-        # Convertir les fonctions LaTeX
+        # Convertir les commandes LaTeX
         expression = expression.replace(r"\ln", "log")
         expression = expression.replace(r"\exp", "exp")
         expression = expression.replace(r"\sqrt", "sqrt")
 
-        # Supprimer les espaces
-        expression = expression.replace(" ", "")
+        # Convertir les puissances restantes
+        expression = expression.replace("^", "**")
 
         return parse_expr(
             expression,
             local_dict={
                 "x": sp.Symbol("x"),
                 "k": sp.Symbol("k"),
+                "exp": sp.exp,
                 "log": sp.log,
                 "sqrt": sp.sqrt,
-                "exp": sp.exp,
                 "e": sp.E
             },
             transformations=standard_transformations + (
@@ -2878,6 +2881,8 @@ def verifier_derives_sujet_sympy(texte_sujet):
                 convert_xor
             )
         )
+
+    
 
     
     for nom, expression in motif_fonction.findall(texte_sujet):
