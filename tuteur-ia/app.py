@@ -3022,9 +3022,17 @@ Indique le chapitre, le niveau, la durée et le barème.
 
 IMPORTANT — NOTATION MATHÉMATIQUE :
 
-Toutes les expressions mathématiques doivent être écrites
-en LaTeX et encadrées par $...$.
 
+Toutes les expressions mathématiques doivent être écrites
+en LaTeX et encadrées exclusivement par un seul dollar
+ouvrant et un seul dollar fermant : $...$.
+
+INTERDICTION ABSOLUE :
+- Ne jamais utiliser $$...$$.
+- Ne jamais utiliser \[...\].
+- Ne jamais utiliser \(...\).
+- Ne jamais écrire une formule mathématique hors de $...$.
+- Ne jamais utiliser de dollars isolés.
 
 
 Exemples :
