@@ -2246,7 +2246,8 @@ def verifier_notation_maths(texte):
     # 1. REFUSER LES AUTRES DÉLIMITEURS LATEX
     # ------------------------------------------------
 
-    if re.search(r"(?<!\\)\$\$|\\[\[\]()]", texte):
+   
+   if re.search(r"(?<!\\)\$\$|\\\[|\\\]|\\\(|\\\)", texte): 
         erreurs.append(
             "Délimiteur interdit : seules les formules "
             "encadrées par $...$ sont autorisées."
