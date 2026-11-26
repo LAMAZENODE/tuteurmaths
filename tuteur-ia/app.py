@@ -2817,7 +2817,7 @@ return parse_expr(
         
 
      for nom, expression in motif_fonction.findall(texte_sujet):
-        try:
+         try:
             fonctions[nom.lower()] = convertir_expression(expression)
         except Exception:
             erreurs.append(
@@ -2825,8 +2825,8 @@ return parse_expr(
                 f"{expression.strip()}"
             )
 
-    for nom, expression in motif_derivee.findall(texte_sujet):
-        try:
+     for nom, expression in motif_derivee.findall(texte_sujet):
+         try:
             derivees[nom.lower()] = convertir_expression(expression)
         except Exception:
             erreurs.append(
