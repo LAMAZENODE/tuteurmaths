@@ -2815,6 +2815,8 @@ def verifier_limite_sympy(
 
 
 
+
+
 def verifier_derives_sujet_sympy(texte_sujet):
     import re
     import sympy as sp
@@ -2824,7 +2826,8 @@ def verifier_derives_sujet_sympy(texte_sujet):
     if not texte_sujet or not texte_sujet.strip():
         return False, ["Le sujet est vide."]
 
-    # Recherche des fonctions et de leurs dérivées annoncées
+    x = sp.Symbol("x")
+
     motif_fonction = re.compile(
         r"\b([fgh])\(x\)\s*=\s*\$?([^$\n]+)\$?",
         re.IGNORECASE
@@ -2838,65 +2841,49 @@ def verifier_derives_sujet_sympy(texte_sujet):
     fonctions = {}
     derivees = {}
 
-   
     def convertir_expression(expression):
         expression = expression.strip()
-
-        # Retirer les délimiteurs
         expression = expression.replace("$", "")
-
-        # Supprimer les espaces
         expression = expression.replace(" ", "")
 
-        # Convertir les fractions LaTeX
+        expression = expression.replace(r"\left", "")
+        expression = expression.replace(r"\right", "")
+
         expression = re.sub(
             r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
             r"((\1)/(\2))",
             expression
         )
 
-        # Convertir les exponentielles e^{...}
         expression = re.sub(
             r"e\^\{([^{}]+)\}",
             r"exp(\1)",
             expression
         )
 
-        # Convertir les exponentielles e^x
         expression = re.sub(
             r"e\^([A-Za-z0-9]+)",
             r"exp(\1)",
             expression
         )
 
-        # Convertir les fonctions LaTeX
         expression = expression.replace(r"\ln", "log")
         expression = expression.replace(r"\exp", "exp")
         expression = expression.replace(r"\sqrt", "sqrt")
-
-        # Convertir les puissances
         expression = expression.replace("^", "**")
 
-        return parse_expr(
+        return sp.sympify(
             expression,
-            local_dict={
-                "x": sp.Symbol("x"),
-                "k": sp.Symbol("k"),
+            locals={
+                "x": x,
+                "e": sp.E,
                 "exp": sp.exp,
                 "log": sp.log,
-                "sqrt": sp.sqrt,
-                "e": sp.E
+                "sqrt": sp.sqrt
             },
-            transformations=standard_transformations + (
-                implicit_multiplication_application,
-                convert_xor
-            )
+            evaluate=True
         )
- 
 
-    
-
-    
     for nom, expression in motif_fonction.findall(texte_sujet):
         try:
             fonctions[nom.lower()] = convertir_expression(expression)
@@ -2913,23 +2900,17 @@ def verifier_derives_sujet_sympy(texte_sujet):
             erreurs.append(
                 f"Dérivée de {nom}(x) impossible à analyser : "
                 f"{expression.strip()}"
-            )    
+            )
 
-
-    # Comparaison entre la dérivée annoncée et la dérivée réelle
     for nom, derivee_annoncee in derivees.items():
 
         if nom not in fonctions:
             erreurs.append(
-                f"Impossible de vérifier la dérivée de {nom}(x) : "
-                "fonction de départ introuvable."
+                f"Fonction de départ introuvable pour {nom}(x)."
             )
             continue
 
-        derivee_reelle = sp.diff(
-            fonctions[nom],
-            sp.Symbol("x")
-        )
+        derivee_reelle = sp.diff(fonctions[nom], x)
 
         difference = sp.simplify(
             derivee_reelle - derivee_annoncee
@@ -2938,9 +2919,7 @@ def verifier_derives_sujet_sympy(texte_sujet):
         if difference != 0:
             erreurs.append(
                 f"Dérivée incorrecte pour {nom}(x). "
-                f"Dérivée annoncée : {derivee_annoncee}. "
-                f"La comparaison avec la fonction de départ "
-                "n'est pas satisfaisante."
+                f"Expression annoncée : {derivee_annoncee}."
             )
 
     return len(erreurs) == 0, erreurs
