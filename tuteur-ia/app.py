@@ -2833,37 +2833,43 @@ def verifier_derives_sujet_sympy(texte_sujet):
     fonctions = {}
     derivees = {}
 
-
-
+   
     def convertir_expression(expression):
         expression = expression.strip()
 
-        # Retirer les dollars LaTeX
+        # Retirer les délimiteurs
         expression = expression.replace("$", "")
 
         # Supprimer les espaces
         expression = expression.replace(" ", "")
 
-        # Convertir les puissances LaTeX : e^{kx}, e^{-x}
+        # Convertir les fractions LaTeX
+        expression = re.sub(
+            r"\\frac\{([^{}]+)\}\{([^{}]+)\}",
+            r"((\1)/(\2))",
+            expression
+        )
+
+        # Convertir les exponentielles e^{...}
         expression = re.sub(
             r"e\^\{([^{}]+)\}",
             r"exp(\1)",
             expression
         )
 
-        # Convertir les puissances simples : e^x
+        # Convertir les exponentielles e^x
         expression = re.sub(
             r"e\^([A-Za-z0-9]+)",
             r"exp(\1)",
             expression
         )
 
-        # Convertir les commandes LaTeX
+        # Convertir les fonctions LaTeX
         expression = expression.replace(r"\ln", "log")
         expression = expression.replace(r"\exp", "exp")
         expression = expression.replace(r"\sqrt", "sqrt")
 
-        # Convertir les puissances restantes
+        # Convertir les puissances
         expression = expression.replace("^", "**")
 
         return parse_expr(
@@ -2881,6 +2887,7 @@ def verifier_derives_sujet_sympy(texte_sujet):
                 convert_xor
             )
         )
+ 
 
     
 
