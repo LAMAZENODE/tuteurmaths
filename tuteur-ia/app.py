@@ -3445,16 +3445,16 @@ par une autre fonction de l'application.
 
                             else:
 
-                    st.session_state.sujet_genere = ""
-                    st.session_state.correction_sujet = ""
+                               st.session_state.sujet_genere = ""
+                               st.session_state.correction_sujet = ""
 
-                    st.error(
-                        "❌ Sujet refusé : une ou plusieurs dérivées "
-                        "sont incorrectes ou impossibles à vérifier."
-                    )
+                              st.error(
+                                 "❌ Sujet refusé : une ou plusieurs dérivées "
+                                 "sont incorrectes ou impossibles à vérifier."
+                                 )
 
-                    for erreur in erreurs_derives:
-                        st.warning(erreur)
+                           for erreur in erreurs_derives:
+                           st.warning(erreur)
 
             else:
 
