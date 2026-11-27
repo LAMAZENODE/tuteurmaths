@@ -3399,10 +3399,7 @@ Le corrigé enseignant sera généré séparément
 par une autre fonction de l'application.
 """
 
-
-   
-                           
-    with st.spinner(
+                            with st.spinner(
                                 "🔬 Deuxième vérification indépendante..."
                             ):
                                 deuxieme_controle = _appeler_gemini(
@@ -3422,21 +3419,21 @@ par une autre fonction de l'application.
                            
                             
 
-        if sujet_accepte:
+                           if sujet_accepte:
 
-            # 1. Vérification de la notation mathématique
-            notation_ok, erreurs_notation = verifier_notation_maths(
-                sujet_accepte
-            )
+                            # 1. Vérification de la notation mathématique
+                            notation_ok, erreurs_notation = verifier_notation_maths(
+                            sujet_accepte
+                           )
 
-            if notation_ok:
+                        if notation_ok:
 
-                # 2. Vérification des dérivées avec SymPy
-                derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
-                    sujet_accepte
-                )
+                           # 2. Vérification des dérivées avec SymPy
+                          derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+                          sujet_accepte
+                         )
 
-                if derives_ok:
+                         if derives_ok:
 
                     st.session_state.sujet_genere = sujet_accepte
                     st.session_state.correction_sujet = ""
@@ -3517,8 +3514,12 @@ else:
 
                          
                            
-                                                     
-                        
+                            
+
+   
+                           
+   
+    
 
 
                           
