@@ -3421,27 +3421,27 @@ par une autre fonction de l'application.
 
                             if sujet_accepte:
 
-                            # 1. Vérification de la notation mathématique
-                            notation_ok, erreurs_notation = verifier_notation_maths(
-                            sujet_accepte
+                                # 1. Vérification de la notation mathématique
+                                notation_ok, erreurs_notation = verifier_notation_maths(
+                                   sujet_accepte
                                 )
 
                                 if notation_ok: 
 
-                                  # 2. Vérification des dérivées avec SymPy
+                                   # 2. Vérification des dérivées avec SymPy
                                  derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
                                  sujet_accepte
-                               )
+                                )
 
-                              if derives_ok:
+                                  if derives_ok:
 
-                                st.session_state.sujet_genere = sujet_accepte
-                                st.session_state.correction_sujet = ""
+                                    st.session_state.sujet_genere = sujet_accepte
+                                    st.session_state.correction_sujet = ""
 
-                              st.success(
-                              "✅ Sujet contrôlé : notation des formules "
-                              "et dérivées vérifiées."
-                              )
+                                  st.success(
+                                      "✅ Sujet contrôlé : notation des formules "
+                                      "et dérivées vérifiées."
+                                )
 
                 else:
 
