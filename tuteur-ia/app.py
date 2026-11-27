@@ -3433,7 +3433,7 @@ par une autre fonction de l'application.
                                  sujet_accepte
                                 )
 
-                                   if derives_ok:
+                                if derives_ok:
 
                                        st.session_state.sujet_genere = sujet_accepte
                                        st.session_state.correction_sujet = ""
