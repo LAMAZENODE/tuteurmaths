@@ -3437,8 +3437,8 @@ par une autre fonction de l'application.
 
                                        st.session_state.sujet_genere = sujet_accepte
                                        st.session_state.correction_sujet = ""
-
-                                      st.success(
+ 
+                                       st.success(
                                           "✅ Sujet contrôlé : notation des formules "
                                           "et dérivées vérifiées."
                                 )
