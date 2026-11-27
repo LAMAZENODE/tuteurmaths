@@ -4,14 +4,6 @@ from google import genai
 from google.genai import types
 import json
 import re
-
-from sympy.parsing.sympy_parser import (
-    parse_expr,
-    standard_transformations,
-    implicit_multiplication_application,
-    convert_xor
-)
-
 import stripe
 
 import io
@@ -19,17 +11,14 @@ import os
 import time
 import random
 import datetime
-
 if "sujet_genere" not in st.session_state:
     st.session_state.sujet_genere = ""
-
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-
 
 # Cookie manager (optionnel)
 try:
@@ -2236,7 +2225,6 @@ def verifier_sympy_disponible():
 
 
 
-
 def verifier_notation_maths(texte):
     """
     Contrôle strict de la notation mathématique.
@@ -2258,17 +2246,14 @@ def verifier_notation_maths(texte):
     # 1. REFUSER LES AUTRES DÉLIMITEURS LATEX
     # ------------------------------------------------
 
-    if re.search(
-        r"(?<!\\)\$\$|\\\[|\\\]|\\\(|\\\)",
-        texte
-    ):
+    if re.search(r"(?<!\\)\$\$|\\[\[\]()]", texte):
         erreurs.append(
             "Délimiteur interdit : seules les formules "
             "encadrées par $...$ sont autorisées."
         )
 
     # ------------------------------------------------
-    # 2. IDENTIFIER LES FORMULES $...$
+    # 2. IDENTIFIER LES FORMULES ENCADRÉES PAR $...$
     # ------------------------------------------------
 
     segments_math = []
@@ -2292,44 +2277,25 @@ def verifier_notation_maths(texte):
             continue
 
         # Refuser les doubles dollars
-        if (
-            (i > 0 and texte[i - 1] == "$")
-            or
-            (i + 1 < len(texte) and texte[i + 1] == "$")
+        if (i > 0 and texte[i - 1] == "$") or (
+            i + 1 < len(texte) and texte[i + 1] == "$"
         ):
             continue
 
         if ouverture is None:
-
             ouverture = True
             debut = i
 
         else:
-
             formule = texte[debut + 1:i].strip()
 
             if not formule:
-                erreurs.append(
-                    "Une formule LaTeX est vide."
-                )
+                erreurs.append("Une formule LaTeX est vide.")
 
-            # Vérifier les accolades non échappées
+            # Vérification des accolades
             niveau = 0
 
-            for k, caractere_formule in enumerate(formule):
-
-                if caractere_formule not in "{}":
-                    continue
-
-                nb_slash = 0
-                j = k - 1
-
-                while j >= 0 and formule[j] == "\\":
-                    nb_slash += 1
-                    j -= 1
-
-                if nb_slash % 2 == 1:
-                    continue
+            for caractere_formule in formule:
 
                 if caractere_formule == "{":
                     niveau += 1
@@ -2350,24 +2316,13 @@ def verifier_notation_maths(texte):
             ouverture = None
             debut = None
 
-    # ------------------------------------------------
-    # 3. GÉRER LES DÉLIMITEURS NON FERMÉS
-    # ------------------------------------------------
-
     if ouverture is not None:
-
         erreurs.append(
             "Une formule contient un délimiteur $ non fermé."
         )
 
-        # Ne pas analyser le contenu de cette formule
-        # une deuxième fois comme du texte ordinaire.
-        fin_texte = len(texte)
-
-        segments_math.append((debut, fin_texte))
-
     # ------------------------------------------------
-    # 4. EXTRAIRE LE TEXTE HORS LATEX
+    # 3. EXTRAIRE LE TEXTE HORS LATEX
     # ------------------------------------------------
 
     texte_hors_latex = []
@@ -2386,18 +2341,18 @@ def verifier_notation_maths(texte):
     texte_hors_latex = " ".join(texte_hors_latex)
 
     # ------------------------------------------------
-    # 5. DÉTECTER LES FORMULES HORS LATEX
+    # 4. DÉTECTER LES FORMULES NON ENCADRÉES
     # ------------------------------------------------
 
     motifs_formules = [
 
-        # Fonctions mathématiques
+        # Fonctions logarithmiques et autres fonctions
         r"\b(?:ln|log|exp|sqrt)\s*\(",
 
-        # Fonction définie par une égalité
+        # Fonction suivie d'une égalité
         r"\b[A-Za-z]\w*\s*\([^()\n]*\)\s*=",
 
-        # Expressions algébriques
+        # Expressions algébriques comme x - 1 ou x + 2
         r"\b[A-Za-z]\s*[+\-*/^=<>]\s*(?:\d|[A-Za-z(])",
 
         # Exposants Unicode
@@ -2409,7 +2364,7 @@ def verifier_notation_maths(texte):
         # Symboles mathématiques
         r"[≤≥≠∈∉∞]",
 
-        # Commandes LaTeX hors délimiteurs
+        # Commandes LaTeX non encadrées
         r"\\(?:frac|sqrt|lim|mathbb|cdot|times)\b"
     ]
 
@@ -2425,15 +2380,11 @@ def verifier_notation_maths(texte):
 
             break
 
-  
     # ------------------------------------------------
-    # 6. VALIDATION FINALE
+    # 5. VALIDATION FINALE
     # ------------------------------------------------
-
-    
 
     return len(erreurs) == 0, erreurs
-
 
 
 
@@ -2815,10 +2766,96 @@ def verifier_limite_sympy(
 
 
 
-
-
-
 def verifier_derives_sujet_sympy(texte_sujet):
+    import re
+    import sympy as sp
+
+    erreurs = []
+
+    if not texte_sujet or not texte_sujet.strip():
+        return False, ["Le sujet est vide."]
+
+    # Recherche des fonctions et de leurs dérivées annoncées
+    motif_fonction = re.compile(
+        r"\b([fgh])\(x\)\s*=\s*\$?([^$\n]+)\$?",
+        re.IGNORECASE
+    )
+
+    motif_derivee = re.compile(
+        r"\b([fgh])['′]\(x\)\s*=\s*\$?([^$\n]+)\$?",
+        re.IGNORECASE
+    )
+
+    fonctions = {}
+    derivees = {}
+
+    def convertir_expression(expression):
+        expression = expression.strip()
+
+        # Conversions mathématiques simples
+        expression = expression.replace("^", "**")
+        expression = expression.replace(r"\ln", "log")
+        expression = expression.replace("ln", "log")
+        expression = expression.replace(r"\sqrt", "sqrt")
+        expression = expression.replace(r"\exp", "exp")
+
+        return sp.sympify(
+            expression,
+            locals={
+                "x": sp.Symbol("x"),
+                "log": sp.log,
+                "sqrt": sp.sqrt,
+                "exp": sp.exp
+            }
+        )
+
+    for nom, expression in motif_fonction.findall(texte_sujet):
+        try:
+            fonctions[nom.lower()] = convertir_expression(expression)
+        except Exception:
+            erreurs.append(
+                f"Fonction {nom}(x) impossible à analyser : "
+                f"{expression.strip()}"
+            )
+
+    for nom, expression in motif_derivee.findall(texte_sujet):
+        try:
+            derivees[nom.lower()] = convertir_expression(expression)
+        except Exception:
+            erreurs.append(
+                f"Dérivée de {nom}(x) impossible à analyser : "
+                f"{expression.strip()}"
+            )
+
+    # Comparaison entre la dérivée annoncée et la dérivée réelle
+    for nom, derivee_annoncee in derivees.items():
+
+        if nom not in fonctions:
+            erreurs.append(
+                f"Impossible de vérifier la dérivée de {nom}(x) : "
+                "fonction de départ introuvable."
+            )
+            continue
+
+        derivee_reelle = sp.diff(
+            fonctions[nom],
+            sp.Symbol("x")
+        )
+
+        difference = sp.simplify(
+            derivee_reelle - derivee_annoncee
+        )
+
+        if difference != 0:
+            erreurs.append(
+                f"Dérivée incorrecte pour {nom}(x). "
+                f"Dérivée annoncée : {derivee_annoncee}. "
+                f"La comparaison avec la fonction de départ "
+                "n'est pas satisfaisante."
+            )
+
+    return len(erreurs) == 0, erreurs
+
 def afficher_generateur_sujet():
 
     if "ouvrir_generateur_sujet" not in st.session_state:
@@ -2933,17 +2970,9 @@ Indique le chapitre, le niveau, la durée et le barème.
 
 IMPORTANT — NOTATION MATHÉMATIQUE :
 
-
 Toutes les expressions mathématiques doivent être écrites
-en LaTeX et encadrées exclusivement par un seul dollar
-ouvrant et un seul dollar fermant : $...$.
+en LaTeX et encadrées par $...$.
 
-INTERDICTION ABSOLUE :
-- Ne jamais utiliser $$...$$.
-- Ne jamais utiliser \[...\].
-- Ne jamais utiliser \(...\).
-- Ne jamais écrire une formule mathématique hors de $...$.
-- Ne jamais utiliser de dollars isolés.
 
 
 Exemples :
@@ -3374,106 +3403,105 @@ par une autre fonction de l'application.
                            
 
 
-                        with st.spinner(
-                            "🔬 Deuxième vérification indépendante..."
-                        ):
-                            deuxieme_controle = _appeler_gemini(
-                                prompt_deuxieme_verification,
-                                contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
-                            )
-
-                        if deuxieme_controle and deuxieme_controle.strip():
-
-                            texte_final = deuxieme_controle.strip()
-
-                            if texte_final.startswith("SUJET CONFORME"):
-
-                                sujet_accepte = texte_final.replace(
-                                    "SUJET CONFORME", "", 1
-                                ).strip()
-
-                            elif texte_final.startswith("SUJET NON VALIDÉ"):
-
-                                sujet_accepte = ""
-
-                                st.session_state.sujet_genere = ""
-                                st.session_state.correction_sujet = ""
-
-                                st.error("❌ Sujet non validé.")
-                                st.warning(texte_final)
-
-                            else:
-
-                                sujet_accepte = ""
-
-                                st.session_state.sujet_genere = ""
-                                st.session_state.correction_sujet = ""
-
-                                st.error("⚠️ Format de réponse incorrect.")
-                                st.warning(texte_final)
-
-                        else:
-
-                            sujet_accepte = ""
-
-                            st.session_state.sujet_genere = ""
-                            st.session_state.correction_sujet = ""
-
-                            st.error("❌ La deuxième vérification a échoué.")
-
-                        if sujet_accepte:
-
-                            # 1. Vérification de la notation mathématique
-                            notation_ok, erreurs_notation = verifier_notation_maths(
-                                sujet_accepte
-                            )
-
-                            if notation_ok:
-
-                                # 2. Vérification des dérivées avec SymPy
-                                derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
-                                    sujet_accepte
+                            with st.spinner(
+                                "🔬 Deuxième vérification indépendante..."
+                            ):
+                                deuxieme_controle = _appeler_gemini(
+                                    prompt_deuxieme_verification,
+                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
                                 )
 
-                                if derives_ok:
+                            if deuxieme_controle and deuxieme_controle.strip():
 
-                                    st.session_state.sujet_genere = sujet_accepte
-                                    st.session_state.correction_sujet = ""
+                                texte_final = deuxieme_controle.strip()
 
-                                    st.success(
-                                        "✅ Sujet contrôlé : notation des formules "
-                                        "et dérivées vérifiées."
-                                    )
+                                if texte_final.startswith("SUJET CONFORME"):
 
-                                else:
-
-                                    st.session_state.sujet_genere = ""
-                                    st.session_state.correction_sujet = ""
-
-                                    st.error(
-                                        "❌ Sujet refusé : une ou plusieurs dérivées "
-                                        "sont incorrectes ou impossibles à vérifier."
-                                    )
-
-                                    for erreur in erreurs_derives:
-                                        st.warning(erreur)
-
-                            else:
-
-                                st.session_state.sujet_genere = ""
-                                st.session_state.correction_sujet = ""
-
-                                st.error(
-                                    "❌ Sujet refusé : problème détecté dans les formules."
-                                )
-
-                                for erreur in erreurs_notation:
-                                    st.warning(erreur)
-
+                                    sujet_accepte = texte_final.replace(
+                                        "SUJET CONFORME", "", 1
+                                    ).strip()
+                           
                             
 
-        
-        
+        if sujet_accepte:
+
+            # 1. Vérification de la notation mathématique
+            notation_ok, erreurs_notation = verifier_notation_maths(
+                sujet_accepte
+            )
+
+            if notation_ok:
+
+                # 2. Vérification des dérivées avec SymPy
+                derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+                    sujet_accepte
+                )
+
+                if derives_ok:
+
+                    st.session_state.sujet_genere = sujet_accepte
+                    st.session_state.correction_sujet = ""
+
+                    st.success(
+                        "✅ Sujet contrôlé : notation des formules "
+                        "et dérivées vérifiées."
+                    )
+
+                else:
+
+                    st.session_state.sujet_genere = ""
+                    st.session_state.correction_sujet = ""
+
+                    st.error(
+                        "❌ Sujet refusé : une ou plusieurs dérivées "
+                        "sont incorrectes ou impossibles à vérifier."
+                    )
+
+                    for erreur in erreurs_derives:
+                        st.warning(erreur)
+
+            else:
+
+                st.session_state.sujet_genere = ""
+                st.session_state.correction_sujet = ""
+
+                st.error(
+                    "❌ Sujet refusé : problème détecté dans les formules."
+                )
+
+                for erreur in erreurs_notation:
+                    st.warning(erreur)
+
+        else:
+
+            st.session_state.sujet_genere = ""
+            st.session_state.correction_sujet = ""
+
+            st.error("⚠️ Aucun sujet retourné.")
+
+    elif texte_final.startswith("SUJET NON VALIDÉ"):
+
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error("❌ Sujet non validé.")
+        st.warning(texte_final)
+
+    else:
+
+        st.session_state.sujet_genere = ""
+        st.session_state.correction_sujet = ""
+
+        st.error("⚠️ Format de réponse incorrect.")
+        st.warning(texte_final)
+
+else:
+
+    st.session_state.sujet_genere = ""
+    st.session_state.correction_sujet = ""
+
+    st.error("❌ La deuxième vérification a échoué.")
+
 
                             
 
@@ -3863,5 +3891,4 @@ else:
             afficher_coach_interactif(
                 st.session_state['dernier_enonce']
             )
-
 
