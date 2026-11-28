@@ -3434,14 +3434,14 @@ par une autre fonction de l'application.
                                         sujet_accepte
                                   )
 
-                              if derives_ok:
+                                        if derives_ok:
 
-                                st.session_state.sujet_genere = sujet_accepte
-                                st.session_state.correction_sujet = ""
+                                            st.session_state.sujet_genere = sujet_accepte
+                                            st.session_state.correction_sujet = ""
 
-                                st.success(
-                                  "✅ Sujet contrôlé : notation des formules "
-                                  "et dérivées vérifiées."
+                                            st.success(
+                                              "✅ Sujet contrôlé : notation des formules "
+                                              "et dérivées vérifiées."
                                   )
 
                 else:
