@@ -3399,81 +3399,74 @@ Le corrigé enseignant sera généré séparément
 par une autre fonction de l'application.
 """
 
-                            with st.spinner(
-                                "🔬 Deuxième vérification indépendante..."
-                            ):
-                                deuxieme_controle = _appeler_gemini(
-                                    prompt_deuxieme_verification,
-                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
-                                )
-
-                            if deuxieme_controle and deuxieme_controle.strip():
-
-                                texte_final = deuxieme_controle.strip()
-
-                                if texte_final.startswith("SUJET CONFORME"):
-
-                                    sujet_accepte = texte_final.replace(
-                                        "SUJET CONFORME", "", 1
-                                    ).strip()
                            
-                            
+    
+with st.spinner(
+    "🔬 Deuxième vérification indépendante..."
+):
+    deuxieme_controle = _appeler_gemini(
+        prompt_deuxieme_verification,
+        contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
+    )
 
-                            if sujet_accepte:
+if deuxieme_controle and deuxieme_controle.strip():
 
-                                # 1. Vérification de la notation mathématique
-                                notation_ok, erreurs_notation = verifier_notation_maths(
-                                   sujet_accepte
-                                )
+    texte_final = deuxieme_controle.strip()
 
-                                if notation_ok: 
+    if texte_final.startswith("SUJET CONFORME"):
 
-                                   # 2. Vérification des dérivées avec SymPy
-                                 derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
-                                 sujet_accepte
-                                )
+        sujet_accepte = texte_final.replace(
+            "SUJET CONFORME", "", 1
+        ).strip()
 
-                                if derives_ok:
+        if sujet_accepte:
 
-                                       st.session_state.sujet_genere = sujet_accepte
-                                       st.session_state.correction_sujet = ""
- 
-                                       st.success(
-                                          "✅ Sujet contrôlé : notation des formules "
-                                          "et dérivées vérifiées."
-                                   )
+            # 1. Vérification de la notation mathématique
+            notation_ok, erreurs_notation = verifier_notation_maths(
+                sujet_accepte
+            )
 
-                            else:
+            if notation_ok:
 
-                               st.session_state.sujet_genere = ""
-                               st.session_state.correction_sujet = ""
+                # 2. Vérification des dérivées avec SymPy
+                derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+                    sujet_accepte
+                )
 
-                               st.error(
-                                 "❌ Sujet refusé : une ou plusieurs dérivées "
-                                 "sont incorrectes ou impossibles à vérifier."
-                                 )
+                if derives_ok:
 
-                               for erreur in erreurs_derives:
-                                    st.warning(erreur)
+                    st.session_state.sujet_genere = sujet_accepte
+                    st.session_state.correction_sujet = ""
 
-                                 else:
+                    st.success(
+                        "✅ Sujet contrôlé : notation des formules "
+                        "et dérivées vérifiées."
+                    )
 
-                                    st.session_state.sujet_genere = ""
-                                    st.session_state.correction_sujet = ""
+                else:
 
-                                    st.error(
-                                      "❌ Sujet refusé : problème détecté dans les formules."
-                                   )
+                    st.session_state.sujet_genere = ""
+                    st.session_state.correction_sujet = ""
 
-                              for erreur in erreurs_notation:
-                                   st.warning(erreur)
+                    st.error(
+                        "❌ Sujet refusé : une ou plusieurs dérivées "
+                        "sont incorrectes ou impossibles à vérifier."
+                    )
 
-        else:
+                    for erreur in erreurs_derives:
+                        st.warning(erreur)
 
-            st.session_state.sujet_genere = ""
-            st.session_state.correction_sujet = ""
+            else:
 
-            st.error("⚠️ Aucun sujet retourné.")
+                st.session_state.sujet_genere = ""
+                st.session_state.correction_sujet = ""
+
+                st.error(
+                    "❌ Sujet refusé : problème détecté dans les formules."
+                )
+
+                for erreur in erreurs_notation:
+                    st.warning(erreur)
 
     elif texte_final.startswith("SUJET NON VALIDÉ"):
 
@@ -3499,29 +3492,17 @@ else:
     st.error("❌ La deuxième vérification a échoué.")
 
 
-                            
+else:
+    st.error(
+        "❌ La première vérification du sujet a échoué."
+    )
 
-                        else:
-                            st.error(
-                                "❌ La première vérification du sujet a échoué."
-                            )
+else:
+    st.error("La génération du sujet a échoué.")
 
-                    else:
-                        st.error("La génération du sujet a échoué.")
-
-                except Exception as e:
-                  st.error(f"Erreur de génération : {e}")
-
-                         
-                           
-                            
-
-   
-                           
-   
-    
-
-
+except Exception as e:
+    st.error(f"Erreur de génération : {e}")
+                        
                           
                             
     # ------------------------------------------------
