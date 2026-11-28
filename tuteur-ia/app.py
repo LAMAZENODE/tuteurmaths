@@ -3493,16 +3493,16 @@ par une autre fonction de l'application.
                        st.error("❌ La deuxième vérification a échoué.")
 
 
-              else:
-                 st.error(
-                     "❌ La première vérification du sujet a échoué."
-             )
+               else:
+                  st.error(
+                      "❌ La première vérification du sujet a échoué."
+              )
 
-        else:
-            st.error("La génération du sujet a échoué.")
+           else:
+               st.error("La génération du sujet a échoué.")
 
-except Exception as e:
-    st.error(f"Erreur de génération : {e}")
+      except Exception as e:
+         st.error(f"Erreur de génération : {e}")
                         
                           
                             
