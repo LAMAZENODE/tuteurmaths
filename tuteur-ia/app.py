@@ -3485,12 +3485,12 @@ par une autre fonction de l'application.
                                st.error("⚠️ Format de réponse incorrect.")
                                st.warning(texte_final)
 
-                          else:
+                       else:
 
-                       st.session_state.sujet_genere = ""
-                       st.session_state.correction_sujet = ""
+                          st.session_state.sujet_genere = ""
+                          st.session_state.correction_sujet = ""
 
-                       st.error("❌ La deuxième vérification a échoué.")
+                          st.error("❌ La deuxième vérification a échoué.")
 
 
                        else:
