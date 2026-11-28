@@ -3416,9 +3416,9 @@ par une autre fonction de l'application.
 
                             if texte_final.startswith("SUJET CONFORME"):
 
-                         sujet_accepte = texte_final.replace(
-                        "SUJET CONFORME", "", 1
-                            ).strip()
+                               sujet_accepte = texte_final.replace(
+                                 "SUJET CONFORME", "", 1
+                                   ).strip()
 
         if sujet_accepte:
 
