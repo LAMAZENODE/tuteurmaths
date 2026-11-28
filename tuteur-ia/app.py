@@ -3452,10 +3452,10 @@ par une autre fonction de l'application.
                                             st.error(
                                              "❌ Sujet refusé : une ou plusieurs dérivées "
                                              "sont incorrectes ou impossibles à vérifier."
-                                        )
+                                           )
 
-                                           for erreur in erreurs_derives:
-                                           st.warning(erreur)
+                                            for erreur in erreurs_derives:
+                                            st.warning(erreur)
 
             else:
 
