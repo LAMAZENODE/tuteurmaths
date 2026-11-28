@@ -3444,7 +3444,7 @@ par une autre fonction de l'application.
                                               "et dérivées vérifiées."
                                   )
 
-                                        else:
+                                       else:
 
                                            st.session_state.sujet_genere = ""
                                            st.session_state.correction_sujet = ""
