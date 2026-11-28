@@ -3495,7 +3495,7 @@ par une autre fonction de l'application.
 
                 else:
                      st.error(
-                         "❌ La première vérification du sujet a échoué."
+                          "❌ La première vérification du sujet a échoué."
                      )
 
              else:
