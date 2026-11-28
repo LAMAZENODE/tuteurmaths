@@ -3466,8 +3466,8 @@ par une autre fonction de l'application.
                                            "❌ Sujet refusé : problème détecté dans les formules."
                                            )
 
-                                   for erreur in erreurs_notation:
-                                       st.warning(erreur)
+                                      for erreur in erreurs_notation:
+                                          st.warning(erreur)
 
                       elif texte_final.startswith("SUJET NON VALIDÉ"):
 
