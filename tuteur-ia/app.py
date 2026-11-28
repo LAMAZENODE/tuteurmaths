@@ -3427,12 +3427,12 @@ par une autre fonction de l'application.
                                       sujet_accepte
                                  )
 
-                                if notation_ok:
+                                  if notation_ok:
 
-                                   # 2. Vérification des dérivées avec SymPy
-                                  derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
-                                    sujet_accepte
-                                 )
+                                     # 2. Vérification des dérivées avec SymPy
+                                     derives_ok, erreurs_derives = verifier_derives_sujet_sympy(
+                                     sujet_accepte
+                                  )
 
                               if derives_ok:
 
