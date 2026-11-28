@@ -3399,15 +3399,15 @@ Le corrigé enseignant sera généré séparément
 par une autre fonction de l'application.
 """
 
-                                with st.spinner(
-                                "🔬 Deuxième vérification indépendante..."
-                            ):
-                                deuxieme_controle = _appeler_gemini(
-                                    prompt_deuxieme_verification,
-                                    contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
-                                )                       
-    
-
+                                    with st.spinner(
+                                        "🔬 Deuxième vérification indépendante..."
+                                    ):
+                                         deuxieme_controle = _appeler_gemini(
+                                             prompt_deuxieme_verification,
+                                             contenu="Effectue un contrôle indépendant complet et retourne le résultat final."
+                                        )                       
+                                                   
+                            
 
 
                             if deuxieme_controle and deuxieme_controle.strip():
