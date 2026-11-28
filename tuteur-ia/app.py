@@ -3485,7 +3485,7 @@ par une autre fonction de l'application.
                                st.error("⚠️ Format de réponse incorrect.")
                                st.warning(texte_final)
 
-                    else:
+                           else:
 
                        st.session_state.sujet_genere = ""
                        st.session_state.correction_sujet = ""
@@ -3493,9 +3493,9 @@ par une autre fonction de l'application.
                        st.error("❌ La deuxième vérification a échoué.")
 
 
-                else:
-                     st.error(
-                          "❌ La première vérification du sujet a échoué."
+                       else:
+                           st.error(
+                               "❌ La première vérification du sujet a échoué."
                      )
 
              else:
