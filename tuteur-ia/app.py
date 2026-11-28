@@ -3499,7 +3499,7 @@ par une autre fonction de l'application.
                      )
 
                 else:
-                   st.error("La génération du sujet a échoué.")
+                    st.error("La génération du sujet a échoué.")
 
              except Exception as e:
                  st.error(f"Erreur de génération : {e}")
