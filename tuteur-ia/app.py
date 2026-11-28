@@ -3479,11 +3479,11 @@ par une autre fonction de l'application.
 
                             else:
 
-                            st.session_state.sujet_genere = ""
-                            st.session_state.correction_sujet = ""
+                               st.session_state.sujet_genere = ""
+                               st.session_state.correction_sujet = ""
 
-                            st.error("⚠️ Format de réponse incorrect.")
-                            st.warning(texte_final)
+                               st.error("⚠️ Format de réponse incorrect.")
+                               st.warning(texte_final)
 
 else:
 
