@@ -3456,14 +3456,14 @@ par une autre fonction de l'application.
                                for erreur in erreurs_derives:
                                     st.warning(erreur)
 
-                             else:
+                                else:
 
-                               st.session_state.sujet_genere = ""
-                               st.session_state.correction_sujet = ""
+                                  st.session_state.sujet_genere = ""
+                                  st.session_state.correction_sujet = ""
 
-                               st.error(
-                                 "❌ Sujet refusé : problème détecté dans les formules."
-                                )
+                                  st.error(
+                                    "❌ Sujet refusé : problème détecté dans les formules."
+                                  )
 
                               for erreur in erreurs_notation:
                                    st.warning(erreur)
