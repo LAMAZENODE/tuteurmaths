@@ -3420,12 +3420,12 @@ par une autre fonction de l'application.
                                  "SUJET CONFORME", "", 1
                                    ).strip()
 
-                          if sujet_accepte:
+                           if sujet_accepte:
 
-                         # 1. Vérification de la notation mathématique
-                        notation_ok, erreurs_notation = verifier_notation_maths(
-                       sujet_accepte
-                       )
+                          # 1. Vérification de la notation mathématique
+                         notation_ok, erreurs_notation = verifier_notation_maths(
+                        sujet_accepte
+                        )
 
             if notation_ok:
 
