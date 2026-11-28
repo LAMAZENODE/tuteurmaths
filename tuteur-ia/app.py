@@ -3414,7 +3414,7 @@ par une autre fonction de l'application.
 
                                  texte_final = deuxieme_controle.strip()
 
-                           if texte_final.startswith("SUJET CONFORME"):
+                            if texte_final.startswith("SUJET CONFORME"):
 
                          sujet_accepte = texte_final.replace(
                         "SUJET CONFORME", "", 1
