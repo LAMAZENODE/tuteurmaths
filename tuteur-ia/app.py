@@ -3493,8 +3493,8 @@ par une autre fonction de l'application.
                        st.error("❌ La deuxième vérification a échoué.")
 
 
-                  else:
-                      st.error(
+                else:
+                     st.error(
                          "❌ La première vérification du sujet a échoué."
                      )
 
